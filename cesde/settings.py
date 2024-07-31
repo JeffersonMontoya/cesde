@@ -80,11 +80,11 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'cesde_api',
-        'USER': 'postgres',
-        'PASSWORD': 'admin',
         'HOST': 'localhost',
-        'PORT': '5432',
+        'PORT': 5432,
+        'NAME': 'cesde',
+        'USER': 'postgres', 
+        'PASSWORD': 'admin'
     }
 }
 
@@ -131,7 +131,13 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://localhost:5500",
+]
+
 CORS_ALLOW_ALL_ORIGINS = True
+
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [

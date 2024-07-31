@@ -1,6 +1,12 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+import pandas as pd
 from .models import *
 from .serializer import *
+from io import StringIO
+from rest_framework.permissions import AllowAny
+
 
 class DepartamentoViewSet(viewsets.ModelViewSet):
     queryset = Departamento.objects.all()
@@ -35,6 +41,18 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
 
+class Cargarcsv(APIView):
+    permission_classes = [AllowAny]  # Permitir acceso a cualquiera
+
+    def post(self, request, format=None):
+        archivos = request.FILES.getlist('archivos')
+        for archivo in archivos: 
+            data_set = archivo.read().decode('UTF-8')
+            io_string = StringIO(data_set)
+            df = pd.read_csv(io_string)
+            print(df)
+
+        return Response(status=status.HTTP_201_CREATED)
 
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
