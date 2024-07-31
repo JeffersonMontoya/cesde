@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="archivos" id="archivos" multiple>
+        <button type="submit">Cargar CSV</button>
+    </form>
+    
+    <script>
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const archivos = document.getElementById('archivos').files;
+            for (let i = 0; i < archivos.length; i++) {
+                formData.append('archivos', archivos[i]);
+            }
+    
+            const response = await fetch('http://localhost:8000/cesde/cargar_csv/', {
+                method: 'POST',
+                body: formData
+            });
+    
+            if (response.ok) {
+                alert('Archivos cargados con éxito');
+            } else {
+                alert('Error al cargar los archivos');
+            }
+        };
+    </script>
+</body>
+</html>

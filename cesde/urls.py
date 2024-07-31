@@ -20,5 +20,8 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('cesde/' , include('cesde_api.urls'))
+<<<<<<< HEAD
   
+=======
+>>>>>>> b3e1f36828bcea14ef8e8959b05070a1340c0b5c
 ]
