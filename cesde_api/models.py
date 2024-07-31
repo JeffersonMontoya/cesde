@@ -2,6 +2,7 @@ from django.db import models
 
 # Create your models here.
 
+
 class Departamento(models.Model):
     nombre = models.CharField(max_length=35)
 
@@ -33,11 +34,11 @@ class Programa(models.Model):
 
 
 class Empresa(models.Model):
-    codigo = models.CharField(max_length=10, primary_key=True)
-    nombre = models.CharField(max_length=100)
+    nit = models.CharField(max_length=20, primary_key=True)  # Definir nit como clave primaria
 
     def __str__(self):
-        return self.nombre
+        return self.nit
+
 
 
 class Aspirantes(models.Model):
@@ -51,9 +52,10 @@ class Aspirantes(models.Model):
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
-
+    
+    
     def __str__(self):
-        return f"{self.nombre} {self.apellidos} ({self.celular})"
+        return self.nombre
 
 
 class Tipo_gestion(models.Model):

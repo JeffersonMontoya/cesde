@@ -35,3 +35,7 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     queryset = Programa.objects.all()
     serializer_class = ProgramaSerializer
 
+
+class EmpresaViewSet(viewsets.ModelViewSet):
+    queryset =  Empresa.objects.all()
+    serializer_class = EmpresaSerializer

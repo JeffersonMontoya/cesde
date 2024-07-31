@@ -11,6 +11,8 @@ router.register(r'tipo-gestion', TipoGestionViewSet)
 router.register(r'asesores', AsesorViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'programas' , ProgramaViewSet)
+router.register(r'empresas' , EmpresaViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
