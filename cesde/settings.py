@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'cesde_api'
+    'cesde_api',
+    'django_filters',
+
 ]
 
 MIDDLEWARE = [
