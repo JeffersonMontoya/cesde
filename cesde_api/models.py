@@ -78,3 +78,4 @@ class Gestiones(models.Model):
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
     asesor = models.ForeignKey(Asesores, on_delete=models.CASCADE)
+

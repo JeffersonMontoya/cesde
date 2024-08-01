@@ -23,6 +23,7 @@ class EstadoViewSet(viewsets.ModelViewSet):
 class AspiranteViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()
     serializer_class = AspiranteSerializer
+    
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
     queryset = Tipo_gestion.objects.all()
@@ -58,3 +59,6 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
     serializer_class = EmpresaSerializer
     
+    
+    
+
