@@ -40,7 +40,6 @@ class Empresa(models.Model):
         return self.nit
 
 
-
 class Aspirantes(models.Model):
     celular = models.CharField(max_length=15, primary_key=True)
     nombre = models.CharField(max_length=40)
