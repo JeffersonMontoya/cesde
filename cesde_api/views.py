@@ -125,8 +125,6 @@ class Cargarcsv(APIView):
                 columnas_deseadas = ['cel_modificado','DATE_x','CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
                 
-                
-
                 print(df_result)
                 return Response(status=status.HTTP_201_CREATED)
             except Exception as e:

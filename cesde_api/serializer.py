@@ -126,10 +126,6 @@ class AspiranteSerializer(serializers.ModelSerializer):
         return None
    
 
-
-
-     
-
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipo_gestion
