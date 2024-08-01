@@ -6,9 +6,17 @@ from .models import *
 from .serializer import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+
+import logging
+
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
+
 from django_filters.rest_framework import DjangoFilterBackend
 # from .filters import AspirantesFilter, CiudadesFilter, DepartamentosFilter
 from .filters import *
+
 
 
 class DepartamentoViewSet(viewsets.ModelViewSet):
@@ -71,18 +79,64 @@ class EmpresaViewSet(viewsets.ModelViewSet): # Proporciona operaciones CRUD (cre
 
 
 
+
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
     def post(self, request, format=None):
-        archivos = request.FILES.getlist('archivos')
-        for archivo in archivos: 
-            data_set = archivo.read().decode('UTF-8')
-            io_string = StringIO(data_set)
-            df = pd.read_csv(io_string)
-            print(df)
+        try:
+            archivos = request.FILES.getlist('archivos')
 
-        return Response(status=status.HTTP_201_CREATED)
+            if len(archivos) < 4:
+                return Response({'error': 'Se requieren 4 archivos CSV'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                # BD Matriculas
+                data_set1 = archivos[3].read().decode('UTF-8')
+                io_string1 = StringIO(data_set1)
+                df1 = pd.read_csv(io_string1)
+                df1['Celular'] = df1['Celular'].astype(str)
+
+                # BD predictivo
+                data_set2 = archivos[2].read().decode('UTF-8')
+                io_string2 = StringIO(data_set2)
+                df2 = pd.read_csv(io_string2)
+                df2['TEL1'] = df2['TEL1'].astype(str)
+                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(x) == 12 else (x[1:] if len(x) == 11 else 'Número no válido'))
+
+                # BD Whatsapp
+                data_set3 = archivos[1].read().decode('UTF-8')
+                io_string3 = StringIO(data_set3)
+                df3 = pd.read_csv(io_string3, skiprows=7)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
+                df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[2:] if len(x) == 12 else x)
+
+                # BD SMS
+                data_set4 = archivos[0].read().decode('UTF-8')
+                io_string4 = StringIO(data_set4)
+                df4 = pd.read_csv(io_string4, skiprows=7)
+                df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
+                df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[1:] if len(x) == 11 else x)
+
+                # Unir los DataFrames
+                df_unido = pd.merge(df1, df2, left_on='Celular', right_on='cel_modificado', how='right')
+                df_unido = pd.merge(df_unido, df3, on='cel_modificado', how='left')
+                df_unido = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+
+                # Seleccionar las columnas específicas que deseas mostrar
+                columnas_deseadas = ['cel_modificado','DATE_x','CIUDAD', 'NOMBRE', 'Estado']
+                df_result = df_unido[columnas_deseadas]
+                
+                # df_result.to_csv('BD_Unidas2', index=False)
+
+                print(df_result)
+                return Response(status=status.HTTP_201_CREATED)
+            except Exception as e:
+                logger.error(f"Error procesando los archivos CSV: {e}")
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Exception as e:
+            logger.error(f"Error en la función: {e}")
+            return Response({'error': 'Error interno del servidor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
