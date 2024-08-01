@@ -84,6 +84,10 @@ class Cargarcsv(APIView):
 
         return Response(status=status.HTTP_201_CREATED)
 
-
-
+class EmpresaViewSet(viewsets.ModelViewSet):
+    queryset =  Empresa.objects.all()
+    serializer_class = EmpresaSerializer
+    
+    
+    
 
