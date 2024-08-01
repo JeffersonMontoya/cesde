@@ -88,6 +88,15 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
     serializer_class = EmpresaSerializer
     
-    
-    
+   
+   
+class ProcesoViewSet(viewsets.ModelViewSet):
+    queryset = Proceso.objects.all()
+    serializer_class = ProcesoSerializer 
+  
+   
+   
+class TipificacionViewSet(viewsets.ModelViewSet):
+    queryset = Tipificacion.objects.all()
+    serializer_class = TipificacionSerializer    
 
