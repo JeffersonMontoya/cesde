@@ -13,10 +13,11 @@ class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtro
     programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
     empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
 
+
     # Modelo y campos que se pueden filtrar
     class Meta:
         model = Aspirantes
-        fields = ['nombre', 'correo', 'documento', 'celular', 'ciudad', 'estado', 'programa', 'empresa']
+        fields = ['nombre', 'correo', 'documento', 'celular', 'ciudad', 'estado', 'programa', 'empresa' ]
 
 
 class DepartamentosFilter(django_filters.FilterSet):

@@ -48,7 +48,6 @@ class GestionSerializer(serializers.ModelSerializer):
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa
-        fields = '__all__'
 
 
 class EmpresaSerializer(serializers.ModelSerializer):
