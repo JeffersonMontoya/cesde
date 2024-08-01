@@ -1,6 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import *
+from .views import (
+    DepartamentoViewSet, CiudadViewSet, EstadoViewSet,
+    TipoGestionViewSet, AsesorViewSet, GestionViewSet, ProgramaViewSet, 
+    EmpresaViewSet, Cargarcsv , AspiranteViewSet
+)
 
 router = DefaultRouter()
 router.register(r'departamentos', DepartamentoViewSet)
@@ -13,8 +17,8 @@ router.register(r'gestiones', GestionViewSet)
 router.register(r'programas' , ProgramaViewSet)
 router.register(r'empresas' , EmpresaViewSet)
 
-
 urlpatterns = [
     path('', include(router.urls)),
-    path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv')
+    path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv'),
+
 ]

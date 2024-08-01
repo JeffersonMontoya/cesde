@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'cesde_api'
+    'cesde_api',
+    'django_filters',
+
 ]
 
 MIDDLEWARE = [
@@ -82,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
         'PORT': 5432,
-        'NAME': 'cesde',
+        'NAME': 'cesde_api',
         'USER': 'postgres', 
         'PASSWORD': 'admin'
     }
