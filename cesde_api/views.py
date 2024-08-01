@@ -78,8 +78,6 @@ class EmpresaViewSet(viewsets.ModelViewSet): # Proporciona operaciones CRUD (cre
     filterset_class = EmpresaFilter
 
 
-
-
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
@@ -127,7 +125,7 @@ class Cargarcsv(APIView):
                 columnas_deseadas = ['cel_modificado','DATE_x','CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
                 
-                # df_result.to_csv('BD_Unidas2', index=False)
+                
 
                 print(df_result)
                 return Response(status=status.HTTP_201_CREATED)
