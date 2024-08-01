@@ -30,7 +30,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
-    fecha_ultima_gestion_celular_adicional = serializers.SerializerMethodField()
+    fecha_ultima_gestion = serializers.SerializerMethodField()
     celular_adicional = serializers.CharField(source='cel_opcional')
 
     class Meta:
@@ -38,7 +38,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
         fields = [
             'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
             'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
-            'fecha_ultima_gestion_celular_adicional' , 'celular_adicional'
+            'fecha_ultima_gestion' , 'celular_adicional'
         ]
             #    Funcion para traer el celular adicional
 
@@ -116,7 +116,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     
     
     # Función para obtener la fecha de la última gestión del celular adicional
-    def get_fecha_ultima_gestion_celular_adicional(self, obj):
+    def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj,
             fecha__isnull=False
@@ -158,4 +158,18 @@ class EmpresaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Empresa
+        fields = '__all__'
+        
+        
+class ProcesoSerializer(serializers.ModelSerializer):
+    
+    class  Meta:
+        model = Proceso
+        fields = '__all__'
+    
+
+class TipificacionSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Tipificacion
         fields = '__all__'
