@@ -86,6 +86,8 @@ class Cargarcsv(APIView):
     def post(self, request, format=None):
         try:
             archivos = request.FILES.getlist('archivos')
+            
+            print(archivos[0], archivos[1], archivos[2], archivos[3])
 
             if len(archivos) < 4:
                 return Response({'error': 'Se requieren 4 archivos CSV'}, status=status.HTTP_400_BAD_REQUEST)
@@ -127,7 +129,7 @@ class Cargarcsv(APIView):
                 columnas_deseadas = ['cel_modificado','DATE_x','CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
                 
-                # df_result.to_csv('BD_Unidas2', index=False)
+                df_result.to_csv('BD_Unidas2', index=False)
 
                 print(df_result)
                 return Response(status=status.HTTP_201_CREATED)
