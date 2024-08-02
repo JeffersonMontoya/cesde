@@ -1,25 +1,18 @@
 from rest_framework import serializers
 from .models import (
     Aspirantes, Gestiones, Tipo_gestion, Estados,
-    Ciudad, Departamento, Asesores, Programa,
-    Empresa, Proceso, Tipificacion
+     Asesores, Programa,
+    Empresa, Proceso, Tipificacion , Sede
 )
 
-class DepartamentoSerializer(serializers.ModelSerializer):
+
+class SedeSerializer(serializers.ModelSerializer):
+    sede = serializers.SerializerMethodField()
+    
     class Meta:
-        model = Departamento
-        fields = ['nombre']
+        model = Sede
+        fields ='__all__'
 
-class CiudadSerializer(serializers.ModelSerializer):
-    departamento = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Ciudad
-        fields = ['id', 'nombre', 'departamento']
-
-    def get_departamento(self, obj):
-        # Obtener el nombre del departamento en lugar del ID
-        return obj.departamento.nombre
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -132,3 +125,5 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = ['nombre']
+        
+        

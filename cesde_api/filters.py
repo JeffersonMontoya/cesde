@@ -8,7 +8,6 @@ class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtro
     correo = django_filters.CharFilter(lookup_expr='icontains')
     documento = django_filters.CharFilter(lookup_expr='icontains')
     celular = django_filters.CharFilter(lookup_expr='icontains')
-    ciudad = django_filters.ModelChoiceFilter(queryset=Ciudad.objects.all()) #ModelChoiceFilter permite filtrar por relaciones de clave forenea
     estado = django_filters.ModelChoiceFilter(queryset=Estados.objects.all())
     programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
     empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
@@ -16,25 +15,8 @@ class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtro
     # Modelo y campos que se pueden filtrar
     class Meta:
         model = Aspirantes
-        fields = ['nombre', 'correo', 'documento', 'celular', 'ciudad', 'estado', 'programa', 'empresa']
+        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
 
-
-class DepartamentosFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-
-    # Modelo y campos que se pueden filtrar
-    class Meta:
-        model = Departamento
-        fields = ['nombre']
-
-
-class CiudadesFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-    departamento = django_filters.ModelChoiceFilter(queryset=Departamento.objects.all())
-
-    class Meta:
-        model = Ciudad
-        fields = ['nombre', 'departamento']
 
 
 class EstadosFilter(django_filters.FilterSet):

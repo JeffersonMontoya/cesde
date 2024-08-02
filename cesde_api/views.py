@@ -19,17 +19,10 @@ from .filters import *
 
 
 
-class DepartamentoViewSet(viewsets.ModelViewSet):
-    queryset = Departamento.objects.all()
-    serializer_class = DepartamentoSerializer
+class SedeViewSet(viewsets.ModelViewSet):
+    queryset = Sede.objects.all()
+    serializer_class = SedeSerializer
     filter_backends = (DjangoFilterBackend,)
-    filterset_class = DepartamentosFilter # Especifica la clase de filtro
-
-class CiudadViewSet(viewsets.ModelViewSet):
-    queryset = Ciudad.objects.all()
-    serializer_class = CiudadSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = CiudadesFilter
 
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
