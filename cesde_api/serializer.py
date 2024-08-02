@@ -2,6 +2,19 @@ from rest_framework import serializers
 from .models import *
 
 
+class SedeSerializer(serializers.ModelSerializer):
+    sede = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Sede
+        fields ='__all__'
+
+
+class EstadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados
+        fields = ['nombre']
+
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -22,14 +35,10 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
             'fecha_ultima_gestion' , 'celular_adicional'
         ]
-        #    Funcion para traer el celular adicional
 
-    # Funcion para traer el nombre completo del aspirante
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellidos}"
 
-
-    # Funcion para llevar el conteo de llamadas del aspirante
     def get_cantidad_llamadas(self, obj):
         llamadas_gestion = Tipo_gestion.objects.filter(
             nombre='Llamada').first()
@@ -69,23 +78,13 @@ class AspiranteSerializer(serializers.ModelSerializer):
             return ultima_gestion.fecha
         return None
 
-
-class DepartamentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Departamento
-        fields = '__all__'
-
-
-class CiudadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ciudad
-        fields = '__all__'
-
-
-class EstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estados
-        fields = '__all__'
+    def get_estado_ultima_gestion(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+        if ultima_gestion:
+            # El estado de la última gestión se obtiene de la tipificación relacionada
+            return ultima_gestion.tipificacion.nombre
+        return None
 
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:

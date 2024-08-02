@@ -6,8 +6,6 @@ from django.db.models import Count, Q, Max
 from django.utils import timezone
 from datetime import timedelta
 
-<<<<<<< HEAD
-=======
 class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtros para un modelo especifico
     #Filtros por cada campo
     nombre = django_filters.CharFilter(lookup_expr='icontains') 
@@ -17,7 +15,7 @@ class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtro
     estado = django_filters.ModelChoiceFilter(queryset=Estados.objects.all())
     programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
     empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
+
 
 # Definición de los estados del aspirante
 ESTADOS_CHOICES = [
@@ -40,7 +38,7 @@ class AspirantesFilter(django_filters.FilterSet):
 
     class Meta:
         model = Aspirantes
-<<<<<<< HEAD
+        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
         fields = [
             'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp',
             'cantidad_gestiones', 'estado_aspirante', 'dias_ultima_gestion', 
@@ -126,12 +124,6 @@ class AspirantesFilter(django_filters.FilterSet):
             return queryset.filter(empresa__nit__icontains=value)
         return queryset
 
-=======
-        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
-
-
-
 class EstadosFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')
 
@@ -139,7 +131,6 @@ class EstadosFilter(django_filters.FilterSet):
     class Meta:
         model = Estados
         fields = ['nombre']
-
 
 class ProgramaFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')
