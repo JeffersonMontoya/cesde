@@ -7,9 +7,16 @@
 </head>
 <body>
     
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="archivos" id="archivos" multiple>
-        <button type="submit">Cargar CSV</button>
+    <form action="http://localhost:8000/cesde/cargar_csv/" method="post" id="uploadForm" enctype="multipart/form-data" >
+        <label> BD predictivo</label><br>
+        <input type="file" name="predictivo" id="predictivo" ><br>
+        <label>BD matricula</label><br>
+        <input type="file" name="matricula" id="matricula"><br>
+        <label>BD whatsapp</label><br>
+        <input type="file" name="whatsapp" id="whatsapp"><br>
+        <label>BD SMS</label><br>
+        <input type="file" name="SMS" id="SMS"><br><br>
+        <button type="submit" id="enviar">Cargar CSV</button>
     </form>
     
     <script>
