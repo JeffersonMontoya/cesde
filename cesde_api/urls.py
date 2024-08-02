@@ -10,15 +10,12 @@ router.register(r'aspirantes-filter', AspiranteFilterViewSet, basename='aspirant
 router.register(r'tipo-gestion', TipoGestionViewSet)
 router.register(r'asesores', AsesorViewSet)
 router.register(r'gestiones', GestionViewSet)
-<<<<<<< HEAD
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
-=======
 router.register(r'programas' , ProgramaViewSet)
 router.register(r'empresas' , EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
 
 urlpatterns = [
     path('', include(router.urls)),
