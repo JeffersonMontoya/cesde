@@ -53,9 +53,8 @@ class Aspirantes(models.Model):
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     
-    
     def __str__(self):
-        return self.nombre
+        return f'{self.nombre} - Programa: {self.programa.nombre} - Descripción: {self.programa.descripcion}'
 
 
 class Tipo_gestion(models.Model):
@@ -78,3 +77,4 @@ class Gestiones(models.Model):
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
     asesor = models.ForeignKey(Asesores, on_delete=models.CASCADE)
+

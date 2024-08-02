@@ -1,19 +1,26 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import *
+from .views import (
+    DepartamentoViewSet, CiudadViewSet, EstadoViewSet,
+    AspiranteViewSet, AspiranteFilterViewSet, TipoGestionViewSet,
+    AsesorViewSet, GestionViewSet, ProgramaViewSet, EmpresaViewSet,
+    Cargarcsv
+)
 
 router = DefaultRouter()
 router.register(r'departamentos', DepartamentoViewSet)
 router.register(r'ciudades', CiudadViewSet)
 router.register(r'estados', EstadoViewSet)
 router.register(r'aspirantes', AspiranteViewSet)
+router.register(r'aspirantes-filter', AspiranteFilterViewSet, basename='aspirantes-filter')
 router.register(r'tipo-gestion', TipoGestionViewSet)
 router.register(r'asesores', AsesorViewSet)
 router.register(r'gestiones', GestionViewSet)
-router.register(r'programas' , ProgramaViewSet)
-router.register(r'empresas' , EmpresaViewSet)
+router.register(r'programas', ProgramaViewSet)
+router.register(r'empresas', EmpresaViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv')
+    path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv'),
+
 ]
