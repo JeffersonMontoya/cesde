@@ -82,7 +82,7 @@ class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
     def post(self, request, format=None):
-        try:
+        try:            
             predictivo_file = request.FILES.get('predictivo')
             matricula_file = request.FILES.get('matricula')
             whatsapp_file = request.FILES.get('whatsapp')
@@ -145,6 +145,9 @@ class Cargarcsv(APIView):
                                     ]
                 
                 df_result = df_unido[columnas_deseadas]
+                
+                df_unido.to_csv('BD_Unidas1', index=False)
+
                 
                 print(df_result)
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)

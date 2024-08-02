@@ -58,10 +58,10 @@ class Aspirantes(models.Model):
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
-    proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.nombre
+        return f" {self.nombre} {self.apellidos} {self.celular}  "
+
 
 
 class Tipo_gestion(models.Model):
@@ -75,10 +75,10 @@ class Tipo_gestion(models.Model):
 class Asesores(models.Model):
     documento = models.CharField(max_length=15, primary_key=True)
     nombre = models.CharField(max_length=40)
-    apellido = models.CharField(max_length=40 , null=True , blank=True)
+    apellido = models.CharField(max_length=40, null=True, blank=True)
 
     def __str__(self):
-        return self.documento
+        return f"{self.documento} - {self.nombre} {self.apellido}"
 
 
 class Tipificacion(models.Model):
@@ -93,8 +93,8 @@ class Gestiones(models.Model):
     fecha = models.DateTimeField()
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
-    tipificacion = models.ForeignKey(Tipificacion , on_delete=models.CASCADE)
-    
+    tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
 
-    
-   
+    def __str__(self):
+        return f"{self.fecha} - {self.cel_aspirante.celular}"
+
