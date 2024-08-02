@@ -4,7 +4,7 @@ from rest_framework.response import Response
 import pandas as pd
 from .models import *
 from .serializer import *
-from .serializer_filters import AspiranteFilterSerializer
+from .serializer_filters import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
 
@@ -18,19 +18,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import *
 
 
-
-<<<<<<< HEAD
-
 class CiudadViewSet(viewsets.ModelViewSet):
     queryset = Ciudad.objects.all()
     serializer_class = CiudadSerializer
-=======
+
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
     filter_backends = (DjangoFilterBackend,)
-
 
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
@@ -153,21 +148,13 @@ class Cargarcsv(APIView):
 
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
-<<<<<<< HEAD
     serializer_class = EmpresaSerializer
-=======
     serializer_class = EmpresaSerializer
-    
-   
    
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer 
-  
-   
    
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer    
-
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
