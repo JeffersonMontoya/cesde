@@ -13,25 +13,36 @@
     </form>
     
     <script>
-        document.getElementById('uploadForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const formData = new FormData();
-            const archivos = document.getElementById('archivos').files;
-            for (let i = 0; i < archivos.length; i++) {
-                formData.append('archivos', archivos[i]);
-            }
-    
-            const response = await fetch('http://localhost:8000/cesde/cargar_csv/', {
+        document.getElementById('uploadForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            var formData = new FormData();
+            formData.append('predictivo', document.getElementById('predictivo').files[0]);
+            formData.append('matricula', document.getElementById('matricula').files[0]);
+            formData.append('whatsapp', document.getElementById('whatsapp').files[0]);
+            formData.append('SMS', document.getElementById('SMS').files[0]);
+
+            fetch('http://localhost:8000/cesde/cargar_csv/', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}' // Incluye esto si estás usando Django templates
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Error en la solicitud');
+                }
+            })
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
-    
-            if (response.ok) {
-                alert('Archivos cargados con éxito');
-            } else {
-                alert('Error al cargar los archivos');
-            }
-        };
+        });
     </script>
     
 </body>

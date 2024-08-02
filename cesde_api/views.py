@@ -78,8 +78,6 @@ class EmpresaViewSet(viewsets.ModelViewSet): # Proporciona operaciones CRUD (cre
     filterset_class = EmpresaFilter
 
 
-
-
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
@@ -91,30 +89,38 @@ class Cargarcsv(APIView):
 
             if len(archivos) < 4:
                 return Response({'error': 'Se requieren 4 archivos CSV'}, status=status.HTTP_400_BAD_REQUEST)
+            predictivo_file = request.FILES.get('predictivo')
+            matricula_file = request.FILES.get('matricula')
+            whatsapp_file = request.FILES.get('whatsapp')
+            sms_file = request.FILES.get('SMS')
+            
+
+            if not predictivo_file or not matricula_file:
+                return Response({"error": "se requieren al menos los archivos predictivo y matricula"}, status=status.HTTP_400_BAD_REQUEST)
 
             try:
                 # BD Matriculas
-                data_set1 = archivos[3].read().decode('UTF-8')
+                data_set1 = matricula_file.read().decode('UTF-8')
                 io_string1 = StringIO(data_set1)
                 df1 = pd.read_csv(io_string1)
                 df1['Celular'] = df1['Celular'].astype(str)
 
                 # BD predictivo
-                data_set2 = archivos[2].read().decode('UTF-8')
+                data_set2 = predictivo_file.read().decode('UTF-8')
                 io_string2 = StringIO(data_set2)
                 df2 = pd.read_csv(io_string2)
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(x) == 12 else (x[1:] if len(x) == 11 else 'Número no válido'))
 
                 # BD Whatsapp
-                data_set3 = archivos[1].read().decode('UTF-8')
+                data_set3 = whatsapp_file.read().decode('UTF-8')
                 io_string3 = StringIO(data_set3)
                 df3 = pd.read_csv(io_string3, skiprows=7)
                 df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                 df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[2:] if len(x) == 12 else x)
 
                 # BD SMS
-                data_set4 = archivos[0].read().decode('UTF-8')
+                data_set4 = sms_file.read().decode('UTF-8')
                 io_string4 = StringIO(data_set4)
                 df4 = pd.read_csv(io_string4, skiprows=7)
                 df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
@@ -131,6 +137,7 @@ class Cargarcsv(APIView):
                 
                 df_result.to_csv('BD_Unidas2', index=False)
 
+                
                 print(df_result)
                 return Response(status=status.HTTP_201_CREATED)
             except Exception as e:
