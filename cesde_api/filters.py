@@ -6,6 +6,18 @@ from django.db.models import Count, Q, Max
 from django.utils import timezone
 from datetime import timedelta
 
+<<<<<<< HEAD
+=======
+class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtros para un modelo especifico
+    #Filtros por cada campo
+    nombre = django_filters.CharFilter(lookup_expr='icontains') 
+    correo = django_filters.CharFilter(lookup_expr='icontains')
+    documento = django_filters.CharFilter(lookup_expr='icontains')
+    celular = django_filters.CharFilter(lookup_expr='icontains')
+    estado = django_filters.ModelChoiceFilter(queryset=Estados.objects.all())
+    programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
+    empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
+>>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
 
 # Definición de los estados del aspirante
 ESTADOS_CHOICES = [
@@ -28,6 +40,7 @@ class AspirantesFilter(django_filters.FilterSet):
 
     class Meta:
         model = Aspirantes
+<<<<<<< HEAD
         fields = [
             'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp',
             'cantidad_gestiones', 'estado_aspirante', 'dias_ultima_gestion', 
@@ -113,24 +126,10 @@ class AspirantesFilter(django_filters.FilterSet):
             return queryset.filter(empresa__nit__icontains=value)
         return queryset
 
+=======
+        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
+>>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
 
-
-class DepartamentosFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-
-    # Modelo y campos que se pueden filtrar
-    class Meta:
-        model = Departamento
-        fields = ['nombre']
-
-
-class CiudadesFilter(django_filters.FilterSet):
-    nombre = django_filters.CharFilter(lookup_expr='icontains')
-    departamento = django_filters.ModelChoiceFilter(queryset=Departamento.objects.all())
-
-    class Meta:
-        model = Ciudad
-        fields = ['nombre', 'departamento']
 
 
 class EstadosFilter(django_filters.FilterSet):
