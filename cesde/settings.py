@@ -84,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
         'PORT': 5432,
-        'NAME': 'cesde_api',
+        'NAME': 'cesde',
         'USER': 'postgres', 
         'PASSWORD': 'admin'
     }
