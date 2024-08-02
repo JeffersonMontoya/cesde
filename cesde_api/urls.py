@@ -1,17 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (
-<<<<<<< HEAD
-    DepartamentoViewSet, CiudadViewSet, EstadoViewSet,
-    AspiranteViewSet, AspiranteFilterViewSet, TipoGestionViewSet,
-    AsesorViewSet, GestionViewSet, ProgramaViewSet, EmpresaViewSet,
-    Cargarcsv
-=======
-    EstadoViewSet, SedeViewSet , 
-    TipoGestionViewSet, AsesorViewSet, GestionViewSet, ProgramaViewSet, 
-    EmpresaViewSet, Cargarcsv , AspiranteViewSet, ProcesoViewSet , TipificacionViewSet
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
-)
+from .views import *
 
 router = DefaultRouter()
 router.register(r'sedes', SedeViewSet)
