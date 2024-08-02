@@ -98,6 +98,7 @@ class Cargarcsv(APIView):
                 io_string1 = StringIO(data_set1)
                 df1 = pd.read_csv(io_string1)
                 df1['Celular'] = df1['Celular'].astype(str)
+                df1['cel_modificado'] = df1['Celular']
 
                 # BD predictivo
                 data_set2 = predictivo_file.read().decode('UTF-8')
@@ -121,22 +122,42 @@ class Cargarcsv(APIView):
                 df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[1:] if len(x) == 11 else x)
 
                 # Unir los DataFrames
-                df_unido = pd.merge(df1, df2, left_on='Celular', right_on='cel_modificado', how='right')
+                df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 df_unido = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
                 # Seleccionar las columnas específicas que deseas mostrar
-                columnas_deseadas = ['cel_modificado','DATE_x','CIUDAD', 'NOMBRE', 'Estado']
+                columnas_deseadas = ["cel_modificado",
+                                     "NOMBRE",
+                                     "APELLIDO",
+                                     "Identificacion",
+                                     "CorreoElectronico",
+                                     "CIUDAD",
+                                     "Estado",
+                                    #  "PROCESO",
+                                     "Programa",
+                                     "NitEmpresa",
+                                     "FECHAFINREG",
+                                     "DATE_x",
+                                     "DATE_y",
+                                     "COMMENTS_x",
+                                     "COMMENTS_y",
+                                    ]
+                
                 df_result = df_unido[columnas_deseadas]
                 
                 print(df_result)
-                return Response(status=status.HTTP_201_CREATED)
+                return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
                 logger.error(f"Error procesando los archivos CSV: {e}")
                 return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         except Exception as e:
             logger.error(f"Error en la función: {e}")
             return Response({'error': 'Error interno del servidor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+    # def guardarDatos(self, df):
+    #     for index, row in df.iterrows():
+            
 
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
