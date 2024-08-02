@@ -7,7 +7,6 @@ from .models import (
 
 
 class SedeSerializer(serializers.ModelSerializer):
-    sede = serializers.SerializerMethodField()
     
     class Meta:
         model = Sede
