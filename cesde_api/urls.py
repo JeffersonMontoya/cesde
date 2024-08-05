@@ -12,8 +12,6 @@ router.register(r'asesores', AsesorViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
-router.register(r'programas' , ProgramaViewSet)
-router.register(r'empresas' , EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
 
