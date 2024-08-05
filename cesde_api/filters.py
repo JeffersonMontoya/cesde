@@ -1,23 +1,9 @@
-# cesde/filters.py
-
-import django_filters
+from rest_framework import serializers
 from .models import *
+import django_filters
 from django.db.models import Count, Q, Max
 from django.utils import timezone
 from datetime import timedelta
-
-<<<<<<< HEAD
-=======
-class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtros para un modelo especifico
-    #Filtros por cada campo
-    nombre = django_filters.CharFilter(lookup_expr='icontains') 
-    correo = django_filters.CharFilter(lookup_expr='icontains')
-    documento = django_filters.CharFilter(lookup_expr='icontains')
-    celular = django_filters.CharFilter(lookup_expr='icontains')
-    estado = django_filters.ModelChoiceFilter(queryset=Estados.objects.all())
-    programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
-    empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
 
 # Definición de los estados del aspirante
 ESTADOS_CHOICES = [
@@ -28,6 +14,7 @@ ESTADOS_CHOICES = [
         ('liquidado', 'Liquidado'),
         ('matriculado', 'Matriculado'),
     ]
+
 class AspirantesFilter(django_filters.FilterSet):
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de Llamadas')
     cantidad_mensajes_texto = django_filters.NumberFilter(method='filter_cantidad_mensajes_texto', label='Cantidad de Mensajes de Texto')
@@ -36,15 +23,15 @@ class AspirantesFilter(django_filters.FilterSet):
     dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días Desde La Última Gestión')
     fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de Última Gestión')
     estado_aspirante = django_filters.ChoiceFilter(choices=ESTADOS_CHOICES, method='filter_estado_aspirante', label='Estado del Aspirante')
+    sede = django_filters.ModelChoiceFilter(queryset=Sede.objects.all(), label='Sedes')
     nit_empresa = django_filters.NumberFilter(method='filter_nit_empresa', label='Nit Empresa')
+    
 
-    class Meta:
-        model = Aspirantes
-<<<<<<< HEAD
+    class Meta:   
         fields = [
             'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp',
             'cantidad_gestiones', 'estado_aspirante', 'dias_ultima_gestion', 
-            'fecha_ultima_gestion', 'nit_empresa'
+            'fecha_ultima_gestion',  'sede' ,'nit_empresa' 
         ]
 
 
@@ -123,14 +110,8 @@ class AspirantesFilter(django_filters.FilterSet):
 
     def filter_nit_empresa(self, queryset, name, value):
         if value:
-            return queryset.filter(empresa__nit__icontains=value)
+            return queryset.filter(empresa_nit_icontains=value)
         return queryset
-
-=======
-        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
-
-
 
 class EstadosFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')
@@ -139,7 +120,6 @@ class EstadosFilter(django_filters.FilterSet):
     class Meta:
         model = Estados
         fields = ['nombre']
-
 
 class ProgramaFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')
@@ -188,11 +168,16 @@ class GestionesFilter(django_filters.FilterSet):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
+        
+class SedeSerializer(serializers.ModelSerializer):
+    sede = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Sede
+        fields = '__all__'
 
 
-
-
-
-
-
-
+class EstadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados
+        fields = ['nombre']

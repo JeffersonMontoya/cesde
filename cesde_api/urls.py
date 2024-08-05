@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import *
 
 router = DefaultRouter()
-router.register(r'sedes', SedeViewSet)
+
 router.register(r'estados', EstadoViewSet)
 router.register(r'aspirantes', AspiranteViewSet)
 router.register(r'aspirantes-filter', AspiranteFilterViewSet, basename='aspirantes-filter')
@@ -12,10 +12,9 @@ router.register(r'asesores', AsesorViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
-router.register(r'programas' , ProgramaViewSet)
-router.register(r'empresas' , EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),

@@ -18,14 +18,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import *
 
 
-class CiudadViewSet(viewsets.ModelViewSet):
-    queryset = Ciudad.objects.all()
-    serializer_class = CiudadSerializer
-
-class SedeViewSet(viewsets.ModelViewSet):
-    queryset = Sede.objects.all()
-    serializer_class = SedeSerializer
-    filter_backends = (DjangoFilterBackend,)
+  
 
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
