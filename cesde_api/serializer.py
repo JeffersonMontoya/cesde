@@ -1,25 +1,14 @@
 from rest_framework import serializers
-from .models import (
-    Aspirantes, Gestiones, Tipo_gestion, Estados,
-    Ciudad, Departamento, Asesores, Programa,
-    Empresa, Proceso, Tipificacion
-)
+from .models import *
+from .models import *
 
-class DepartamentoSerializer(serializers.ModelSerializer):
+
+class SedeSerializer(serializers.ModelSerializer):
+    
     class Meta:
-        model = Departamento
-        fields = ['nombre']
+        model = Sede
+        fields ='__all__'
 
-class CiudadSerializer(serializers.ModelSerializer):
-    departamento = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Ciudad
-        fields = ['id', 'nombre', 'departamento']
-
-    def get_departamento(self, obj):
-        # Obtener el nombre del departamento en lugar del ID
-        return obj.departamento.nombre
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,6 +22,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
+    fecha_ultima_gestion= serializers.SerializerMethodField()
     celular_adicional = serializers.CharField(source='cel_opcional')
     fecha_ultima_gestion = serializers.SerializerMethodField()
     estado_ultima_gestion = serializers.SerializerMethodField()
@@ -43,13 +33,16 @@ class AspiranteSerializer(serializers.ModelSerializer):
         fields = [
             'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
             'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
-            'celular_adicional', 'fecha_ultima_gestion', 'estado_ultima_gestion',
-            'estado_aspirante',
+            'fecha_ultima_gestion' , 'celular_adicional'
         ]
+        #    Funcion para traer el celular adicional
 
+    # Funcion para traer el nombre completo del aspirante
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellidos}"
 
+
+    # Funcion para llevar el conteo de llamadas del aspirante
     def get_cantidad_llamadas(self, obj):
         llamadas_gestion = Tipo_gestion.objects.filter(
             nombre='Llamada').first()
@@ -66,14 +59,22 @@ class AspiranteSerializer(serializers.ModelSerializer):
 
     def get_cantidad_whatsapp(self, obj):
         whatsapp_gestion = Tipo_gestion.objects.filter(
-            nombre='Whatsapp').first()
+            nombre='WhatsApp').first()
+
+        # Filtramos el modelo Gestiones para contar todas las gestiones asociadas al aspirante actual (obj) y que tengan el tipo de gestión encontrado (llamadas_gestion). count() devuelve el número de estas gestiones.
         if whatsapp_gestion:
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=whatsapp_gestion).count()
         return 0
 
-    def get_cantidad_gestiones(self, obj):
-        return Gestiones.objects.filter(cel_aspirante=obj).count()
 
+    # Funcion para llevar el conteo  de gestiones
+    def get_cantidad_gestiones(self, obj):
+        cantidad_gestiones = Gestiones.objects.filter(
+            cel_aspirante=obj).count()
+        return cantidad_gestiones
+    
+    
+    # Función para obtener la fecha de la última gestión del celular adicional
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
@@ -88,6 +89,11 @@ class AspiranteSerializer(serializers.ModelSerializer):
             # El estado de la última gestión se obtiene de la tipificación relacionada
             return ultima_gestion.tipificacion.nombre
         return None
+
+class EstadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados
+        fields = '__all__'
 
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -132,3 +138,5 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = ['nombre']
+        
+        

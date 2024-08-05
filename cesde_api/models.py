@@ -1,18 +1,8 @@
 from django.db import models
 
-# Create your models here.
-
-
-class Departamento(models.Model):
+class Sede(models.Model):
     nombre = models.CharField(max_length=35)
 
-    def __str__(self):
-        return self.nombre
-
-
-class Ciudad(models.Model):
-    nombre = models.CharField(max_length=35)
-    departamento = models.ForeignKey(Departamento, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.nombre
@@ -35,7 +25,7 @@ class Programa(models.Model):
 
 class Empresa(models.Model):
     # Definir nit como clave primaria
-    nit = models.CharField(max_length=20, primary_key=True)
+    nit = models.CharField(max_length=20)
 
     def __str__(self):
         return self.nit
@@ -53,11 +43,12 @@ class Aspirantes(models.Model):
     apellidos = models.CharField(max_length=40)
     documento = models.CharField(max_length=15)
     correo = models.CharField(max_length=50)
-    ciudad = models.ForeignKey(Ciudad, on_delete=models.CASCADE)
+    sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
     cel_opcional = models.CharField(max_length=15, blank=True)
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
 
     def __str__(self):
         return f" {self.nombre} {self.apellidos} {self.celular}  "
@@ -66,7 +57,6 @@ class Aspirantes(models.Model):
 
 class Tipo_gestion(models.Model):
     nombre = models.CharField(max_length=12)
-
 
     def __str__(self):
         return self.nombre
@@ -83,7 +73,7 @@ class Asesores(models.Model):
 
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
-    contacto = models.CharField(max_length=2)
+    contacto = models.BooleanField(default=False)
     
     def __str__(self):
         return self.nombre
@@ -97,4 +87,3 @@ class Gestiones(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
-
