@@ -24,7 +24,6 @@ class AspiranteSerializer(serializers.ModelSerializer):
     cantidad_gestiones = serializers.SerializerMethodField()
     fecha_ultima_gestion= serializers.SerializerMethodField()
     celular_adicional = serializers.CharField(source='cel_opcional')
-    fecha_ultima_gestion = serializers.SerializerMethodField()
     estado_ultima_gestion = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='estado.nombre')
 
