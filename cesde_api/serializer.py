@@ -1,11 +1,6 @@
 from rest_framework import serializers
 from .models import *
-
-from .models import (
-    Aspirantes, Gestiones, Tipo_gestion, Estados,
-     Asesores, Programa,
-    Empresa, Proceso, Tipificacion , Sede
-)
+from .models import *
 
 
 class SedeSerializer(serializers.ModelSerializer):
@@ -87,18 +82,13 @@ class AspiranteSerializer(serializers.ModelSerializer):
             return ultima_gestion.fecha
         return None
 
-
-class DepartamentoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Departamento
-        fields = '__all__'
-
-
-class CiudadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Ciudad
-        fields = '__all__'
-
+    def get_estado_ultima_gestion(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+        if ultima_gestion:
+            # El estado de la última gestión se obtiene de la tipificación relacionada
+            return ultima_gestion.tipificacion.nombre
+        return None
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
