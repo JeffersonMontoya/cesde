@@ -1,19 +1,7 @@
 from rest_framework import serializers
 from .models import *
+from datetime import datetime
 
-
-class SedeSerializer(serializers.ModelSerializer):
-    sede = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = Sede
-        fields ='__all__'
-
-
-class EstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estados
-        fields = ['nombre']
 
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
@@ -22,18 +10,23 @@ class AspiranteSerializer(serializers.ModelSerializer):
     cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
-    fecha_ultima_gestion= serializers.SerializerMethodField()
-    celular_adicional = serializers.CharField(source='cel_opcional')
     fecha_ultima_gestion = serializers.SerializerMethodField()
+    dias_ultima_gestion = serializers.SerializerMethodField()
+    sede = serializers.CharField(source='sede.nombre')
+    celular_adicional = serializers.CharField(source='cel_opcional')
     estado_ultima_gestion = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='estado.nombre')
+    programa_formacion = serializers.CharField(source = 'programa.nombre')
+    nit_empresa = serializers.CharField(source='empresa.nit')
+    proceso = serializers.CharField(source='proceso.nombre')
 
     class Meta:
         model = Aspirantes
         fields = [
             'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
             'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
-            'fecha_ultima_gestion' , 'celular_adicional'
+            'fecha_ultima_gestion', 'celular_adicional', 'estado_aspirante', 'estado_ultima_gestion' , 'sede' , 'dias_ultima_gestion' , 
+            'programa_formacion' , 'nit_empresa'  , 'proceso'
         ]
 
     def get_nombre_completo(self, obj):
@@ -85,6 +78,19 @@ class AspiranteSerializer(serializers.ModelSerializer):
             # El estado de la última gestión se obtiene de la tipificación relacionada
             return ultima_gestion.tipificacion.nombre
         return None
+    
+    def get_dias_ultima_gestion(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj,
+            fecha__isnull=False
+        ).order_by('-fecha').first()
+        if ultima_gestion:
+            fecha_ultima = ultima_gestion.fecha.date() if isinstance(ultima_gestion.fecha, datetime) else ultima_gestion.fecha
+            delta = datetime.now().date() - fecha_ultima
+            return delta.days
+        return None
+
+
 
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -129,5 +135,15 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = ['nombre']
-        
-        
+
+class SedeSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Sede
+        fields ='__all__'
+
+
+class EstadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Estados
+        fields = ['nombre']

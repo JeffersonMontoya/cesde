@@ -6,43 +6,27 @@ from django.db.models import Count, Q, Max
 from django.utils import timezone
 from datetime import timedelta
 
-class AspirantesFilter(django_filters.FilterSet): # Define un conjunto de filtros para un modelo especifico
-    #Filtros por cada campo
-    nombre = django_filters.CharFilter(lookup_expr='icontains') 
-    correo = django_filters.CharFilter(lookup_expr='icontains')
-    documento = django_filters.CharFilter(lookup_expr='icontains')
-    celular = django_filters.CharFilter(lookup_expr='icontains')
-    estado = django_filters.ModelChoiceFilter(queryset=Estados.objects.all())
-    programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all())
-    empresa = django_filters.ModelChoiceFilter(queryset=Empresa.objects.all())
 
-
-# Definición de los estados del aspirante
-ESTADOS_CHOICES = [
-        ('no gestionable', 'No Gestionable'),
-        ('sin gestión', 'Sin Gestión'),
-        ('en gestion', 'En Gestión'),
-        ('cancelado', 'Cancelado'),
-        ('liquidado', 'Liquidado'),
-        ('matriculado', 'Matriculado'),
-    ]
 class AspirantesFilter(django_filters.FilterSet):
-    cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de Llamadas')
-    cantidad_mensajes_texto = django_filters.NumberFilter(method='filter_cantidad_mensajes_texto', label='Cantidad de Mensajes de Texto')
+    cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
+    cantidad_mensajes_texto = django_filters.NumberFilter(method='filter_cantidad_mensajes_texto', label='Cantidad de mensajes de texto')
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
-    cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de Gestiones')
-    dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días Desde La Última Gestión')
-    fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de Última Gestión')
-    estado_aspirante = django_filters.ChoiceFilter(choices=ESTADOS_CHOICES, method='filter_estado_aspirante', label='Estado del Aspirante')
-    nit_empresa = django_filters.NumberFilter(method='filter_nit_empresa', label='Nit Empresa')
+    cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
+    # mejor_gestion = django_filters.ChoiceFilter() queda pendiente
+    estado_aspirante = django_filters.ModelChoiceFilter(queryset=Estados.objects.all(), method='filter_estado_aspirante', label='Estado del aspirante')
+    dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días desde la última gestión')
+    fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de última gestión')
+    tipificacion_ultima_gestion = django_filters.ModelChoiceFilter(queryset=Tipificacion.objects.all(), method='filter_tipificacion_ultima_gestion', label='Tipificacion última gestión')
+    programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all(), label='Programa')
+    sede = django_filters.ModelChoiceFilter(queryset=Sede.objects.all(), label='Sedes') 
+    nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
 
     class Meta:
         model = Aspirantes
-        fields = ['nombre', 'correo', 'documento', 'celular',  'estado', 'programa', 'empresa']
         fields = [
             'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp',
-            'cantidad_gestiones', 'estado_aspirante', 'dias_ultima_gestion', 
-            'fecha_ultima_gestion', 'nit_empresa'
+            'cantidad_gestiones', 'dias_ultima_gestion', 'fecha_ultima_gestion',
+            'tipificacion_ultima_gestion','estado_aspirante', 'programa','sede','nit_empresa'
         ]
 
 
@@ -106,12 +90,10 @@ class AspirantesFilter(django_filters.FilterSet):
     def filter_fecha_ultima_gestion(self, queryset, name, value):
         if value:
             fecha_limite = value
-
             # Anotar con la última fecha de gestión
             queryset = queryset.annotate(
                 fecha_ultima_gestion=Max('gestiones__fecha')
             )
-
             # Comparar solo la parte de la fecha
             return queryset.filter(
                 fecha_ultima_gestion__date=fecha_limite
@@ -121,8 +103,23 @@ class AspirantesFilter(django_filters.FilterSet):
 
     def filter_nit_empresa(self, queryset, name, value):
         if value:
-            return queryset.filter(empresa__nit__icontains=value)
+            return queryset.filter(empresa__nit=value)
         return queryset
+
+
+    def filter_tipificacion_ultima_gestion(self, queryset, name, value):
+        return queryset.filter(gestiones__tipificacion__nombre=value)
+
+
+
+class ProcesosFilter(django_filters.FilterSet):
+    proceso = django_filters.ModelChoiceFilter(queryset=Proceso.objects.all(), label='Proceso')
+
+    class Meta:
+        model = Aspirantes
+        fields = ['proceso']
+
+
 
 class EstadosFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')

@@ -4,9 +4,11 @@ from rest_framework.response import Response
 import pandas as pd
 from .models import *
 from .serializer import *
-from .serializer_filters import AspiranteFilterSerializer
+from .serializer_filters import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+# from rest_framework import generics
+
 
 import logging
 
@@ -17,20 +19,10 @@ logging.basicConfig(level=logging.DEBUG)
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import *
 
-
-
-<<<<<<< HEAD
-
-class CiudadViewSet(viewsets.ModelViewSet):
-    queryset = Ciudad.objects.all()
-    serializer_class = CiudadSerializer
-=======
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d
     filter_backends = (DjangoFilterBackend,)
-
 
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
@@ -43,7 +35,9 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all() # Conjunto de datos a mostrar
     serializer_class = AspiranteSerializer # Serializador para convertir datos a JSON
     filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
-    filterset_class = AspirantesFilter # Especifica la clase de filtro
+    filterset_class = ProcesosFilter # Especifica la clase de filtro
+    
+
 
 # view para filters aspirantes
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
@@ -51,6 +45,12 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
     filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter # Especifica la clase de filtro
+
+
+# class ProcesosFilterView(generics.ListAPIView):
+#     queryset = Aspirantes.objects.all()
+#     serializer_class = AspiranteFilterSerializer
+#     filterset_class = ProcesosFilter
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -66,13 +66,11 @@ class AsesorViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
 
-
 class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = GestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = GestionesFilter
-
 
 class ProgramaViewSet(viewsets.ModelViewSet):
     queryset = Programa.objects.all()
@@ -80,13 +78,11 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ProgramaFilter
 
-
 class EmpresaViewSet(viewsets.ModelViewSet): # Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
     queryset =  Empresa.objects.all() # Especifica datos que deben ser consultados y retornados a la vista
     serializer_class = EmpresaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
-
 
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
@@ -153,21 +149,14 @@ class Cargarcsv(APIView):
 
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
-<<<<<<< HEAD
     serializer_class = EmpresaSerializer
-=======
     serializer_class = EmpresaSerializer
     
-   
-   
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer 
-  
-   
-   
+
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer    
 
->>>>>>> 6b5feeb6037ee90671e8064a9e53756979f73c0d

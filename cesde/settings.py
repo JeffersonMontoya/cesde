@@ -41,7 +41,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'cesde_api',
     'django_filters',
-
 ]
 
 MIDDLEWARE = [
