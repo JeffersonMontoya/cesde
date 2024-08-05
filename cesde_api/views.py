@@ -4,6 +4,7 @@ from rest_framework.response import Response
 import pandas as pd
 from .models import *
 from .serializer import *
+from .serializer_filters import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
 
@@ -14,10 +15,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 from django_filters.rest_framework import DjangoFilterBackend
-# from .filters import AspirantesFilter, CiudadesFilter, DepartamentosFilter
 from .filters import *
 
 
+class CiudadViewSet(viewsets.ModelViewSet):
+    queryset = Ciudad.objects.all()
+    serializer_class = CiudadSerializer
 
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
@@ -30,11 +33,20 @@ class EstadoViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EstadosFilter
 
+
 class AspiranteViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all() # Conjunto de datos a mostrar
     serializer_class = AspiranteSerializer # Serializador para convertir datos a JSON
     filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter # Especifica la clase de filtro
+
+# view para filters aspirantes
+class AspiranteFilterViewSet(viewsets.ModelViewSet):
+    queryset = Aspirantes.objects.all() # Conjunto de datos a mostrar
+    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
+    filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
+    filterset_class = AspirantesFilter # Especifica la clase de filtro
+
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
     queryset = Tipo_gestion.objects.all()
@@ -137,16 +149,12 @@ class Cargarcsv(APIView):
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
     serializer_class = EmpresaSerializer
-    
-   
+    serializer_class = EmpresaSerializer
    
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer 
-  
-   
    
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer    
-
