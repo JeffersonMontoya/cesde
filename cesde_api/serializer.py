@@ -1,4 +1,3 @@
-from .models import Aspirantes, Gestiones, Tipo_gestion, Estados
 from rest_framework import serializers
 from .models import *
 
