@@ -89,7 +89,6 @@ class Cargarcsv(APIView):
             whatsapp_file = request.FILES.get('whatsapp')
             sms_file = request.FILES.get('SMS')
             
-
             if not predictivo_file or not matricula_file:
                 return Response({"error": "se requieren al menos los archivos predictivo y matricula"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -111,14 +110,14 @@ class Cargarcsv(APIView):
                 # BD Whatsapp
                 data_set3 = whatsapp_file.read().decode('UTF-8')
                 io_string3 = StringIO(data_set3)
-                df3 = pd.read_csv(io_string3, skiprows=7)
+                df3 = pd.read_csv(io_string3)
                 df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                 df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[2:] if len(x) == 12 else x)
 
                 # BD SMS
                 data_set4 = sms_file.read().decode('UTF-8')
                 io_string4 = StringIO(data_set4)
-                df4 = pd.read_csv(io_string4, skiprows=7)
+                df4 = pd.read_csv(io_string4)
                 df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                 df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[1:] if len(x) == 11 else x)
 
@@ -127,28 +126,122 @@ class Cargarcsv(APIView):
                 df_unido = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                # Seleccionar las columnas específicas que deseas mostrar
-                columnas_deseadas = ["cel_modificado",
-                                     "NOMBRE",
-                                     "APELLIDO",
-                                     "Identificacion",
-                                     "CorreoElectronico",
-                                     "CIUDAD",
-                                     "Estado",
-                                    #  "PROCESO",
-                                     "Programa",
-                                     "NitEmpresa",
-                                     "FECHAFINREG",
-                                     "DATE_x",
-                                     "DATE_y",
-                                     "COMMENTS_x",
-                                     "COMMENTS_y",
-                                    ]
+                # datos para cada modelo
+                modelo_estado = [
+                    "Estado"
+                ]
                 
-                df_result = df_unido[columnas_deseadas]
+                modelo_sede = [
+                    "Sede"
+                ]
                 
+                modelo_empresa = [
+                    "NitEmpresa"
+                ]
                 
-                print(df_result)
+                modelo_programa = [
+                    "TipoPrograma",
+                    "Programa"
+                ]
+                
+                modelo_tipificaciones = [
+                    "RESULTADOREG",
+                    "DESCRIPTION_COD_ACT_x",
+                    "DESCRIPTION_COD_ACT_y",
+                ]                
+                
+                modelo_asesores = [
+                    "AGENT_ID_x",
+                    "AGENT_ID_y",
+                    "AGENT_NAME_x",
+                    "AGENT_NAME_y"
+                ]
+                
+                modelo_aspirantes = [
+                    "cel_modificado",
+                    "NOMBRE",
+                    "Identificacion",
+                    "CorreoElectronico",
+                    "CIUDAD",
+                    "Estado",
+                    # "PROCESO",
+                    "Programa",
+                    "NitEmpresa",
+                    "DESCRIPTION_COD_ACT_x",
+                    "DESCRIPTION_COD_ACT_y",
+
+                ]
+                
+                modelo_gestiones = [
+                    "cel_modificado",
+                    "FECHAFINREG",
+                    "DATE_x",
+                    "DATE_y",
+                    "COMMENTS_x",
+                    "COMMENTS_y",
+                    "AGENT_ID_x",
+                    "AGENT_ID_y",
+                    "AGENT_NAME_x",
+                    "AGENT_NAME_y",
+                    "RESULTADOREG",
+                    "DESCRIPTION_COD_ACT_x",
+                    "DESCRIPTION_COD_ACT_y",
+                    "AGENT_ID_x",
+                    "AGENT_ID_y",
+                    # "asesor_predictivo"
+                ]
+                
+                modelo_procesos = [
+                    "nombre"
+                ]
+                
+                df_result = df_unido[modelo_aspirantes]
+                
+                def llenarDatos(row):
+                    #validar Estado
+                    validar_estado = ['DESCRIPTION_COD_ACT_x', 'DESCRIPTION_COD_ACT_y']
+                    estado_descargo = [
+                        'Sin_interes', 
+                        'Otra_area_de_interes',
+                        'Ya_esta_estudiando_en_otra_universidad',
+                        'Sin_tiempo',
+                        'Sin_perfil',
+                        'Eliminar_de_la_base',
+                        'Proxima_convocatoria',
+                        'No_manifiesta_motivo',
+                        'Por_ubicacion ',
+                        'Imposible_contacto',
+                        'Numero_invalido'
+                    ]
+                    estado_en_gestion = [
+                        'Volver_a_llamar',
+                        'Primer_intento_de_contacto',
+                        'Segundo_intento_de_contacto',
+                        'Tercer_intento_de_contacto',
+                        'Fuera_de_servicio'
+                    ]
+                    if pd.isna(row['Estado']):
+                        # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
+                        if any(row[col] in estado_descargo for col in validar_estado if col in row):
+                            return 'Descartado'
+                        # verifica si alguna de las columnas en validar_estado tiene valor en estado_en_gestion
+                        if  any(row[col] in estado_en_gestion for col in validar_estado if col in row):
+                            return 'En Gestión'
+                        # Verificar si alguna de las columnas en validar_estado está vacía
+                        if any(pd.isna(row[col]) for col in validar_estado if col in row):
+                            return 'Sin gestión'
+                        else:
+                            return 'En gestion'
+                        
+                    else:
+                        return row['Estado']
+                        
+           
+                df_result['Estado'] = df_result.apply(lambda row: llenarDatos(row), axis=1)
+                
+
+                df_result.to_csv("aspirantes", index=False)
+                
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
                 logger.error(f"Error procesando los archivos CSV: {e}")
@@ -157,10 +250,7 @@ class Cargarcsv(APIView):
             logger.error(f"Error en la función: {e}")
             return Response({'error': 'Error interno del servidor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
-    # def guardarDatos(self, df):
-    #     for index, row in df.iterrows():
-            
-
+        
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset =  Empresa.objects.all()
     serializer_class = EmpresaSerializer

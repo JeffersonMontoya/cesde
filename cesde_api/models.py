@@ -54,7 +54,6 @@ class Aspirantes(models.Model):
         return f" {self.nombre} {self.apellidos} {self.celular}  "
 
 
-
 class Tipo_gestion(models.Model):
     nombre = models.CharField(max_length=12)
 
