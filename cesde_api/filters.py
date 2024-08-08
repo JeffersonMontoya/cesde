@@ -106,17 +106,20 @@ class AspirantesFilter(django_filters.FilterSet):
 
 
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
-        return queryset.filter(gestiones_tipificacion_nombre=value)
+        if value:
+            return queryset.filter(
+                gestiones__tipificacion=value
+            ).distinct()
+        return queryset
 
 
-
+# Filters para los procesos
 class ProcesosFilter(django_filters.FilterSet):
     proceso = django_filters.ModelChoiceFilter(queryset=Proceso.objects.all(), label='Proceso')
 
     class Meta:
         model = Aspirantes
         fields = ['proceso']
-
 
 
 class EstadosFilter(django_filters.FilterSet):

@@ -16,6 +16,12 @@ class EstadoSerializer(serializers.ModelSerializer):
         fields = ['nombre']
 
 
+# class EstadisticasSerializer(serializers.Serializer):
+#     # Define los campos necesarios para las estadísticas
+#     estado_nombre = serializers.CharField()
+#     count = serializers.IntegerField()
+
+
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -132,7 +138,7 @@ class GestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                  'observaciones', 'tipificacion']
+                'observaciones', 'tipificacion']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre

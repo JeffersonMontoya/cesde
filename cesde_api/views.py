@@ -9,6 +9,9 @@ from .serializer import *
 from .serializer_filters import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from .estadisticas import *
+from rest_framework.decorators import action
+from django.shortcuts import redirect
 
 import logging
 
@@ -30,23 +33,74 @@ class EstadoViewSet(viewsets.ModelViewSet):
     filterset_class = EstadosFilter
 
 
-
 class AspiranteViewSet(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
+    queryset = Aspirantes.objects.all()
     serializer_class = AspiranteSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = ProcesosFilter  # Especifica la clase de filtro
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
+
+    
+    def list(self, request, *args, **kwargs):
+        # Filtrar el queryset según los parámetros del request
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+
+        # Serializar los aspirantes filtrados
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        aspirantes = serializer.data
+
+        # Obtener estadísticas generales para el queryset filtrado
+        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+
+        # Crear la respuesta personalizada
+        response_data = {
+            'aspirantes': aspirantes,
+            'estadisticas': estadisticas_generales,
+        }
+
+        return Response(response_data)
+
+    # Action for Process 1
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def proceso_1(self, request):
+        queryset = self.get_queryset().filter(proceso_id=1)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 2
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def proceso_2(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 3
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def proceso_3(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+
 # view para filters aspirantes
-
-
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
-    serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
+    serializer_class = AspiranteFilterSerializer # Serializador para convertir datos a JSON
+    filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
 
@@ -141,7 +195,7 @@ class Cargarcsv(APIView):
 
                 # Seleccionar las columnas específicas que deseas mostrar
                 columnas_deseadas = ['cel_modificado',
-                                     'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
+                                    'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
 
                 df_unido.to_csv('BD_Unidas1', index=False)

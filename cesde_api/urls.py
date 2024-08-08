@@ -15,6 +15,9 @@ router.register(r'empresas', EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
 
+
+
+
 urlpatterns = [
     path('', include(router.urls)),
     path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv'),
