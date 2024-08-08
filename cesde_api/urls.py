@@ -17,6 +17,9 @@ router.register(r'aspirantes-historico', AspiranteHistoricoView, basename='aspir
 
 
 
+
+
+
 urlpatterns = [
     path('', include(router.urls)),
     path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv'),

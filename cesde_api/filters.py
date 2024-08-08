@@ -122,7 +122,6 @@ class ProcesosFilter(django_filters.FilterSet):
         fields = ['proceso']
 
 
-
 class EstadosFilter(django_filters.FilterSet):
     nombre = django_filters.CharFilter(lookup_expr='icontains')
 
