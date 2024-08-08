@@ -191,8 +191,7 @@ class Cargarcsv(APIView):
                 df_result_whatsapp = df_unido_whatsapp[modelo_aspirantes]
                 df_result_llamadas = df_unido_llamadas[modelo_aspirantes]
 
-                
-                def llenarDatos(row):
+                def validarDatos(row):
                     #validar Estado
                     validar_estado = ['DESCRIPTION_COD_ACT']
                     estado_descargo = [
@@ -245,12 +244,12 @@ class Cargarcsv(APIView):
                     
                 
                 
-                df_result_whatsapp['Estado'] = df_result_whatsapp.apply(lambda row: llenarDatos(row), axis=1)
-                df_result_llamadas['Estado'] = df_result_llamadas.apply(lambda row: llenarDatos(row), axis=1)
+                df_result_whatsapp['Estado'] = df_result_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_result_llamadas['Estado'] = df_result_llamadas.apply(lambda row: validarDatos(row), axis=1)
 
                 df_result_whatsapp.to_csv("whatsapp", index=False)
                 df_result_llamadas.to_csv("llamadas", index=False)
-
+                    
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
