@@ -2,26 +2,6 @@ from rest_framework import serializers
 from .models import *
 from datetime import datetime
 
-from .models import *
-
-
-class SedeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Sede
-        fields = '__all__'
-
-
-class EstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estados
-        fields = ['nombre']
-
-
-# class EstadisticasSerializer(serializers.Serializer):
-#     # Define los campos necesarios para las estadísticas
-#     estado_nombre = serializers.CharField()
-#     count = serializers.IntegerField()
 
 
 class AspiranteSerializer(serializers.ModelSerializer):
@@ -34,7 +14,6 @@ class AspiranteSerializer(serializers.ModelSerializer):
     fecha_ultima_gestion = serializers.SerializerMethodField()
     dias_ultima_gestion = serializers.SerializerMethodField()
     sede = serializers.CharField(source='sede.nombre')
-    celular_adicional = serializers.CharField(source='cel_opcional')
     estado_ultima_gestion = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='estado.nombre')
     programa_formacion = serializers.CharField(source='programa.nombre')
@@ -44,18 +23,19 @@ class AspiranteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Aspirantes
         fields = [
-            'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
-            'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
-            'fecha_ultima_gestion' , 'celular_adicional'
+            'nombre_completo', 'nit', 'estado_aspirante', 'sede',  'patrocinio_empresa', 'programa_formacion', 'proceso',
+            'celular',
+            'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
+            'fecha_ultima_gestion', 'dias_ultima_gestion', 'estado_ultima_gestion'
         ]
-        #    Funcion para traer el celular adicional
 
     # Funcion para traer el nombre completo del aspirante
+
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellidos}"
 
-
     # Funcion para llevar el conteo de llamadas del aspirante
+
     def get_cantidad_llamadas(self, obj):
         llamadas_gestion = Tipo_gestion.objects.filter(
             nombre='Llamada').first()
@@ -79,14 +59,13 @@ class AspiranteSerializer(serializers.ModelSerializer):
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=whatsapp_gestion).count()
         return 0
 
-
     # Funcion para llevar el conteo  de gestiones
+
     def get_cantidad_gestiones(self, obj):
         cantidad_gestiones = Gestiones.objects.filter(
             cel_aspirante=obj).count()
         return cantidad_gestiones
-    
-    
+
     # Función para obtener la fecha de la última gestión del celular adicional
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
@@ -103,79 +82,14 @@ class AspiranteSerializer(serializers.ModelSerializer):
             return ultima_gestion.tipificacion.nombre
         return None
 
-class EstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estados
-        fields = '__all__'
-
-
-class TipoGestionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tipo_gestion
-        fields = ['nombre']
-
-class AsesorSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Asesores
-        fields = '__all__'
-
-
-class GestionSerializer(serializers.ModelSerializer):
-    tipo_gestion = serializers.SerializerMethodField()
-    tipificacion = serializers.SerializerMethodField()
-    asesor = serializers.SerializerMethodField()  # Agrega el campo para el asesor
-
-    class Meta:
-        model = Gestiones
-        fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                'observaciones', 'tipificacion']
-
-    def get_tipo_gestion(self, obj):
-        return obj.tipo_gestion.nombre
-
-    def get_tipificacion(self, obj):
-        return obj.tipificacion.nombre
-
-    def get_asesor(self, obj):
-        # Retorna la información del asesor, puedes ajustar el campo retornado si es necesario
-        if obj.asesor:
-            return {
-                'id': obj.asesor.id,
-                'nombre_completo': obj.asesor.nombre_completo
-            }
+    def get_dias_ultima_gestion(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj,
+            fecha__isnull=False
+        ).order_by('-fecha').first()
+        if ultima_gestion:
+            fecha_ultima = ultima_gestion.fecha.date() if isinstance(
+                ultima_gestion.fecha, datetime) else ultima_gestion.fecha
+            delta = datetime.now().date() - fecha_ultima
+            return delta.days
         return None
-
-
-class ProgramaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Programa
-        fields = ['nombre']
-
-
-class EmpresaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Empresa
-        fields = ['nit']
-
-
-class ProcesoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Proceso
-        fields = ['nombre']
-
-
-class TipificacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tipificacion
-        fields = ['nombre']
-
-
-
-
-class AsesorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asesores
-        fields = '__all__'
-        
-        
