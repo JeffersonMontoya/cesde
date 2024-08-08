@@ -41,6 +41,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'cesde_api',
     'django_filters',
+    'drf_yasg',
+
 ]
 
 MIDDLEWARE = [
@@ -79,7 +81,7 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
         'PORT': 5432,

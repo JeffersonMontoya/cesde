@@ -1,5 +1,3 @@
-# cesde/filters.py
-
 import django_filters
 from .models import *
 from django.db.models import Count, Q, Max
@@ -108,10 +106,14 @@ class AspirantesFilter(django_filters.FilterSet):
 
 
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
-        return queryset.filter(gestiones__tipificacion__nombre=value)
+        if value:
+            return queryset.filter(
+                gestiones__tipificacion=value
+            ).distinct()
+        return queryset
 
 
-
+# Filters para los procesos
 class ProcesosFilter(django_filters.FilterSet):
     proceso = django_filters.ModelChoiceFilter(queryset=Proceso.objects.all(), label='Proceso')
 
@@ -176,11 +178,3 @@ class GestionesFilter(django_filters.FilterSet):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
-
-
-
-
-
-
-
-
