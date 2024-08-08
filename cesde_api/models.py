@@ -16,9 +16,7 @@ class Estados(models.Model):
 
 
 class Programa(models.Model):
-    nombre = models.CharField(max_length=40)
-    descripcion = models.TextField(max_length=300)
-
+    nombre = models.CharField(max_length=70)
     def __str__(self):
         return self.nombre
 
@@ -44,7 +42,6 @@ class Aspirantes(models.Model):
     documento = models.CharField(max_length=15)
     correo = models.CharField(max_length=50)
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
-    cel_opcional = models.CharField(max_length=15, blank=True)
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
@@ -61,18 +58,20 @@ class Tipo_gestion(models.Model):
         return self.nombre
 
 
+
 class Asesores(models.Model):
-    documento = models.CharField(max_length=15, primary_key=True)
-    nombre = models.CharField(max_length=40)
-    apellido = models.CharField(max_length=40, null=True, blank=True)
+    id = models.CharField(max_length=15, primary_key=True)
+    nombre_completo = models.CharField(max_length=70)
 
     def __str__(self):
-        return f"{self.documento} - {self.nombre} {self.apellido}"
+        return f"{self.id} - {self.nombre_completo}"
+
 
 
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
+    
     
     def __str__(self):
         return self.nombre
@@ -83,6 +82,7 @@ class Gestiones(models.Model):
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
+    asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"

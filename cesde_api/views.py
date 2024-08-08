@@ -1,3 +1,5 @@
+from .filters import *
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,8 +7,14 @@ import pandas as pd
 from .models import *
 from .serializer import *
 from .serializer_filters import *
+from .serializer_historico import *
+from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import NotFound
+from .estadisticas import *
+from rest_framework.decorators import action
+from django.shortcuts import redirect
 
 import logging
 
@@ -31,17 +39,80 @@ class EstadoViewSet(viewsets.ModelViewSet):
 
 
 class AspiranteViewSet(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all() # Conjunto de datos a mostrar
-    serializer_class = AspiranteSerializer # Serializador para convertir datos a JSON
-    filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
-    filterset_class = AspirantesFilter # Especifica la clase de filtro
+    queryset = Aspirantes.objects.all()
+    serializer_class = AspiranteSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
+
+    
+    def list(self, request, *args, **kwargs):
+        # Filtrar el queryset según los parámetros del request
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+
+        # Serializar los aspirantes filtrados
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        aspirantes = serializer.data
+
+        # Obtener estadísticas generales para el queryset filtrado
+        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+
+        # Crear la respuesta personalizada
+        response_data = {
+            'aspirantes': aspirantes,
+            'estadisticas': estadisticas_generales,
+        }
+
+        return Response(response_data)
+
+    # Action for Process 1
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def proceso_1(self, request):
+        queryset = self.get_queryset().filter(proceso_id=1)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 2
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def proceso_2(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 3
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def proceso_3(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
 
 # view para filters aspirantes
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all() # Conjunto de datos a mostrar
-    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
+    queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
+    serializer_class = AspiranteFilterSerializer # Serializador para convertir datos a JSON
     filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
-    filterset_class = AspirantesFilter # Especifica la clase de filtro
+    filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+
+# class ProcesosFilterView(generics.ListAPIView):
+#     queryset = Aspirantes.objects.all()
+#     serializer_class = AspiranteFilterSerializer
+#     filterset_class = ProcesosFilter
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -51,11 +122,11 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     filterset_class = Tipo_gestionFilter
 
 
-class AsesorViewSet(viewsets.ModelViewSet):
+class AsesoresViewSet(viewsets.ModelViewSet):
     queryset = Asesores.objects.all()
     serializer_class = AsesorSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = AsesoresFilter
+    filter_backends = (DjangoFilterBackend)
+    
 
 
 class GestionViewSet(viewsets.ModelViewSet):
@@ -63,6 +134,13 @@ class GestionViewSet(viewsets.ModelViewSet):
     serializer_class = GestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = GestionesFilter
+    
+ 
+class AsesorViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = AsesorSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
 
 
 class ProgramaViewSet(viewsets.ModelViewSet):
@@ -72,18 +150,19 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     filterset_class = ProgramaFilter
 
 
-class EmpresaViewSet(viewsets.ModelViewSet): # Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
-    queryset =  Empresa.objects.all() # Especifica datos que deben ser consultados y retornados a la vista
+# Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
+class EmpresaViewSet(viewsets.ModelViewSet):
+    # Especifica datos que deben ser consultados y retornados a la vista
+    queryset = Empresa.objects.all()
     serializer_class = EmpresaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
-
 
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
     def post(self, request, format=None):
-        try:            
+        try:
             predictivo_file = request.FILES.get('predictivo')
             matricula_file = request.FILES.get('matricula')
             whatsapp_file = request.FILES.get('whatsapp')
@@ -105,14 +184,16 @@ class Cargarcsv(APIView):
                 io_string2 = StringIO(data_set2)
                 df2 = pd.read_csv(io_string2)
                 df2['TEL1'] = df2['TEL1'].astype(str)
-                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(x) == 12 else (x[1:] if len(x) == 11 else 'Número no válido'))
+                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(
+                    x) == 12 else (x[1:] if len(x) == 11 else 'Número no válido'))
 
                 # BD Whatsapp
                 data_set3 = whatsapp_file.read().decode('UTF-8')
                 io_string3 = StringIO(data_set3)
                 df3 = pd.read_csv(io_string3)
                 df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
-                df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[2:] if len(x) == 12 else x)
+                df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
+                    lambda x: x[2:] if len(x) == 12 else x)
 
                 # BD SMS
                 data_set4 = sms_file.read().decode('UTF-8')
@@ -261,14 +342,23 @@ class Cargarcsv(APIView):
         
         
 class EmpresaViewSet(viewsets.ModelViewSet):
-    queryset =  Empresa.objects.all()
+    queryset = Empresa.objects.all()
     serializer_class = EmpresaSerializer
     serializer_class = EmpresaSerializer
-   
+
+
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
-    serializer_class = ProcesoSerializer 
-   
+    serializer_class = ProcesoSerializer
+
+
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
-    serializer_class = TipificacionSerializer    
+    serializer_class = TipificacionSerializer
+    
+
+class AspiranteHistoricoView(viewsets.ModelViewSet):
+    queryset = Aspirantes.objects.all()
+    serializer_class = HistoricoSerializer
+
+    

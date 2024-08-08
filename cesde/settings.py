@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'cesde_api',
     'django_filters',
+    'drf_yasg',
 
 ]
 
@@ -80,7 +81,7 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
         'PORT': 5432,
@@ -145,7 +146,13 @@ CORS_ALLOW_ALL_ORIGINS = True
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
-    ]
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.OrderingFilter',
+    ],
 }
+
+
 
 APPEND_SLASH = False
