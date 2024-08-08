@@ -120,11 +120,11 @@ class Cargarcsv(APIView):
                 df4 = pd.read_csv(io_string4)
                 df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                 df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[1:] if len(x) == 11 else x)
-
+                
                 # Unir los DataFrames
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
-                df_unido = pd.merge(df_unido, df3, on='cel_modificado', how='left')
-                df_unido = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
+                df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
                 # datos para cada modelo
                 modelo_estado = [
@@ -167,11 +167,10 @@ class Cargarcsv(APIView):
                     # "PROCESO",
                     "Programa",
                     "NitEmpresa",
-                    "DESCRIPTION_COD_ACT_x",
-                    "DESCRIPTION_COD_ACT_y",
-
+                    "DESCRIPTION_COD_ACT",
+                    "DATE"
                 ]
-                
+                   
                 modelo_gestiones = [
                     "cel_modificado",
                     "FECHAFINREG",
@@ -186,20 +185,16 @@ class Cargarcsv(APIView):
                     "RESULTADOREG",
                     "DESCRIPTION_COD_ACT_x",
                     "DESCRIPTION_COD_ACT_y",
-                    "AGENT_ID_x",
-                    "AGENT_ID_y",
-                    # "asesor_predictivo"
                 ]
                 
-                modelo_procesos = [
-                    "nombre"
-                ]
-                
-                df_result = df_unido[modelo_aspirantes]
+                #se crean los df con la información necesaria
+                df_result_whatsapp = df_unido_whatsapp[modelo_aspirantes]
+                df_result_llamadas = df_unido_llamadas[modelo_aspirantes]
+
                 
                 def llenarDatos(row):
                     #validar Estado
-                    validar_estado = ['DESCRIPTION_COD_ACT_x', 'DESCRIPTION_COD_ACT_y']
+                    validar_estado = ['DESCRIPTION_COD_ACT']
                     estado_descargo = [
                         'Sin_interes', 
                         'Otra_area_de_interes',
@@ -209,7 +204,7 @@ class Cargarcsv(APIView):
                         'Eliminar_de_la_base',
                         'Proxima_convocatoria',
                         'No_manifiesta_motivo',
-                        'Por_ubicacion ',
+                        'Por_ubicacion',
                         'Imposible_contacto',
                         'Numero_invalido'
                     ]
@@ -218,7 +213,16 @@ class Cargarcsv(APIView):
                         'Primer_intento_de_contacto',
                         'Segundo_intento_de_contacto',
                         'Tercer_intento_de_contacto',
-                        'Fuera_de_servicio'
+                        'Fuera_de_servicio',
+                        'TIMEOUTACW',
+                        'Interesado_en_seguimiento',
+                        'En_proceso_de_selección',
+                        'Cliente_en_seguimiento',
+                        'Informacion_general_'
+                    ]
+                    estado_liquidado = [
+                        'Matriculado',
+                        'Liquidacion'
                     ]
                     if pd.isna(row['Estado']):
                         # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
@@ -227,6 +231,9 @@ class Cargarcsv(APIView):
                         # verifica si alguna de las columnas en validar_estado tiene valor en estado_en_gestion
                         if  any(row[col] in estado_en_gestion for col in validar_estado if col in row):
                             return 'En Gestión'
+                        # verifica si alguna de las columnas en validar-estado tiene valor en estado_liquidado
+                        if any(row[col] in estado_liquidado for col in validar_estado if col in row):
+                            return 'liquidado'
                         # Verificar si alguna de las columnas en validar_estado está vacía
                         if any(pd.isna(row[col]) for col in validar_estado if col in row):
                             return 'Sin gestión'
@@ -235,12 +242,15 @@ class Cargarcsv(APIView):
                         
                     else:
                         return row['Estado']
-                        
-           
-                df_result['Estado'] = df_result.apply(lambda row: llenarDatos(row), axis=1)
+                    
                 
+                
+                df_result_whatsapp['Estado'] = df_result_whatsapp.apply(lambda row: llenarDatos(row), axis=1)
+                df_result_llamadas['Estado'] = df_result_llamadas.apply(lambda row: llenarDatos(row), axis=1)
 
-                df_result.to_csv("aspirantes", index=False)
+                df_result_whatsapp.to_csv("whatsapp", index=False)
+                df_result_llamadas.to_csv("llamadas", index=False)
+
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
