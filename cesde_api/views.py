@@ -65,6 +65,14 @@ class GestionViewSet(viewsets.ModelViewSet):
     serializer_class = GestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = GestionesFilter
+    
+ 
+class AsesorViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = AsesorSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
+
 
 
 class ProgramaViewSet(viewsets.ModelViewSet):

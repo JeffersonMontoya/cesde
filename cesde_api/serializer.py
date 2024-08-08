@@ -77,3 +77,11 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = ['nombre']
+
+
+
+
+class AsesorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asesores
+        fields = '__all__'
