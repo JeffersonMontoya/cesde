@@ -29,8 +29,9 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'fecha_ultima_gestion', 'dias_ultima_gestion', 'estado_ultima_gestion'
         ]
 
-    # Funcion para traer el nombre completo del aspirante
 
+
+    # Funcion para traer el nombre completo del aspirante
     def get_nombre_completo(self, obj):
         return f"{obj.nombre} {obj.apellidos}"
 

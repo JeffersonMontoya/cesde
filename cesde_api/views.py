@@ -106,10 +106,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
 
-# class ProcesosFilterView(generics.ListAPIView):
-#     queryset = Aspirantes.objects.all()
-#     serializer_class = AspiranteFilterSerializer
-#     filterset_class = ProcesosFilter
+
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -240,8 +237,15 @@ class TipificacionViewSet(viewsets.ModelViewSet):
     serializer_class = TipificacionSerializer
     
 
-class AspiranteHistoricoView(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all()
+
+class AspiranteHistoricoView(viewsets.ReadOnlyModelViewSet):
     serializer_class = HistoricoSerializer
 
-    
+    def get_queryset(self):
+        celular = self.request.query_params.get('celular_aspirante')
+        if celular:
+            return Gestiones.objects.filter(cel_aspirante__celular=celular).order_by('fecha')
+        return Gestiones.objects.none()
+
+    def get_serializer_context(self):
+        return {'request': self.request}

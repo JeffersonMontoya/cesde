@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import *
+from .models import Gestiones
 
 class HistoricoSerializer(serializers.ModelSerializer):
     fechas_gestiones_por_aspirante = serializers.SerializerMethodField()
@@ -9,7 +9,12 @@ class HistoricoSerializer(serializers.ModelSerializer):
         fields = ['fechas_gestiones_por_aspirante']
 
     def get_fechas_gestiones_por_aspirante(self, obj):
-        gestiones = Gestiones.objects.filter(cel_aspirante=obj).order_by('fecha')
+        celular = self.context['request'].query_params.get('celular_aspirante')
+        if celular:
+            gestiones = Gestiones.objects.filter(cel_aspirante__celular=celular).order_by('fecha')
+        else:
+            gestiones = Gestiones.objects.none()  # Retornar vacío si no se proporciona celular
+
         return [
             {
                 'nombre_completo': f"{gestion.cel_aspirante.nombre} {gestion.cel_aspirante.apellidos}",
