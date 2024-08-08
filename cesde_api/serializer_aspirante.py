@@ -14,7 +14,6 @@ class AspiranteSerializer(serializers.ModelSerializer):
     fecha_ultima_gestion = serializers.SerializerMethodField()
     dias_ultima_gestion = serializers.SerializerMethodField()
     sede = serializers.CharField(source='sede.nombre')
-    celular_adicional = serializers.CharField(source='cel_opcional')
     estado_ultima_gestion = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='estado.nombre')
     programa_formacion = serializers.CharField(source='programa.nombre')
@@ -25,7 +24,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
         model = Aspirantes
         fields = [
             'nombre_completo', 'nit', 'estado_aspirante', 'sede',  'patrocinio_empresa', 'programa_formacion', 'proceso',
-            'celular', 'celular_adicional',
+            'celular',
             'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
             'fecha_ultima_gestion', 'dias_ultima_gestion', 'estado_ultima_gestion'
         ]
