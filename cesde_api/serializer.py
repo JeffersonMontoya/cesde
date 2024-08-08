@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from datetime import datetime
 
 
 
@@ -16,6 +17,28 @@ class EstadoSerializer(serializers.ModelSerializer):
         fields = ['nombre']
 
 
+# class EstadisticasSerializer(serializers.Serializer):
+#     # Define los campos necesarios para las estadísticas
+#     estado_nombre = serializers.CharField()
+#     count = serializers.IntegerField()
+
+
+class AspiranteSerializer(serializers.ModelSerializer):
+    nit = serializers.CharField(source='documento')
+    nombre_completo = serializers.SerializerMethodField()
+    cantidad_llamadas = serializers.SerializerMethodField()
+    cantidad_mensajes_texto = serializers.SerializerMethodField()
+    cantidad_whatsapp = serializers.SerializerMethodField()
+    cantidad_gestiones = serializers.SerializerMethodField()
+    fecha_ultima_gestion = serializers.SerializerMethodField()
+    dias_ultima_gestion = serializers.SerializerMethodField()
+    sede = serializers.CharField(source='sede.nombre')
+    celular_adicional = serializers.CharField(source='cel_opcional')
+    estado_ultima_gestion = serializers.SerializerMethodField()
+    estado_aspirante = serializers.CharField(source='estado.nombre')
+    programa_formacion = serializers.CharField(source='programa.nombre')
+    patrocinio_empresa = serializers.CharField(source='empresa.nit')
+    proceso = serializers.CharField(source='proceso.nombre')
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,6 +51,12 @@ class TipoGestionSerializer(serializers.ModelSerializer):
         model = Tipo_gestion
         fields = ['nombre']
 
+class AsesorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Asesores
+        fields = '__all__'
+
 
 class GestionSerializer(serializers.ModelSerializer):
     tipo_gestion = serializers.SerializerMethodField()
@@ -37,7 +66,7 @@ class GestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                  'observaciones', 'tipificacion', 'asesor']
+                'observaciones', 'tipificacion']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre

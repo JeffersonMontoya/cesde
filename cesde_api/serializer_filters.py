@@ -18,6 +18,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     sede = serializers.CharField(source='sede.nombre')
     nit_empresa = serializers.CharField(source='empresa.nit')
 
+
     class Meta:
         model = Aspirantes
         fields = [
