@@ -7,8 +7,11 @@ import pandas as pd
 from .models import *
 from .serializer import *
 from .serializer_filters import *
+from .serializer_historico import *
+from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from rest_framework.exceptions import NotFound
 
 import logging
 
@@ -28,7 +31,6 @@ class EstadoViewSet(viewsets.ModelViewSet):
     serializer_class = EstadoSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EstadosFilter
-
 
 
 class AspiranteViewSet(viewsets.ModelViewSet):
@@ -56,12 +58,6 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = Tipo_gestionFilter
 
-
-class AsesorViewSet(viewsets.ModelViewSet):
-    queryset = Asesores.objects.all()
-    serializer_class = AsesorSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = AsesoresFilter
 
 
 class GestionViewSet(viewsets.ModelViewSet):
@@ -170,3 +166,10 @@ class ProcesoViewSet(viewsets.ModelViewSet):
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer
+    
+
+class AspiranteHistoricoView(viewsets.ModelViewSet):
+    queryset = Aspirantes.objects.all()
+    serializer_class = HistoricoSerializer
+
+    
