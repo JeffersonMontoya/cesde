@@ -51,6 +51,12 @@ class TipoGestionSerializer(serializers.ModelSerializer):
         model = Tipo_gestion
         fields = ['nombre']
 
+class AsesorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Asesores
+        fields = '__all__'
+
 
 class GestionSerializer(serializers.ModelSerializer):
     tipo_gestion = serializers.SerializerMethodField()

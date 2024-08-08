@@ -119,6 +119,12 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     filterset_class = Tipo_gestionFilter
 
 
+class AsesoresViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = AsesorSerializer
+    filter_backends = (DjangoFilterBackend)
+    
+
 
 class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
