@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from datetime import datetime
 
 
 
@@ -17,6 +18,7 @@ class EstadoSerializer(serializers.ModelSerializer):
 
 
 
+
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estados
@@ -28,6 +30,12 @@ class TipoGestionSerializer(serializers.ModelSerializer):
         model = Tipo_gestion
         fields = ['nombre']
 
+class AsesorSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Asesores
+        fields = '__all__'
+
 
 class GestionSerializer(serializers.ModelSerializer):
     tipo_gestion = serializers.SerializerMethodField()
@@ -37,7 +45,7 @@ class GestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                  'observaciones', 'tipificacion', 'asesor']
+                'observaciones', 'tipificacion' , 'asesor']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre
@@ -77,3 +85,11 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = ['nombre']
+
+
+
+
+class AsesorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asesores
+        fields = '__all__'

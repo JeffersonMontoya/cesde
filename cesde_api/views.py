@@ -12,6 +12,9 @@ from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import NotFound
+from .estadisticas import *
+from rest_framework.decorators import action
+from django.shortcuts import redirect
 
 import logging
 
@@ -25,7 +28,6 @@ class SedeViewSet(viewsets.ModelViewSet):
     serializer_class = SedeSerializer
     filter_backends = (DjangoFilterBackend,)
 
-
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
     serializer_class = EstadoSerializer
@@ -34,22 +36,77 @@ class EstadoViewSet(viewsets.ModelViewSet):
 
 
 class AspiranteViewSet(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
+    queryset = Aspirantes.objects.all()
     serializer_class = AspiranteSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = ProcesosFilter  # Especifica la clase de filtro
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
+
+    
+    def list(self, request, *args, **kwargs):
+        # Filtrar el queryset según los parámetros del request
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+
+        # Serializar los aspirantes filtrados
+        serializer = self.get_serializer(filtered_queryset, many=True)
+        aspirantes = serializer.data
+
+        # Obtener estadísticas generales para el queryset filtrado
+        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+
+        # Crear la respuesta personalizada
+        response_data = {
+            'aspirantes': aspirantes,
+            'estadisticas': estadisticas_generales,
+        }
+
+        return Response(response_data)
+
+    # Action for Process 1
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def proceso_1(self, request):
+        queryset = self.get_queryset().filter(proceso_id=1)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 2
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def proceso_2(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+    # Action for Process 3
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def proceso_3(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        serializer = self.get_serializer(queryset, many=True)
+
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({
+            'aspirantes': serializer.data,
+            'estadisticas': estadisticas_generales,
+        })
+
+
 # view para filters aspirantes
-
-
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
-    serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
+    serializer_class = AspiranteFilterSerializer # Serializador para convertir datos a JSON
+    filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+
+
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -59,12 +116,25 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     filterset_class = Tipo_gestionFilter
 
 
+class AsesoresViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = AsesorSerializer
+    filter_backends = (DjangoFilterBackend)
+    
+
 
 class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = GestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = GestionesFilter
+    
+ 
+class AsesorViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = AsesorSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
 
 
 class ProgramaViewSet(viewsets.ModelViewSet):
@@ -81,7 +151,6 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     serializer_class = EmpresaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
-
 
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
@@ -137,7 +206,7 @@ class Cargarcsv(APIView):
 
                 # Seleccionar las columnas específicas que deseas mostrar
                 columnas_deseadas = ['cel_modificado',
-                                     'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
+                                    'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
 
                 df_unido.to_csv('BD_Unidas1', index=False)
@@ -168,8 +237,15 @@ class TipificacionViewSet(viewsets.ModelViewSet):
     serializer_class = TipificacionSerializer
     
 
-class AspiranteHistoricoView(viewsets.ModelViewSet):
-    queryset = Aspirantes.objects.all()
+
+class AspiranteHistoricoView(viewsets.ReadOnlyModelViewSet):
     serializer_class = HistoricoSerializer
 
-    
+    def get_queryset(self):
+        celular = self.request.query_params.get('celular_aspirante')
+        if celular:
+            return Gestiones.objects.filter(cel_aspirante__celular=celular).order_by('fecha')
+        return Gestiones.objects.none()
+
+    def get_serializer_context(self):
+        return {'request': self.request}
