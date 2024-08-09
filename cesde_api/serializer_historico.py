@@ -1,31 +1,37 @@
 from rest_framework import serializers
-from .models import Gestiones
+from .models import Gestiones, Aspirantes
 
-class HistoricoSerializer(serializers.ModelSerializer):
-    fechas_gestiones_por_aspirante = serializers.SerializerMethodField()
+class HistoricoGestionesSerializer(serializers.ModelSerializer):
+    tipo_gestion_nombre = serializers.SerializerMethodField()
+    tipificacion_nombre = serializers.SerializerMethodField()
+    nombre_completo_aspirante = serializers.SerializerMethodField()
+    sede_nombre = serializers.SerializerMethodField()
+    programa_nombre = serializers.SerializerMethodField()
 
     class Meta:
         model = Gestiones
-        fields = ['fechas_gestiones_por_aspirante']
+        fields = ['nombre_completo_aspirante', 'cel_aspirante', 'fecha', 'tipo_gestion_nombre', 'observaciones',
+                  'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre']
 
-    def get_fechas_gestiones_por_aspirante(self, obj):
-        celular = self.context['request'].query_params.get('celular_aspirante')
-        if celular:
-            gestiones = Gestiones.objects.filter(cel_aspirante__celular=celular).order_by('fecha')
-        else:
-            gestiones = Gestiones.objects.none()  # Retornar vacío si no se proporciona celular
+    def get_tipo_gestion_nombre(self, obj):
+        return obj.tipo_gestion.nombre if obj.tipo_gestion else None
 
-        return [
-            {
-                'nombre_completo': f"{gestion.cel_aspirante.nombre} {gestion.cel_aspirante.apellidos}",
-                'celular': gestion.cel_aspirante.celular,
-                'fecha': gestion.fecha,
-                'asesor': gestion.asesor.nombre_completo,
-                'descripcion': gestion.observaciones,
-                'tipo_gestion': gestion.tipo_gestion.nombre,
-                'resultado_gestion': gestion.tipificacion.nombre,
-                'programa': gestion.cel_aspirante.programa.nombre,
-                'sede': gestion.cel_aspirante.sede.nombre
-            }
-            for gestion in gestiones
-        ]
+    def get_tipificacion_nombre(self, obj):
+        return obj.tipificacion.nombre if obj.tipificacion else None
+
+    def get_nombre_completo_aspirante(self, obj):
+        # Asumiendo que `cel_aspirante` es una relación con el modelo `Aspirantes`
+        aspirante = obj.cel_aspirante
+        if aspirante:
+            return aspirante.nombre
+        return None
+
+    def get_sede_nombre(self, obj):
+        # Asumiendo que `cel_aspirante` es una relación con el modelo `Aspirantes`
+        aspirante = obj.cel_aspirante
+        return aspirante.sede.nombre if aspirante and aspirante.sede else None
+
+    def get_programa_nombre(self, obj):
+        # Asumiendo que `cel_aspirante` es una relación con el modelo `Aspirantes`
+        aspirante = obj.cel_aspirante
+        return aspirante.programa.nombre if aspirante and aspirante.programa else None

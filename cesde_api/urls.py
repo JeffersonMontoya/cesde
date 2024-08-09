@@ -9,12 +9,13 @@ router.register(r'estados', EstadoViewSet)
 router.register(r'aspirantes', AspiranteViewSet)
 router.register(r'aspirantes-filter', AspiranteFilterViewSet, basename='aspirantes-filter')
 router.register(r'tipo-gestion', TipoGestionViewSet)
-router.register(r'gestiones', GestionViewSet)
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
-router.register(r'aspirantes-historico', AspiranteHistoricoView, basename='aspirantes-historico')
+router.register(r'gestiones', GestionViewSet)
+router.register(r'historico', HistoricoViewSet, basename='historico')
+
 
 
 urlpatterns = [

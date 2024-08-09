@@ -28,6 +28,7 @@ class SedeViewSet(viewsets.ModelViewSet):
     serializer_class = SedeSerializer
     filter_backends = (DjangoFilterBackend,)
 
+
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
     serializer_class = EstadoSerializer
@@ -41,7 +42,6 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
 
-    
     def list(self, request, *args, **kwargs):
         # Filtrar el queryset según los parámetros del request
         filtered_queryset = self.filter_queryset(self.get_queryset())
@@ -51,7 +51,8 @@ class AspiranteViewSet(viewsets.ModelViewSet):
         aspirantes = serializer.data
 
         # Obtener estadísticas generales para el queryset filtrado
-        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+        estadisticas_generales = obtener_estadisticas_generales(
+            filtered_queryset)
 
         # Crear la respuesta personalizada
         response_data = {
@@ -101,12 +102,11 @@ class AspiranteViewSet(viewsets.ModelViewSet):
 # view para filters aspirantes
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    serializer_class = AspiranteFilterSerializer # Serializador para convertir datos a JSON
-    filter_backends = (DjangoFilterBackend,) # Habilita el filtrado usando django-filter
+    # Serializador para convertir datos a JSON
+    serializer_class = AspiranteFilterSerializer
+    # Habilita el filtrado usando django-filter
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
-
-
-
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -120,7 +120,6 @@ class AsesoresViewSet(viewsets.ModelViewSet):
     queryset = Asesores.objects.all()
     serializer_class = AsesorSerializer
     filter_backends = (DjangoFilterBackend)
-    
 
 
 class GestionViewSet(viewsets.ModelViewSet):
@@ -128,8 +127,8 @@ class GestionViewSet(viewsets.ModelViewSet):
     serializer_class = GestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = GestionesFilter
-    
- 
+
+
 class AsesorViewSet(viewsets.ModelViewSet):
     queryset = Asesores.objects.all()
     serializer_class = AsesorSerializer
@@ -151,6 +150,7 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     serializer_class = EmpresaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
+
 
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
@@ -206,7 +206,7 @@ class Cargarcsv(APIView):
 
                 # Seleccionar las columnas específicas que deseas mostrar
                 columnas_deseadas = ['cel_modificado',
-                                    'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
+                                     'DATE_x', 'CIUDAD', 'NOMBRE', 'Estado']
                 df_result = df_unido[columnas_deseadas]
 
                 df_unido.to_csv('BD_Unidas1', index=False)
@@ -235,17 +235,20 @@ class ProcesoViewSet(viewsets.ModelViewSet):
 class TipificacionViewSet(viewsets.ModelViewSet):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer
-    
 
 
-class AspiranteHistoricoView(viewsets.ReadOnlyModelViewSet):
-    serializer_class = HistoricoSerializer
+class HistoricoViewSet(viewsets.ModelViewSet):
+    queryset = Gestiones.objects.all()
+    serializer_class = HistoricoGestionesSerializer
 
-    def get_queryset(self):
-        celular = self.request.query_params.get('celular_aspirante')
-        if celular:
-            return Gestiones.objects.filter(cel_aspirante__celular=celular).order_by('fecha')
-        return Gestiones.objects.none()
+    @action(detail=False, methods=['get'])
+    def historico(self, request):
+        celular_aspirante = request.query_params.get('celular_aspirante')
+        if celular_aspirante:
+            # Ordena las gestiones por fecha en orden descendente
+            gestiones = self.queryset.filter(cel_aspirante_id=celular_aspirante).order_by('-fecha')
+            serializer = self.get_serializer(gestiones, many=True)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "Número de celular no proporcionado"}, status=400)
 
-    def get_serializer_context(self):
-        return {'request': self.request}
