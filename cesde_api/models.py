@@ -37,8 +37,7 @@ class Proceso(models.Model):
 
 class Aspirantes(models.Model):
     celular = models.CharField(max_length=15, primary_key=True)
-    nombre = models.CharField(max_length=40)
-    apellidos = models.CharField(max_length=40)
+    nombre = models.CharField(max_length=100)
     documento = models.CharField(max_length=15)
     correo = models.CharField(max_length=50)
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
@@ -48,7 +47,7 @@ class Aspirantes(models.Model):
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
 
     def __str__(self):
-        return f" {self.nombre} {self.apellidos} {self.celular}  "
+        return f" {self.nombre} {self.celular}  "
 
 
 
