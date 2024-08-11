@@ -32,7 +32,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     # Funcion para traer el nombre completo del aspirante
 
     def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellidos}"
+        return obj.nombre
 
     # Funcion para llevar el conteo de llamadas del aspirante
 

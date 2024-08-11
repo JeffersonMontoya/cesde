@@ -52,7 +52,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
 
     # Funcion para traer el nombre completo del aspirante
     def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellidos}"
+        return obj.nombre
 
 
     # Funcion para llevar el conteo de llamadas del aspirante
@@ -129,7 +129,7 @@ class GestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                'observaciones', 'tipificacion']
+                'observaciones', 'tipificacion','asesor']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre

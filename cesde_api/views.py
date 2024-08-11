@@ -161,6 +161,7 @@ class EmpresaViewSet(viewsets.ModelViewSet):
 class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
 
+    #función para conectar los archivos csv 
     def post(self, request, format=None):
         try:
             predictivo_file = request.FILES.get('predictivo')
@@ -185,7 +186,7 @@ class Cargarcsv(APIView):
                 df2 = pd.read_csv(io_string2)
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(
-                    x) == 12 else (x[1:] if len(x) == 11 else 'Número no válido'))
+                    x) == 12 else (x[1:] if len(x) == 11 else 'no válido'))
 
                 # BD Whatsapp
                 data_set3 = whatsapp_file.read().decode('UTF-8')
@@ -207,71 +208,7 @@ class Cargarcsv(APIView):
                 df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                # datos para cada modelo
-                modelo_estado = [
-                    "Estado"
-                ]
-                
-                modelo_sede = [
-                    "Sede"
-                ]
-                
-                modelo_empresa = [
-                    "NitEmpresa"
-                ]
-                
-                modelo_programa = [
-                    "TipoPrograma",
-                    "Programa"
-                ]
-                
-                modelo_tipificaciones = [
-                    "RESULTADOREG",
-                    "DESCRIPTION_COD_ACT_x",
-                    "DESCRIPTION_COD_ACT_y",
-                ]                
-                
-                modelo_asesores = [
-                    "AGENT_ID_x",
-                    "AGENT_ID_y",
-                    "AGENT_NAME_x",
-                    "AGENT_NAME_y"
-                ]
-                
-                modelo_aspirantes = [
-                    "cel_modificado",
-                    "NOMBRE",
-                    "Identificacion",
-                    "CorreoElectronico",
-                    "CIUDAD",
-                    "Estado",
-                    # "PROCESO",
-                    "Programa",
-                    "NitEmpresa",
-                    "DESCRIPTION_COD_ACT",
-                    "DATE"
-                ]
-                   
-                modelo_gestiones = [
-                    "cel_modificado",
-                    "FECHAFINREG",
-                    "DATE_x",
-                    "DATE_y",
-                    "COMMENTS_x",
-                    "COMMENTS_y",
-                    "AGENT_ID_x",
-                    "AGENT_ID_y",
-                    "AGENT_NAME_x",
-                    "AGENT_NAME_y",
-                    "RESULTADOREG",
-                    "DESCRIPTION_COD_ACT_x",
-                    "DESCRIPTION_COD_ACT_y",
-                ]
-                
-                #se crean los df con la información necesaria
-                df_result_whatsapp = df_unido_whatsapp[modelo_aspirantes]
-                df_result_llamadas = df_unido_llamadas[modelo_aspirantes]
-
+                #funcion para validar los datos antes de ingresarlos a la BD                
                 def validarDatos(row):
                     #validar Estado
                     validar_estado = ['DESCRIPTION_COD_ACT']
@@ -286,7 +223,8 @@ class Cargarcsv(APIView):
                         'No_manifiesta_motivo',
                         'Por_ubicacion',
                         'Imposible_contacto',
-                        'Numero_invalido'
+                        'Numero_invalido',
+                        'Se_remite_a_otras_áreas_'
                     ]
                     estado_en_gestion = [
                         'Volver_a_llamar',
@@ -298,12 +236,14 @@ class Cargarcsv(APIView):
                         'Interesado_en_seguimiento',
                         'En_proceso_de_selección',
                         'Cliente_en_seguimiento',
-                        'Informacion_general_'
-                    ]
-                    estado_liquidado = [
-                        'Matriculado',
+                        'Informacion_general_',
+                        'Cuelga_Telefono',
                         'Liquidacion'
                     ]
+                    estado_liquidado = [
+                        'Matriculado',                        
+                    ]
+                    
                     if pd.isna(row['Estado']):
                         # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
                         if any(row[col] in estado_descargo for col in validar_estado if col in row):
@@ -318,19 +258,16 @@ class Cargarcsv(APIView):
                         if any(pd.isna(row[col]) for col in validar_estado if col in row):
                             return 'Sin gestión'
                         else:
-                            return 'En gestion'
+                            return 'En Gestión'
                         
                     else:
                         return row['Estado']
                     
-                
-                
-                df_result_whatsapp['Estado'] = df_result_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                df_result_llamadas['Estado'] = df_result_llamadas.apply(lambda row: validarDatos(row), axis=1)
-
-                df_result_whatsapp.to_csv("whatsapp", index=False)
-                df_result_llamadas.to_csv("llamadas", index=False)
+                df_unido_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_unido_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
                     
+                self.llenarBD(df_unido_llamadas)
+                self.llenarBD(df_unido_whatsapp)
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -340,12 +277,178 @@ class Cargarcsv(APIView):
             logger.error(f"Error en la función: {e}")
             return Response({'error': 'Error interno del servidor'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
+    # función para agregar a la base de datos    
+    def llenarBD(self,df):
+                    for index, row in df.iterrows():
+                        #modelo estado
+                        Estados.objects.update_or_create(
+                            nombre=row['Estado']
+                        ) 
+                         
+                        #modelo procesos
+                        Proceso.objects.update_or_create(
+                            nombre=row['PROCESO']
+                        )
+                        
+                        #modelo asesores
+                        Asesores.objects.update_or_create(
+                            id = row['AGENT_ID'],
+                            nombre_completo = row['AGENT_NAME'] 
+                        )
+                        
+                        #modelo programa 
+                        Programa.objects.update_or_create(
+                            nombre = row['Programa']
+                        )
+                        
+                        #modelo sede
+                        Sede.objects.update_or_create(
+                            nombre = row['Sede']
+                        )
+                        
+                        #modelo empresa
+                        Empresa.objects.update_or_create(
+                            nit = row['NitEmpresa']
+                        )
+                        
+                        # validando si hubo contacto o no en base a las tipificaciones
+                        contacto = [
+                            'Otra_area_de_interés', 
+                            'Ya_esta_estudiando_en_otra_universidad',
+                            'Sin_interes',
+                            'Sin_tiempo',
+                            'Eliminar_de_la_base',
+                            'Próxima_convocatorio',
+                            'No_Manifiesta_motivo',
+                            'Por_ubicación',
+                            'Matriculado',
+                            'Liquidacion',
+                            'En_proceso_de_selección',
+                            'Interesado_en_seguimiento',
+                            'Volver_a_llamar'
+                            ]
+                        
+                        no_contacto = [
+                            'Primer_intento_de_contacto',
+                            'Segundo_intento_de_contacto',
+                            'Tercer_intento_de_contacto',
+                            'Fuera_de_servicio',
+                            'Imposible_contacto',
+                            'Número_inválido'
+                        ] 
+                        def contactabilidad(row):
+                            if row['DESCRIPTION_COD_ACT'] in no_contacto:
+                                return False
+                            elif row['DESCRIPTION_COD_ACT'] in contacto: 
+                                return True
+                            return False
+                        #modelo tipificacion
+                        Tipificacion.objects.update_or_create(
+                            nombre = row['DESCRIPTION_COD_ACT'],
+                            contacto = contactabilidad(row)
+                        )
+                        
+                        #modelo tipo_gestión
+                        lista_tipo_gestion = ['WhatsApp','Llamada']
+                        for tipo in lista_tipo_gestion:
+                            Tipo_gestion.objects.update_or_create(
+                                nombre = tipo
+                            ) 
+                        
+                        #validaciones para llenar el modelo Aspirantes
+                        def llenar_correo(row):
+                            if pd.isna(row['CorreoElectronico']):
+                                return 'sin correo'
+                            else: 
+                                return row['CorreoElectronico']
+                                                     
+                        def llenar_documento(row):
+                            if pd.isna(row['Identificacion']):
+                                return 'sin ID' 
+                            else:
+                                return row['Identificacion']
+                            
+                            
+                        #modelo aspirantes
+                        try:
+                            documento = llenar_documento(row)
+                            correo = llenar_correo(row)
+                            sede = Sede.objects.get(nombre=row['Sede'])
+                            estado = Estados.objects.get(nombre=row['Estado'])
+                            programa = Programa.objects.get(nombre=row['Programa'])
+                            empresa = Empresa.objects.get(nit=row['NitEmpresa'])
+                            proceso = Proceso.objects.get(nombre=row['PROCESO'])
+                            
+                            Aspirantes.objects.update_or_create(
+                                celular=row['cel_modificado'],  # Campo único para buscar o crear
+                                defaults={
+                                    'nombre': row['NOMBRE'],
+                                    'documento': documento,
+                                    'correo': correo,
+                                    'sede': sede,
+                                    'estado': estado,
+                                    'programa': programa,
+                                    'empresa': empresa,
+                                    'proceso': proceso,
+                                }
+                            )
+                        except Exception as e:
+                            return f"error procesando la fila {e}"
+                        
+                        def validar_tipo_gestion(row, df):
+                            # Verificar si la columna 'CHANNEL' existe en el DataFrame
+                            if 'CHANNEL' in df.columns:
+                                # Verificar si el valor de 'CHANNEL' no es NaN
+                                if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
+                                    return Tipo_gestion.objects.get(nombre='WhatsApp')
+                            # Si la columna no existe o el valor es NaN, retornar 'llamadas'
+                            return Tipo_gestion.objects.get(nombre='Llamada')
+                        
+                        def convertir_fecha(fecha_str):
+                            try:
+                                # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
+                                fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                                return fecha_convertida
+                            except ValueError as e:
+                                print(f"Error al convertir la fecha: {e}")
+                                return None
+                        
+                        def llenar_observaciones(row):
+                            if pd.isna(row['COMMENTS']):
+                                 return 'sin observaciones'
+                            else:
+                                return row['COMMENTS']
+                        #modelo gestiones
+                        try:
+                            aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
+                            tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
+                            asesor = Asesores.objects.get(id=row['AGENT_ID'])
+
+                            tipo_gestion = validar_tipo_gestion(row, df)
+                            fecha_convertida = convertir_fecha(row['DATE'])
+                            observaciones = llenar_observaciones(row)
+    
+                            Gestiones.objects.update_or_create(
+                                cel_aspirante = aspirante,
+                                fecha = fecha_convertida,
+                                tipo_gestion = tipo_gestion,
+                                observaciones = observaciones , 
+                                tipificacion = tipificacion,
+                                asesor = asesor,
+                            )
+                        except Aspirantes.DoesNotExist:
+                            print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
+                        except Tipificacion.DoesNotExist:
+                            print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
+                        except Asesores.DoesNotExist:
+                            print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
+                        except Exception as e:
+                            print(f"Error procesando la fila: {e}")
         
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset = Empresa.objects.all()
     serializer_class = EmpresaSerializer
     serializer_class = EmpresaSerializer
-
 
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
@@ -360,5 +463,3 @@ class TipificacionViewSet(viewsets.ModelViewSet):
 class AspiranteHistoricoView(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()
     serializer_class = HistoricoSerializer
-
-    

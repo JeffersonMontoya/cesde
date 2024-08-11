@@ -12,7 +12,7 @@ class HistoricoSerializer(serializers.ModelSerializer):
         gestiones = Gestiones.objects.filter(cel_aspirante=obj).order_by('fecha')
         return [
             {
-                'nombre_completo': f"{gestion.cel_aspirante.nombre} {gestion.cel_aspirante.apellidos}",
+                'nombre_completo': gestion.cel_aspirante.nombre,
                 'celular': gestion.cel_aspirante.celular,
                 'fecha': gestion.fecha,
                 'asesor': gestion.asesor.nombre_completo,
