@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'cesde_api',
     'django_filters',
     'drf_yasg',
+    'drf_spectacular',
 
 ]
 

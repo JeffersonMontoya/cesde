@@ -112,7 +112,7 @@ class EstadoSerializer(serializers.ModelSerializer):
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipo_gestion
-        fields = ['nombre']
+        fields = '__all__'
 
 class AsesorSerializer(serializers.ModelSerializer):
 
@@ -150,25 +150,25 @@ class GestionSerializer(serializers.ModelSerializer):
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa
-        fields = ['nombre']
+        fields = '__all__'
 
 
 class EmpresaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empresa
-        fields = ['nit']
+        fields = '__all__'
 
 
 class ProcesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proceso
-        fields = ['nombre']
+        fields = '__all__'
 
 
 class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
-        fields = ['nombre']
+        fields = '__all__'
 
 
 
