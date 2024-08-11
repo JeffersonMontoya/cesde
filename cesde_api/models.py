@@ -3,7 +3,6 @@ from django.db import models
 class Sede(models.Model):
     nombre = models.CharField(max_length=35)
 
-
     def __str__(self):
         return self.nombre
 
@@ -22,7 +21,6 @@ class Programa(models.Model):
 
 
 class Empresa(models.Model):
-    # Definir nit como clave primaria
     nit = models.CharField(max_length=20)
 
     def __str__(self):
@@ -48,6 +46,7 @@ class Aspirantes(models.Model):
 
     def __str__(self):
         return f" {self.nombre} {self.celular}  "
+
 
 
 
