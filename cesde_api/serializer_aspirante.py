@@ -3,12 +3,10 @@ from .models import *
 from datetime import datetime
 
 
-
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
     cantidad_llamadas = serializers.SerializerMethodField()
-    cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
     fecha_ultima_gestion = serializers.SerializerMethodField()
@@ -20,19 +18,21 @@ class AspiranteSerializer(serializers.ModelSerializer):
     patrocinio_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
 
+
     class Meta:
         model = Aspirantes
         fields = [
             'nombre_completo', 'nit', 'estado_aspirante', 'sede',  'patrocinio_empresa', 'programa_formacion', 'proceso',
             'celular',
-            'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones',
+            'cantidad_llamadas',  'cantidad_whatsapp', 'cantidad_gestiones',
             'fecha_ultima_gestion', 'dias_ultima_gestion', 'estado_ultima_gestion'
         ]
 
-    # Funcion para traer el nombre completo del aspirante
 
+
+    # Funcion para traer el nombre completo del aspirante
     def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellidos}"
+        return obj.nombre
 
     # Funcion para llevar el conteo de llamadas del aspirante
 
@@ -41,13 +41,6 @@ class AspiranteSerializer(serializers.ModelSerializer):
             nombre='Llamada').first()
         if llamadas_gestion:
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=llamadas_gestion).count()
-        return 0
-
-    def get_cantidad_mensajes_texto(self, obj):
-        mensajes_texto_gestion = Tipo_gestion.objects.filter(
-            nombre='SMS').first()
-        if mensajes_texto_gestion:
-            return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=mensajes_texto_gestion).count()
         return 0
 
     def get_cantidad_whatsapp(self, obj):
