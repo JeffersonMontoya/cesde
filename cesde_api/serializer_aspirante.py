@@ -3,7 +3,6 @@ from .models import *
 from datetime import datetime
 
 
-
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()

@@ -1,9 +1,25 @@
 import django_filters
 from .models import *
-from django.db.models import Count, Q, Max
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
 
+class TipificacionNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra la Tipificacion correspondiente por nombre
+                tipificacion = self.queryset.get(nombre=value)
+                return qs.filter(
+                    gestiones__tipificacion=tipificacion
+                ).distinct()
+            except Tipificacion.DoesNotExist:
+                return qs.none()
+        return qs
 
 class AspirantesFilter(django_filters.FilterSet):
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
@@ -14,7 +30,7 @@ class AspirantesFilter(django_filters.FilterSet):
     estado_aspirante = django_filters.ModelChoiceFilter(queryset=Estados.objects.all(), method='filter_estado_aspirante', label='Estado del aspirante')
     dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días desde la última gestión')
     fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de última gestión')
-    tipificacion_ultima_gestion = django_filters.ModelChoiceFilter(queryset=Tipificacion.objects.all(), method='filter_tipificacion_ultima_gestion', label='Tipificacion última gestión')
+    tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
     programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all(), label='Programa')
     sede = django_filters.ModelChoiceFilter(queryset=Sede.objects.all(), label='Sedes') 
     nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
@@ -104,22 +120,30 @@ class AspirantesFilter(django_filters.FilterSet):
             return queryset.filter(empresa__nit=value)
         return queryset
 
-
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
         if value:
-            return queryset.filter(
-                gestiones__tipificacion=value
-            ).distinct()
+            # Buscar la tipificación por nombre
+            try:
+                tipificacion = Tipificacion.objects.get(nombre=value)
+                # Filtrar por la tipificación encontrada
+                return queryset.filter(
+                    gestiones__tipificacion=tipificacion
+                ).distinct()
+            except Tipificacion.DoesNotExist:
+                return queryset.none()
         return queryset
+
 
 
 # Filters para los procesos
 class ProcesosFilter(django_filters.FilterSet):
-    proceso = django_filters.ModelChoiceFilter(queryset=Proceso.objects.all(), label='Proceso')
+    proceso = django_filters.NumberFilter(field_name='proceso_id')
+    fecha = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='exact')
 
     class Meta:
         model = Aspirantes
-        fields = ['proceso']
+        fields = ['proceso', 'fecha']
+
 
 
 class EstadosFilter(django_filters.FilterSet):
