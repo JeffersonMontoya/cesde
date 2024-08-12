@@ -157,15 +157,6 @@ class Tipo_gestionFilter(django_filters.FilterSet):
         model = Tipo_gestion
         fields = ['nombre']
 
-
-class AsesoresFilter(django_filters.FilterSet):
-    documento = django_filters.CharFilter(lookup_expr='icontains')
-
-    # Modelo y campos que se pueden filtrar
-    class Meta:
-        model = Asesores
-        fields = ['documento']
-
 class GestionesFilter(django_filters.FilterSet):
     cel_aspirante = django_filters.CharFilter(field_name='cel_aspirante__celular', lookup_expr='icontains')
     fecha = django_filters.DateTimeFilter(field_name='fecha', lookup_expr='exact')
@@ -177,3 +168,11 @@ class GestionesFilter(django_filters.FilterSet):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
+
+class AsesoresFilter(django_filters.FilterSet):
+    fecha_inicio = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='gte', label='fecha inicio')
+    fecha_fin = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='lte', label='fecha final')
+
+    class Meta:
+        model = Asesores
+        fields = ['fecha_inicio', 'fecha_fin']

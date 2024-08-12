@@ -11,6 +11,9 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from django.db.models import Sum, Count, Case, When, IntegerField, Q
+from .serializer_asesores import ConsultaAsesoresSerializer
+from django.db.models.functions import Coalesce
 from rest_framework.exceptions import NotFound
 from .estadisticas import *
 from rest_framework.decorators import action
@@ -281,7 +284,7 @@ class Cargarcsv(APIView):
                         Estados.objects.update_or_create(
                             nombre=row['Estado']
                         ) 
-                         
+                        
                         #modelo procesos
                         Proceso.objects.update_or_create(
                             nombre=row['PROCESO']
@@ -358,7 +361,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                     
+                                                    
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -412,7 +415,7 @@ class Cargarcsv(APIView):
                         
                         def llenar_observaciones(row):
                             if pd.isna(row['COMMENTS']):
-                                 return 'sin observaciones'
+                                return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
                         #modelo gestiones
@@ -470,3 +473,34 @@ class HistoricoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         else:
             return Response({"error": "Número de celular no proporcionado"}, status=400)
+        
+class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = ConsultaAsesoresSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
+
+    def get_queryset(self):
+        queryset = Asesores.objects.annotate(
+            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
+                output_field=models.IntegerField() )), 0),
+
+            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_gestiones=Count('gestiones', distinct=True),
+
+        )
+
+        fecha_inicio = self.request.query_params.get('fecha_inicio')
+        fecha_fin = self.request.query_params.get('fecha_fin')
+
+        if fecha_inicio:
+            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+
+        return queryset.distinct()
