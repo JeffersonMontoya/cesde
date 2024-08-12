@@ -76,7 +76,6 @@ class SedeNameFilter(django_filters.ModelChoiceFilter):
 
 class AspirantesFilter(django_filters.FilterSet):
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
-    cantidad_mensajes_texto = django_filters.NumberFilter(method='filter_cantidad_mensajes_texto', label='Cantidad de mensajes de texto')
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
     cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
     # mejor_gestion = django_filters.ChoiceFilter() queda pendiente
@@ -91,9 +90,16 @@ class AspirantesFilter(django_filters.FilterSet):
     class Meta:
         model = Aspirantes
         fields = [
-            'cantidad_llamadas', 'cantidad_mensajes_texto', 'cantidad_whatsapp',
-            'cantidad_gestiones', 'dias_ultima_gestion', 'fecha_ultima_gestion',
-            'tipificacion_ultima_gestion','estado_aspirante', 'programa','sede','nit_empresa'
+            'cantidad_llamadas',
+            'cantidad_whatsapp',
+            'cantidad_gestiones',
+            'dias_ultima_gestion',
+            'fecha_ultima_gestion',
+            'tipificacion_ultima_gestion',
+            'estado_aspirante',
+            'programa',
+            'sede',
+            'nit_empresa'
         ]
 
 
@@ -103,15 +109,6 @@ class AspirantesFilter(django_filters.FilterSet):
             return queryset.annotate(
                 cantidad_llamadas=Count('gestiones', filter=Q(gestiones__tipo_gestion=llamadas_gestion))
             ).filter(cantidad_llamadas=value) 
-        return queryset
-
-
-    def filter_cantidad_mensajes_texto(self, queryset, name, value):
-        mensajes_texto_gestion = Tipo_gestion.objects.filter(nombre='SMS').first()
-        if mensajes_texto_gestion:
-            return queryset.annotate(
-                cantidad_mensajes_texto=Count('gestiones', filter=Q(gestiones__tipo_gestion=mensajes_texto_gestion))
-            ).filter(cantidad_mensajes_texto=value) 
         return queryset
 
 
