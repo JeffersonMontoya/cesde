@@ -64,7 +64,8 @@ class AspiranteSerializer(serializers.ModelSerializer):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-            return ultima_gestion.fecha
+        # Formatear la fecha para que solo devuelva año, mes y día
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return None
 
     def get_estado_ultima_gestion(self, obj):
