@@ -31,7 +31,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
 
 
     def get_nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellidos}"
+        return obj.nombre
 
 
     def get_cantidad_llamadas(self, obj):

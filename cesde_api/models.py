@@ -3,7 +3,6 @@ from django.db import models
 class Sede(models.Model):
     nombre = models.CharField(max_length=35)
 
-
     def __str__(self):
         return self.nombre
 
@@ -22,7 +21,6 @@ class Programa(models.Model):
 
 
 class Empresa(models.Model):
-    # Definir nit como clave primaria
     nit = models.CharField(max_length=20)
 
     def __str__(self):
@@ -37,8 +35,7 @@ class Proceso(models.Model):
 
 class Aspirantes(models.Model):
     celular = models.CharField(max_length=15, primary_key=True)
-    nombre = models.CharField(max_length=40)
-    apellidos = models.CharField(max_length=40)
+    nombre = models.CharField(max_length=100)
     documento = models.CharField(max_length=15)
     correo = models.CharField(max_length=50)
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
@@ -48,7 +45,8 @@ class Aspirantes(models.Model):
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
 
     def __str__(self):
-        return f" {self.nombre} {self.apellidos} {self.celular}  "
+        return f" {self.nombre} {self.celular}  "
+
 
 
 
@@ -72,6 +70,7 @@ class Asesores(models.Model):
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
+    valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2 , default=0.00) 
     
     def __str__(self):
         return self.nombre
