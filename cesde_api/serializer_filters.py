@@ -17,6 +17,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     programa = serializers.CharField(source='programa.nombre') 
     sede = serializers.CharField(source='sede.nombre')
     nit_empresa = serializers.CharField(source='empresa.nit')
+    proceso = serializers.CharField(source='proceso.nombre')
 
 
     class Meta:
@@ -25,7 +26,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
             'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones', 
             'estado', 'tipificacion', 'dias_ultima_gestion', 'fecha_ultima_gestion',
-            'programa', 'sede', 'nit_empresa'
+            'programa', 'sede', 'nit_empresa', 'proceso'
         ]
 
 

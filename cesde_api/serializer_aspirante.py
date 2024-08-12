@@ -3,7 +3,6 @@ from .models import *
 from datetime import datetime
 
 
-
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -18,6 +17,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     programa_formacion = serializers.CharField(source='programa.nombre')
     patrocinio_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
+
 
     class Meta:
         model = Aspirantes

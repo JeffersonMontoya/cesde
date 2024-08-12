@@ -11,10 +11,15 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from django.db.models import Sum, Count, Case, When, IntegerField, Q
+from .serializer_asesores import ConsultaAsesoresSerializer
+from django.db.models.functions import Coalesce
 from rest_framework.exceptions import NotFound
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.shortcuts import redirect
+from django.db.models import Count, OuterRef, Subquery
+
+
 
 import logging
 
@@ -45,64 +50,8 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
 
-    def list(self, request, *args, **kwargs):
-        # Filtrar el queryset según los parámetros del request
-        filtered_queryset = self.filter_queryset(self.get_queryset())
 
-        # Serializar los aspirantes filtrados
-        serializer = self.get_serializer(filtered_queryset, many=True)
-        aspirantes = serializer.data
-
-        # Obtener estadísticas generales para el queryset filtrado
-        estadisticas_generales = obtener_estadisticas_generales(
-            filtered_queryset)
-
-        # Crear la respuesta personalizada
-        response_data = {
-            'aspirantes': aspirantes,
-            'estadisticas': estadisticas_generales,
-        }
-
-        return Response(response_data)
-
-    # Action for Process 1
-    @action(detail=False, methods=['get'], url_path='proceso-1')
-    def proceso_1(self, request):
-        queryset = self.get_queryset().filter(proceso_id=1)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-    # Action for Process 2
-    @action(detail=False, methods=['get'], url_path='proceso-2')
-    def proceso_2(self, request):
-        queryset = self.get_queryset().filter(proceso_id=2)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-    # Action for Process 3
-    @action(detail=False, methods=['get'], url_path='proceso-3')
-    def proceso_3(self, request):
-        queryset = self.get_queryset().filter(proceso_id=3)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-
-# view para filters aspirantes
+# view para filters generales 
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
     # Serializador para convertir datos a JSON
@@ -110,6 +59,176 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+
+#  View para filters por procesos y por generales 
+class FilterProcesosViewSet(viewsets.ViewSet):
+    """
+    Vista para mostrar aspirantes con filtros por procesos y filtros generales.
+    """
+
+    def get_queryset(self):
+        """
+        Devuelve el queryset para aspirantes.
+        """
+        return Aspirantes.objects.all()
+
+    def list(self, request):
+        """
+        Devuelve la lista de aspirantes con filtros aplicados.
+        """
+        queryset = self.get_queryset()
+
+        # Inicializa el filtro de procesos
+        procesos_filter = ProcesosFilter(request.GET, queryset=queryset)
+        if procesos_filter.is_valid():
+            queryset = procesos_filter.qs
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def empresa(self, request):
+        """
+        Filtro aspirantes para el proceso 1 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=1)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def extensiones(self, request):
+        """
+        Filtro aspirantes para el proceso 2 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=2)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def tecnico(self, request):
+        """
+        Filtro aspirantes para el proceso 3 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=3)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+# Estadisticas genrales, por procesos y por fechas
+class EstadisticasViewSet(viewsets.GenericViewSet):
+    """
+    Vista para mostrar estadisticas generales por fecha y por proceso.
+    """
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProcesosFilter  # Especifica la clase de filtros aquí
+    
+
+    def get_queryset(self):
+        """
+        Método para obtener el queryset de aspirantes.
+        """
+        return Aspirantes.objects.all()
+
+    def list(self, request):
+        """
+        Lista las estadísticas generales si no se especifica un tipo.
+        """
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+        return Response({'estadisticas_generales': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='fechas')
+    def estadisticas_por_fechas(self, request):
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
+        if not fecha_inicio or not fecha_fin:
+            return Response({
+                'detail': 'Las fechas de inicio y fin son requeridas en el formato YYYY-MM-DD.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({
+                'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        gestiones_queryset = Gestiones.objects.filter(fecha__date__range=[fecha_inicio, fecha_fin])
+        estadisticas_por_fechas = obtener_estadisticas_por_fechas(gestiones_queryset, fecha_inicio, fecha_fin)
+        contactabilidad = obtener_contactabilidad(gestiones_queryset)
+
+        return Response({
+            'estadisticas_por_fechas': estadisticas_por_fechas,
+            'contactabilidad': contactabilidad,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def estadisticas_empresas(self, request):
+        queryset = self.get_queryset().filter(proceso_id=1)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_empresas': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def estadisticas_extenciones(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_extensiones': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def estadisticas_tecnicos(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_tecnicos': estadisticas_generales})
+
+
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -281,7 +400,7 @@ class Cargarcsv(APIView):
                         Estados.objects.update_or_create(
                             nombre=row['Estado']
                         ) 
-                         
+                        
                         #modelo procesos
                         Proceso.objects.update_or_create(
                             nombre=row['PROCESO']
@@ -358,7 +477,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                     
+                                                    
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -412,7 +531,7 @@ class Cargarcsv(APIView):
                         
                         def llenar_observaciones(row):
                             if pd.isna(row['COMMENTS']):
-                                 return 'sin observaciones'
+                                return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
                         #modelo gestiones
@@ -470,3 +589,34 @@ class HistoricoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         else:
             return Response({"error": "Número de celular no proporcionado"}, status=400)
+        
+class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = ConsultaAsesoresSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
+
+    def get_queryset(self):
+        queryset = Asesores.objects.annotate(
+            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
+                output_field=models.IntegerField() )), 0),
+
+            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_gestiones=Count('gestiones', distinct=True),
+
+        )
+
+        fecha_inicio = self.request.query_params.get('fecha_inicio')
+        fecha_fin = self.request.query_params.get('fecha_fin')
+
+        if fecha_inicio:
+            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+
+        return queryset.distinct()
