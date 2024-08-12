@@ -11,13 +11,10 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-<<<<<<< HEAD
-=======
 from django.db.models import Sum, Count, Case, When, IntegerField, Q
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from rest_framework.exceptions import NotFound
->>>>>>> 60789f71c0fc8c8dd452b72a8bcbfeb3d00f10d3
 from .estadisticas import *
 from rest_framework.decorators import action
 from django.db.models import Count, OuterRef, Subquery
