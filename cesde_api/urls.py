@@ -4,6 +4,7 @@ from .views import *
 
 router = DefaultRouter()
 router.register(r'asesores' , AsesorViewSet)
+router.register(r'sedes' , SedeViewSet)
 router.register(r'aspirantes', AspiranteViewSet)
 router.register(r'filter-procesos', FilterProcesosViewSet, basename='filter-procesos')
 router.register(r'aspirantes-filter', AspiranteFilterViewSet, basename='aspirantes-filter')
