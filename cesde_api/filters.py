@@ -4,6 +4,7 @@ from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
 
+# Para devolver el nombre por get 
 class TipificacionNameFilter(django_filters.ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
@@ -20,6 +21,58 @@ class TipificacionNameFilter(django_filters.ModelChoiceFilter):
             except Tipificacion.DoesNotExist:
                 return qs.none()
         return qs
+    
+class EstadoAspiranteNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra el Estado correspondiente por nombre
+                estado = self.queryset.get(nombre=value)
+                return qs.filter(
+                    estado=estado
+                ).distinct()
+            except Estados.DoesNotExist:
+                return qs.none()
+        return qs
+    
+class ProgramaNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra el Programa correspondiente por nombre
+                programa = self.queryset.get(nombre=value)
+                return qs.filter(
+                    programa=programa
+                ).distinct()
+            except Programa.DoesNotExist:
+                return qs.none()
+        return qs
+    
+class SedeNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra la Sede correspondiente por nombre
+                sede = self.queryset.get(nombre=value)
+                return qs.filter(
+                    sede=sede
+                ).distinct()
+            except Sede.DoesNotExist:
+                return qs.none()
+        return qs
+
 
 class AspirantesFilter(django_filters.FilterSet):
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
@@ -27,12 +80,12 @@ class AspirantesFilter(django_filters.FilterSet):
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
     cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
     # mejor_gestion = django_filters.ChoiceFilter() queda pendiente
-    estado_aspirante = django_filters.ModelChoiceFilter(queryset=Estados.objects.all(), method='filter_estado_aspirante', label='Estado del aspirante')
+    estado_aspirante = EstadoAspiranteNameFilter(queryset=Estados.objects.all(), label='Estado del aspirante')
     dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días desde la última gestión')
     fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de última gestión')
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
-    programa = django_filters.ModelChoiceFilter(queryset=Programa.objects.all(), label='Programa')
-    sede = django_filters.ModelChoiceFilter(queryset=Sede.objects.all(), label='Sedes') 
+    programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
+    sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
     nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
 
     class Meta:
