@@ -10,6 +10,7 @@ class TipificacionNameFilter(django_filters.ModelChoiceFilter):
         kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
         super().__init__(*args, **kwargs)
     
+    
     def filter(self, qs, value):
         if value:
             try:
