@@ -143,8 +143,6 @@ class TipificacionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-
-
 class AsesorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asesores
