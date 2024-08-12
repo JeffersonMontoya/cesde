@@ -70,6 +70,7 @@ class Asesores(models.Model):
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
+    valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2 , default=0.00) 
     
     
     def __str__(self):

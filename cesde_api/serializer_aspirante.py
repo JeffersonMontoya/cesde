@@ -19,6 +19,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     patrocinio_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
 
+
     class Meta:
         model = Aspirantes
         fields = [
