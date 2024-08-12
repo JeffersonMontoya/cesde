@@ -59,7 +59,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
-    # Función para obtener la fecha de la última gestión del celular adicional
+    # Función para obtener la fecha de la última gestión del celular adicional oeee
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
