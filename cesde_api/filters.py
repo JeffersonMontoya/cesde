@@ -33,12 +33,13 @@ class EstadoAspiranteNameFilter(django_filters.ModelChoiceFilter):
             try:
                 # Encuentra el Estado correspondiente por nombre
                 estado = self.queryset.get(nombre=value)
+                # Filtra aspirantes que tienen gestiones con el estado encontrado
                 return qs.filter(
-                    estado=estado
+                    gestiones__estado=estado
                 ).distinct()
             except Estados.DoesNotExist:
                 return qs.none()
-        return qs
+        return qs    
     
 class ProgramaNameFilter(django_filters.ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
@@ -90,14 +91,13 @@ class ProcesoNameFilter(django_filters.ModelChoiceFilter):
         return qs
 
 
-
 class AspirantesFilter(django_filters.FilterSet):
     proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
     cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
     # mejor_gestion = django_filters.ChoiceFilter() queda pendiente
-    estado_aspirante = EstadoAspiranteNameFilter(queryset=Estados.objects.all(), label='Estado del aspirante')
+    estado_ultima_gestion = EstadoAspiranteNameFilter(queryset=Estados.objects.all(), label='Estado del aspirante')
     dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días desde la última gestión')
     fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de última gestión')
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
@@ -115,7 +115,7 @@ class AspirantesFilter(django_filters.FilterSet):
             'dias_ultima_gestion',
             'fecha_ultima_gestion',
             'tipificacion_ultima_gestion',
-            'estado_aspirante',
+            'estado_ultima_gestion',
             'programa',
             'sede',
             'nit_empresa'
@@ -152,8 +152,9 @@ class AspirantesFilter(django_filters.FilterSet):
         ).filter(cantidad_gestiones=value) 
 
 
-    def filter_estado_aspirante(self, queryset, name, value):
+    def filter_estado_ultima_gestion(self, queryset, name, value):
         return queryset.filter(gestiones__estado__nombre=value).distinct()
+
 
 
     def filter_dias_ultima_gestion(self, queryset, name, value):
@@ -218,7 +219,6 @@ class ProcesosFilter(django_filters.FilterSet):
     class Meta:
         model = Aspirantes
         fields = ['proceso', 'fecha']
-
 
 
 class EstadosFilter(django_filters.FilterSet):
