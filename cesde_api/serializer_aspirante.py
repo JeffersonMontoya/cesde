@@ -12,11 +12,12 @@ class AspiranteSerializer(serializers.ModelSerializer):
     fecha_ultima_gestion = serializers.SerializerMethodField()
     dias_ultima_gestion = serializers.SerializerMethodField()
     sede = serializers.CharField(source='sede.nombre')
-    estado_ultima_gestion = serializers.SerializerMethodField()
-    estado_aspirante = serializers.CharField(source='estado.nombre')
+    ultima_tipificacion = serializers.SerializerMethodField()
     programa_formacion = serializers.CharField(source='programa.nombre')
-    patrocinio_empresa = serializers.CharField(source='empresa.nit')
+    nit_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
+    estado_ultima_gestion = serializers.SerializerMethodField()
+    
 
 
     class Meta:
@@ -77,13 +78,24 @@ class AspiranteSerializer(serializers.ModelSerializer):
         # Formatear la fecha para que solo devuelva año, mes y día
             return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return None
-
+    
+    # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+            cel_aspirante=obj
+        ).order_by('-fecha').first()
         if ultima_gestion:
+        # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
+            return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
+        return None
+    
+
+    def get_ultima_tipificacion(self, obj):
+        ultima_tipificacion = Gestiones.objects.filter(
+            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+        if ultima_tipificacion:
             # El estado de la última gestión se obtiene de la tipificación relacionada
-            return ultima_gestion.tipificacion.nombre
+            return ultima_tipificacion.tipificacion.nombre
         return None
 
     def get_dias_ultima_gestion(self, obj):

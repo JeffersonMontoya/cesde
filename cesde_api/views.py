@@ -508,30 +508,26 @@ class Cargarcsv(APIView):
                             
                             
                         #modelo aspirantes
-                        try:
-                            documento = llenar_documento(row)
-                            correo = llenar_correo(row)
-                            sede = Sede.objects.get(nombre=row['Sede'])
-                            estado = Estados.objects.get(nombre=row['Estado'])
-                            programa = Programa.objects.get(nombre=row['Programa'])
-                            empresa = Empresa.objects.get(nit=row['NitEmpresa'])
-                            proceso = Proceso.objects.get(nombre=row['PROCESO'])
-                            
-                            Aspirantes.objects.update_or_create(
-                                celular=row['cel_modificado'],  # Campo único para buscar o crear
-                                defaults={
-                                    'nombre': row['NOMBRE'],
-                                    'documento': documento,
-                                    'correo': correo,
-                                    'sede': sede,
-                                    'estado': estado,
-                                    'programa': programa,
-                                    'empresa': empresa,
-                                    'proceso': proceso,
-                                }
-                            )
-                        except Exception as e:
-                            return f"error procesando la fila {e}"
+                        documento = llenar_documento(row)
+                        correo = llenar_correo(row)
+                        sede = Sede.objects.get(nombre=row['Sede'])
+                        programa = Programa.objects.get(nombre=row['Programa'])
+                        empresa = Empresa.objects.get(nit=row['NitEmpresa'])
+                        proceso = Proceso.objects.get(nombre=row['PROCESO'])
+                        
+                        Aspirantes.objects.update_or_create(
+                            celular=row['cel_modificado'],  # Campo único para buscar o crear
+                            defaults={
+                                'nombre': row['NOMBRE'],
+                                'documento': documento,
+                                'correo': correo,
+                                'sede': sede,
+                                'programa': programa,
+                                'empresa': empresa,
+                                'proceso': proceso,
+                            }
+                        )
+                        
                         
                         def validar_tipo_gestion(row, df):
                             # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -561,6 +557,7 @@ class Cargarcsv(APIView):
                             aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
                             tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
                             asesor = Asesores.objects.get(id=row['AGENT_ID'])
+                            estado = Estados.objects.get(nombre=row['Estado'])
 
                             tipo_gestion = validar_tipo_gestion(row, df)
                             fecha_convertida = convertir_fecha(row['DATE'])
@@ -571,6 +568,7 @@ class Cargarcsv(APIView):
                                 fecha = fecha_convertida,
                                 tipo_gestion = tipo_gestion,
                                 observaciones = observaciones , 
+                                estado = estado,
                                 tipificacion = tipificacion,
                                 asesor = asesor,
                             )
