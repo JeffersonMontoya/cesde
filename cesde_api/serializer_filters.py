@@ -7,7 +7,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
     cantidad_llamadas = serializers.SerializerMethodField()
-    cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
     estado = serializers.CharField(source='estado.nombre')
@@ -23,10 +22,19 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Aspirantes
         fields = [
-            'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
-            'cantidad_mensajes_texto', 'cantidad_whatsapp', 'cantidad_gestiones', 
-            'estado', 'tipificacion', 'dias_ultima_gestion', 'fecha_ultima_gestion',
-            'programa', 'sede', 'nit_empresa', 'proceso'
+            'nit', 
+            'celular',
+            'nombre_completo',
+            'cantidad_llamadas',
+            'cantidad_whatsapp',
+            'cantidad_gestiones', 
+            'estado', 'tipificacion', 
+            'dias_ultima_gestion', 
+            'fecha_ultima_gestion',
+            'programa', 
+            'sede', 
+            'nit_empresa', 
+            'proceso'
         ]
 
 
@@ -40,12 +48,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=llamadas_gestion).count()
         return 0
 
-
-    def get_cantidad_mensajes_texto(self, obj):
-        mensajes_texto_gestion = Tipo_gestion.objects.filter(nombre='SMS').first()
-        if mensajes_texto_gestion:
-            return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=mensajes_texto_gestion).count()
-        return 0
 
 
     def get_cantidad_whatsapp(self, obj):

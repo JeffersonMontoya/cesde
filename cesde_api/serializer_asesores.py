@@ -7,7 +7,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     id = serializers.CharField(max_length=15)
     nombre_completo = serializers.SerializerMethodField()
     cantidad_llamadas = serializers.SerializerMethodField()
-    cantidad_mensajes_texto = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
     cantidad_matriculas = serializers.SerializerMethodField()
@@ -21,7 +20,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'id',
             'nombre_completo',
             'cantidad_llamadas',
-            'cantidad_mensajes_texto',
             'cantidad_whatsapp',
             'cantidad_gestiones',
             'cantidad_matriculas',  
@@ -43,18 +41,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
         llamadas_gestion = Tipo_gestion.objects.filter(nombre='Llamada').first()
         if llamadas_gestion:
             query = Gestiones.objects.filter(asesor=obj, tipo_gestion=llamadas_gestion)
-            if fecha_inicio:
-                query = query.filter(fecha__gte=fecha_inicio)
-            if fecha_fin:
-                query = query.filter(fecha__lte=fecha_fin)
-            return query.count()
-        return 0
-
-    def get_cantidad_mensajes_texto(self, obj):
-        fecha_inicio, fecha_fin = self.get_fecha_range()
-        mensajes_texto_gestion = Tipo_gestion.objects.filter(nombre='SMS').first()
-        if mensajes_texto_gestion:
-            query = Gestiones.objects.filter(asesor=obj, tipo_gestion=mensajes_texto_gestion)
             if fecha_inicio:
                 query = query.filter(fecha__gte=fecha_inicio)
             if fecha_fin:
