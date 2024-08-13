@@ -32,7 +32,7 @@ class GestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                  'observaciones', 'tipificacion', 'asesor', 'estado_aspirante']
+                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre
