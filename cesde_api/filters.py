@@ -153,7 +153,7 @@ class AspirantesFilter(django_filters.FilterSet):
 
 
     def filter_estado_aspirante(self, queryset, name, value):
-        return queryset.filter(estado__nombre=value)
+        return queryset.filter(gestiones__estado__nombre=value).distinct()
 
 
     def filter_dias_ultima_gestion(self, queryset, name, value):

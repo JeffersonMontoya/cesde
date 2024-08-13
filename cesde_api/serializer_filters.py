@@ -9,7 +9,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     cantidad_llamadas = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
-    estado = serializers.CharField(source='estado.nombre')
+    estado_aspirante = serializers.SerializerMethodField()
     dias_ultima_gestion = serializers.SerializerMethodField()
     fecha_ultima_gestion = serializers.SerializerMethodField()
     tipificacion = serializers.SerializerMethodField()
@@ -28,7 +28,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'cantidad_llamadas',
             'cantidad_whatsapp',
             'cantidad_gestiones', 
-            'estado', 'tipificacion', 
+            'estado_aspirante', 
+            'tipificacion', 
             'dias_ultima_gestion', 
             'fecha_ultima_gestion',
             'programa', 
@@ -49,10 +50,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         return 0
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> acb54233658a2f645dcafc176e279b478840b98b
     def get_cantidad_whatsapp(self, obj):
         whatsapp_gestion = Tipo_gestion.objects.filter(nombre='WhatsApp').first()
         if whatsapp_gestion:
@@ -91,3 +88,10 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if ultima_gestion:
             return ultima_gestion.fecha
         return None
+    
+    def get_estado_aspirante(self, obj):
+        # Obtener la gestión más reciente del aspirante
+        ultima_gestion = obj.gestiones_set.order_by('-fecha').first()
+        if ultima_gestion:
+            return ultima_gestion.estado.nombre
+        return None  # O un valor predeterminado si no ha
