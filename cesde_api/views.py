@@ -428,19 +428,13 @@ class Cargarcsv(APIView):
                 return Tipo_gestion.objects.get(nombre='Llamada')
             
             def convertir_fecha(fecha_str):
-                try:
-                    if fecha_str:
-                        if (isinstance(fecha_str, float) or fecha_str is None):
-                            return None
-                        fecha_str = fecha_str.split()[0]
-                        # Convertir la fecha de "MM/DD/YYYY" a un objeto date
-                        fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y").date()
+                    try:
+                        # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
+                        fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
                         return fecha_convertida
-                    else:
-                        return '00/00/00'
-                except ValueError as e:
-                    print(f"Error al convertir la fecha: {e}")
-                    return None  # Maneja el error según sea necesario
+                    except ValueError as e:
+                        print(f"Error al convertir la fecha: {e}")
+                        return None
             
             def llenar_observaciones(row):
                 if pd.isna(row['COMMENTS']):
