@@ -33,12 +33,13 @@ class EstadoAspiranteNameFilter(django_filters.ModelChoiceFilter):
             try:
                 # Encuentra el Estado correspondiente por nombre
                 estado = self.queryset.get(nombre=value)
+                # Filtra aspirantes que tienen gestiones con el estado encontrado
                 return qs.filter(
-                    estado=estado
+                    gestiones__estado=estado
                 ).distinct()
             except Estados.DoesNotExist:
                 return qs.none()
-        return qs
+        return qs    
     
 class ProgramaNameFilter(django_filters.ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
@@ -73,14 +74,30 @@ class SedeNameFilter(django_filters.ModelChoiceFilter):
             except Sede.DoesNotExist:
                 return qs.none()
         return qs
+    
+class ProcesoNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra el proceso correspondiente por nombre
+                proceso = self.queryset.get(nombre=value)
+                return qs.filter(proceso=proceso).distinct()  # Usar 'proceso' en lugar de 'Proceso'
+            except Proceso.DoesNotExist:
+                return qs.none()
+        return qs
 
 
 class AspirantesFilter(django_filters.FilterSet):
+    proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
     cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
     # mejor_gestion = django_filters.ChoiceFilter() queda pendiente
-    estado_aspirante = EstadoAspiranteNameFilter(queryset=Estados.objects.all(), label='Estado del aspirante')
+    estado_ultima_gestion = EstadoAspiranteNameFilter(queryset=Estados.objects.all(), label='Estado del aspirante')
     dias_ultima_gestion = django_filters.NumberFilter(method='filter_dias_ultima_gestion', label='Días desde la última gestión')
     fecha_ultima_gestion = django_filters.DateFilter(method='filter_fecha_ultima_gestion', label='Fecha de última gestión')
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
@@ -91,17 +108,24 @@ class AspirantesFilter(django_filters.FilterSet):
     class Meta:
         model = Aspirantes
         fields = [
+            'proceso_nombre',
             'cantidad_llamadas',
             'cantidad_whatsapp',
             'cantidad_gestiones',
             'dias_ultima_gestion',
             'fecha_ultima_gestion',
             'tipificacion_ultima_gestion',
-            'estado_aspirante',
+            'estado_ultima_gestion',
             'programa',
             'sede',
             'nit_empresa'
         ]
+
+    def filter_by_proceso_nombre(self, queryset, name, value):
+        """
+        Filtra los aspirantes por el nombre del proceso y aplica filtros adicionales.
+        """
+        return queryset.filter(proceso__nombre=value)
 
 
     def filter_cantidad_llamadas(self, queryset, name, value):
@@ -128,8 +152,9 @@ class AspirantesFilter(django_filters.FilterSet):
         ).filter(cantidad_gestiones=value) 
 
 
-    def filter_estado_aspirante(self, queryset, name, value):
-        return queryset.filter(estado__nombre=value)
+    def filter_estado_ultima_gestion(self, queryset, name, value):
+        return queryset.filter(gestiones__estado__nombre=value).distinct()
+
 
 
     def filter_dias_ultima_gestion(self, queryset, name, value):
@@ -194,7 +219,6 @@ class ProcesosFilter(django_filters.FilterSet):
     class Meta:
         model = Aspirantes
         fields = ['proceso', 'fecha']
-
 
 
 class EstadosFilter(django_filters.FilterSet):
