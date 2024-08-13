@@ -18,6 +18,7 @@ from .estadisticas import *
 from rest_framework.decorators import action
 from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 
 
 import logging
@@ -424,6 +425,9 @@ class Cargarcsv(APIView):
                 df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
                 df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
 
+                df_result_llamadas['DESCRIPTION_COD_ACT'].fillna('no', inplace=True)
+                df_result_whatsapp['DESCRIPTION_COD_ACT'].fillna('no', inplace=True)
+
                 df_result_llamadas.to_csv('llamadas', index=False)
                 df_result_whatsapp.to_csv('whatsapp', index=False)
                 
@@ -495,7 +499,8 @@ class Cargarcsv(APIView):
                             'Tercer_intento_de_contacto',
                             'Fuera_de_servicio',
                             'Imposible_contacto',
-                            'Número_inválido'
+                            'Número_inválido',
+                            'Sin_perfil'
                         ] 
                         def contactabilidad(row):
                             if row['DESCRIPTION_COD_ACT'] in no_contacto:
@@ -504,11 +509,50 @@ class Cargarcsv(APIView):
                                 return True
                             return False
                         #modelo tipificacion
+                        tipificaciones = { 
+                            'Matriculado': 1.0,
+                            'Liquidacion': 2.0,
+                            'Número_inválido': 3.0,
+                            'Imposible_contacto': 4.0,
+                            'Por_ubicacion': 5.0,
+                            'No_Manifiesta_motivo':6.0,
+                            'Proxima_convocatoria': 7.0,
+                            'Eliminar_de_la_base': 8.0,
+                            'Sin_perfil': 9.0,
+                            'Sin_tiempo': 10.0,
+                            'Sin_interes': 11.0,
+                            'Ya_esta_estudiando_en_otra_universidad': 12.0,
+                            'Otra_area_de_interés': 13.0,
+                            'En_proceso_de_selección': 14.0,
+                            'Interesado_en_seguimiento': 15.0,
+                            'Volver_a_llamar': 16.0,
+                            'Fuera_de_servicio': 17.0,
+                            'Tercer_intento_de_contacto': 18.0,
+                            'Segundo_intento_de_contacto': 19.0,
+                            'Primer_intento_de_contacto': 20.0,
+                            'Informacion_general_': 21.0,
+                            'No_Manifiesta_motivo': 22.0,
+                            'no': 23.0,
+                            'Cliente_en_seguimiento': 24.0, 
+                            'TIMEOUTCHAT':25.0,
+                            'Equivocado': 26.0,
+                            'Se_remite_a_otras_áreas': 27.0,
+                            'TIMEOUTACW': 28.0,
+                            'Cuelga_Telefono': 29.0,
+                            '': 30.0,
+                            'nan':31.0
+                        }
+                        if pd.isna(row['DESCRIPTION_COD_ACT']) or row['DESCRIPTION_COD_ACT'].strip() == '':
+                            valor_tipificacion = 31.0  # Valor por defecto para 'nan' o cadenas vacías
+                        else:
+                            valor_tipificacion = tipificaciones.get(row['DESCRIPTION_COD_ACT'], 0.0)
                         Tipificacion.objects.update_or_create(
                             nombre = row['DESCRIPTION_COD_ACT'],
-                            contacto = contactabilidad(row)
+                            defaults={
+                                'contacto' : contactabilidad(row),
+                                'valor_tipificacion' : valor_tipificacion
+                            }
                         )
-                        
                         #modelo tipo_gestión
                         lista_tipo_gestion = ['WhatsApp','Llamada']
                         for tipo in lista_tipo_gestion:
@@ -614,9 +658,26 @@ class ProcesoViewSet(viewsets.ModelViewSet):
     serializer_class = ProcesoSerializer
 
 
-class TipificacionViewSet(viewsets.ModelViewSet):
+class TipificacionViewSet(viewsets.ModelViewSet, APIView):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def create(self, request, *args, **kwargs):
+        # Extraer datos del cuerpo de la solicitud
+        data = request.data
+
+        # Crear o actualizar la instancia
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def perform_create(self, serializer):
+        serializer.save()
+        
 
 class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
@@ -663,3 +724,4 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
 
         return queryset.distinct()
+    
