@@ -11,11 +11,13 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
+from django.db.models import Sum, Count, Case, When, IntegerField, Q
+from .serializer_asesores import ConsultaAsesoresSerializer
+from django.db.models.functions import Coalesce
 from rest_framework.exceptions import NotFound
 from .estadisticas import *
 from rest_framework.decorators import action
 from django.shortcuts import redirect
-
 
 import logging
 
@@ -46,64 +48,8 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
 
-    def list(self, request, *args, **kwargs):
-        # Filtrar el queryset según los parámetros del request
-        filtered_queryset = self.filter_queryset(self.get_queryset())
 
-        # Serializar los aspirantes filtrados
-        serializer = self.get_serializer(filtered_queryset, many=True)
-        aspirantes = serializer.data
-
-        # Obtener estadísticas generales para el queryset filtrado
-        estadisticas_generales = obtener_estadisticas_generales(
-            filtered_queryset)
-
-        # Crear la respuesta personalizada
-        response_data = {
-            'aspirantes': aspirantes,
-            'estadisticas': estadisticas_generales,
-        }
-
-        return Response(response_data)
-
-    # Action for Process 1
-    @action(detail=False, methods=['get'], url_path='proceso-1')
-    def proceso_1(self, request):
-        queryset = self.get_queryset().filter(proceso_id=1)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-    # Action for Process 2
-    @action(detail=False, methods=['get'], url_path='proceso-2')
-    def proceso_2(self, request):
-        queryset = self.get_queryset().filter(proceso_id=2)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-    # Action for Process 3
-    @action(detail=False, methods=['get'], url_path='proceso-3')
-    def proceso_3(self, request):
-        queryset = self.get_queryset().filter(proceso_id=3)
-        serializer = self.get_serializer(queryset, many=True)
-
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({
-            'aspirantes': serializer.data,
-            'estadisticas': estadisticas_generales,
-        })
-
-
-# view para filters aspirantes
+# view para filters generales 
 class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
     # Serializador para convertir datos a JSON
@@ -111,6 +57,176 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+
+#  View para filters por procesos y por generales 
+class FilterProcesosViewSet(viewsets.ViewSet):
+    """
+    Vista para mostrar aspirantes con filtros por procesos y filtros generales.
+    """
+
+    def get_queryset(self):
+        """
+        Devuelve el queryset para aspirantes.
+        """
+        return Aspirantes.objects.all()
+
+    def list(self, request):
+        """
+        Devuelve la lista de aspirantes con filtros aplicados.
+        """
+        queryset = self.get_queryset()
+
+        # Inicializa el filtro de procesos
+        procesos_filter = ProcesosFilter(request.GET, queryset=queryset)
+        if procesos_filter.is_valid():
+            queryset = procesos_filter.qs
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def empresa(self, request):
+        """
+        Filtro aspirantes para el proceso 1 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=1)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def extensiones(self, request):
+        """
+        Filtro aspirantes para el proceso 2 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=2)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def tecnico(self, request):
+        """
+        Filtro aspirantes para el proceso 3 y aplica filtros generales.
+        """
+        queryset = self.get_queryset().filter(proceso_id=3)
+        
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(queryset, many=True)
+        
+        # Obtiene estadísticas generales
+
+        return Response({
+            'aspirantes': serializer.data,
+        })
+
+# Estadisticas genrales, por procesos y por fechas
+class EstadisticasViewSet(viewsets.GenericViewSet):
+    """
+    Vista para mostrar estadisticas generales por fecha y por proceso.
+    """
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ProcesosFilter  # Especifica la clase de filtros aquí
+    
+
+    def get_queryset(self):
+        """
+        Método para obtener el queryset de aspirantes.
+        """
+        return Aspirantes.objects.all()
+
+    def list(self, request):
+        """
+        Lista las estadísticas generales si no se especifica un tipo.
+        """
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+        estadisticas_generales = obtener_estadisticas_generales(filtered_queryset)
+        return Response({'estadisticas_generales': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='fechas')
+    def estadisticas_por_fechas(self, request):
+        fecha_inicio = request.query_params.get('fecha_inicio')
+        fecha_fin = request.query_params.get('fecha_fin')
+
+        if not fecha_inicio or not fecha_fin:
+            return Response({
+                'detail': 'Las fechas de inicio y fin son requeridas en el formato YYYY-MM-DD.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({
+                'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        gestiones_queryset = Gestiones.objects.filter(fecha__date__range=[fecha_inicio, fecha_fin])
+        estadisticas_por_fechas = obtener_estadisticas_por_fechas(gestiones_queryset, fecha_inicio, fecha_fin)
+        contactabilidad = obtener_contactabilidad(gestiones_queryset)
+
+        return Response({
+            'estadisticas_por_fechas': estadisticas_por_fechas,
+            'contactabilidad': contactabilidad,
+        })
+
+    @action(detail=False, methods=['get'], url_path='proceso-1')
+    def estadisticas_empresas(self, request):
+        queryset = self.get_queryset().filter(proceso_id=1)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_empresas': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def estadisticas_extenciones(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_extensiones': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def estadisticas_tecnicos(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_tecnicos': estadisticas_generales})
+
+
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -302,171 +418,169 @@ class Cargarcsv(APIView):
         
     # función para agregar a la base de datos    
     def llenarBD(self,df):
-        for index, row in df.iterrows():
-            #modelo estado
-            Estados.objects.update_or_create(
-                nombre=row['Estado']
-            )
-             
-            #modelo procesos
-            Proceso.objects.update_or_create(
-                nombre=row['PROCESO']
-            )
-            
-            #modelo asesores
-            Asesores.objects.update_or_create(
-                id = row['AGENT_ID'],
-                nombre_completo = row['AGENT_NAME'] 
-            )
-            
-            #modelo programa 
-            Programa.objects.update_or_create(
-                nombre = row['Programa']
-            )
-            
-            #modelo sede
-            Sede.objects.update_or_create(
-                nombre = row['Sede']
-            )
-            
-            #modelo empresa
-            Empresa.objects.update_or_create(
-                nit = row['NitEmpresa']
-            )
-            
-            # validando si hubo contacto o no en base a las tipificaciones
-            contacto = [
-                'Otra_area_de_interés', 
-                'Ya_esta_estudiando_en_otra_universidad',
-                'Sin_interes',
-                'Sin_tiempo',
-                'Eliminar_de_la_base',
-                'Próxima_convocatoria',
-                'No_Manifiesta_motivo',
-                'Por_ubicación',
-                'Matriculado',
-                'Liquidacion',
-                'En_proceso_de_selección',
-                'Interesado_en_seguimiento',
-                'Volver_a_llamar'
-                ]
-            
-            no_contacto = [
-                'Primer_intento_de_contacto',
-                'Segundo_intento_de_contacto',
-                'Tercer_intento_de_contacto',
-                'Fuera_de_servicio',
-                'Imposible_contacto',
-                'Número_inválido'
-            ] 
-            def contactabilidad(row):
-                if row['DESCRIPTION_COD_ACT'] in no_contacto:
-                    return False
-                elif row['DESCRIPTION_COD_ACT'] in contacto: 
-                    return True
-                return False
-            #modelo tipificacion
-            Tipificacion.objects.update_or_create(
-                nombre = row['DESCRIPTION_COD_ACT'],
-                contacto = contactabilidad(row)
-            )
-            
-            #modelo tipo_gestión
-            lista_tipo_gestion = ['WhatsApp','Llamada']
-            for tipo in lista_tipo_gestion:
-                Tipo_gestion.objects.update_or_create(
-                    nombre = tipo
-                ) 
-            
-            #validaciones para llenar el modelo Aspirantes
-            def llenar_correo(row):
-                if pd.isna(row['CorreoElectronico']):
-                    return 'sin correo'
-                else: 
-                    return row['CorreoElectronico']
-                                         
-            def llenar_documento(row):
-                if pd.isna(row['Identificacion']):
-                    return 'sin ID' 
-                else:
-                    return row['Identificacion']
-                
-                
-            #modelo aspirantes
-            try:
-                documento = llenar_documento(row)
-                correo = llenar_correo(row)
-                sede = Sede.objects.get(nombre=row['Sede'])
-                estado = Estados.objects.get(nombre=row['Estado'])
-                programa = Programa.objects.get(nombre=row['Programa'])
-                empresa = Empresa.objects.get(nit=row['NitEmpresa'])
-                proceso = Proceso.objects.get(nombre=row['PROCESO'])
-                
-                Aspirantes.objects.update_or_create(
-                    celular=row['cel_modificado'],  # Campo único para buscar o crear
-                    defaults={
-                        'nombre': row['NOMBRE'],
-                        'documento': documento,
-                        'correo': correo,
-                        'sede': sede,
-                        'estado': estado,
-                        'programa': programa,
-                        'empresa': empresa,
-                        'proceso': proceso,
-                    }
-                )
-            except Exception as e:
-                return f"error procesando la fila {e}"
-            
-            def validar_tipo_gestion(row, df):
-                # Verificar si la columna 'CHANNEL' existe en el DataFrame
-                if 'CHANNEL' in df.columns:
-                    # Verificar si el valor de 'CHANNEL' no es NaN
-                    if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
-                        return Tipo_gestion.objects.get(nombre='WhatsApp')
-                # Si la columna no existe o el valor es NaN, retornar 'llamadas'
-                return Tipo_gestion.objects.get(nombre='Llamada')
-            
-            def convertir_fecha(fecha_str):
-                    try:
-                        # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
-                        fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
-                        return fecha_convertida
-                    except ValueError as e:
-                        print(f"Error al convertir la fecha: {e}")
-                        return None
-            
-            def llenar_observaciones(row):
-                if pd.isna(row['COMMENTS']):
-                     return 'sin observaciones'
-                else:
-                    return row['COMMENTS']
-            #modelo gestiones
-            try:
-                aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
-                tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
-                asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                tipo_gestion = validar_tipo_gestion(row, df)
-                fecha_convertida = convertir_fecha(row['DATE'])
-                observaciones = llenar_observaciones(row)
-                
-                Gestiones.objects.update_or_create(
-                    cel_aspirante = aspirante,
-                    fecha = fecha_convertida,
-                    tipo_gestion = tipo_gestion,
-                    observaciones = observaciones , 
-                    tipificacion = tipificacion,
-                    asesor = asesor,
-                )
-            except Aspirantes.DoesNotExist:
-                print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
-            except Tipificacion.DoesNotExist:
-                print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
-            except Asesores.DoesNotExist:
-                print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
-            except Exception as e:
-                print(f"Error procesando la fila: {e}")
-        print('datos cargados con éxito')
+                    for index, row in df.iterrows():
+                        #modelo estado
+                        Estados.objects.update_or_create(
+                            nombre=row['Estado']
+                        ) 
+                         
+                        #modelo procesos
+                        Proceso.objects.update_or_create(
+                            nombre=row['PROCESO']
+                        )
+                        
+                        #modelo asesores
+                        Asesores.objects.update_or_create(
+                            id = row['AGENT_ID'],
+                            nombre_completo = row['AGENT_NAME'] 
+                        )
+                        
+                        #modelo programa 
+                        Programa.objects.update_or_create(
+                            nombre = row['Programa']
+                        )
+                        
+                        #modelo sede
+                        Sede.objects.update_or_create(
+                            nombre = row['Sede']
+                        )
+                        
+                        #modelo empresa
+                        Empresa.objects.update_or_create(
+                            nit = row['NitEmpresa']
+                        )
+                        
+                        # validando si hubo contacto o no en base a las tipificaciones
+                        contacto = [
+                            'Otra_area_de_interés', 
+                            'Ya_esta_estudiando_en_otra_universidad',
+                            'Sin_interes',
+                            'Sin_tiempo',
+                            'Eliminar_de_la_base',
+                            'Próxima_convocatorio',
+                            'No_Manifiesta_motivo',
+                            'Por_ubicación',
+                            'Matriculado',
+                            'Liquidacion',
+                            'En_proceso_de_selección',
+                            'Interesado_en_seguimiento',
+                            'Volver_a_llamar'
+                            ]
+                        
+                        no_contacto = [
+                            'Primer_intento_de_contacto',
+                            'Segundo_intento_de_contacto',
+                            'Tercer_intento_de_contacto',
+                            'Fuera_de_servicio',
+                            'Imposible_contacto',
+                            'Número_inválido'
+                        ] 
+                        def contactabilidad(row):
+                            if row['DESCRIPTION_COD_ACT'] in no_contacto:
+                                return False
+                            elif row['DESCRIPTION_COD_ACT'] in contacto: 
+                                return True
+                            return False
+                        #modelo tipificacion
+                        Tipificacion.objects.update_or_create(
+                            nombre = row['DESCRIPTION_COD_ACT'],
+                            contacto = contactabilidad(row)
+                        )
+                        
+                        #modelo tipo_gestión
+                        lista_tipo_gestion = ['WhatsApp','Llamada']
+                        for tipo in lista_tipo_gestion:
+                            Tipo_gestion.objects.update_or_create(
+                                nombre = tipo
+                            ) 
+                        
+                        #validaciones para llenar el modelo Aspirantes
+                        def llenar_correo(row):
+                            if pd.isna(row['CorreoElectronico']):
+                                return 'sin correo'
+                            else: 
+                                return row['CorreoElectronico']
+                                                     
+                        def llenar_documento(row):
+                            if pd.isna(row['Identificacion']):
+                                return 'sin ID' 
+                            else:
+                                return row['Identificacion']
+                            
+                            
+                        #modelo aspirantes
+                        documento = llenar_documento(row)
+                        correo = llenar_correo(row)
+                        sede = Sede.objects.get(nombre=row['Sede'])
+                        programa = Programa.objects.get(nombre=row['Programa'])
+                        empresa = Empresa.objects.get(nit=row['NitEmpresa'])
+                        proceso = Proceso.objects.get(nombre=row['PROCESO'])
+                        
+                        Aspirantes.objects.update_or_create(
+                            celular=row['cel_modificado'],  # Campo único para buscar o crear
+                            defaults={
+                                'nombre': row['NOMBRE'],
+                                'documento': documento,
+                                'correo': correo,
+                                'sede': sede,
+                                'programa': programa,
+                                'empresa': empresa,
+                                'proceso': proceso,
+                            }
+                        )
+
+                        
+                        def validar_tipo_gestion(row, df):
+                            # Verificar si la columna 'CHANNEL' existe en el DataFrame
+                            if 'CHANNEL' in df.columns:
+                                # Verificar si el valor de 'CHANNEL' no es NaN
+                                if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
+                                    return Tipo_gestion.objects.get(nombre='WhatsApp')
+                            # Si la columna no existe o el valor es NaN, retornar 'llamadas'
+                            return Tipo_gestion.objects.get(nombre='Llamada')
+                        
+                        def convertir_fecha(fecha_str):
+                            try:
+                                # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
+                                fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                                return fecha_convertida
+                            except ValueError as e:
+                                print(f"Error al convertir la fecha: {e}")
+                                return None
+                        
+                        def llenar_observaciones(row):
+                            if pd.isna(row['COMMENTS']):
+                                 return 'sin observaciones'
+                            else:
+                                return row['COMMENTS']
+                        #modelo gestiones
+                        try:
+                            aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
+                            tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
+                            asesor = Asesores.objects.get(id=row['AGENT_ID'])
+                            estado = Estados.objects.get(nombre=row['Estado'])
+
+                            tipo_gestion = validar_tipo_gestion(row, df)
+                            fecha_convertida = convertir_fecha(row['DATE'])
+                            observaciones = llenar_observaciones(row)
+    
+                            Gestiones.objects.update_or_create(
+                                cel_aspirante = aspirante,
+                                fecha = fecha_convertida,
+                                tipo_gestion = tipo_gestion,
+                                observaciones = observaciones , 
+                                estado = estado,
+                                tipificacion = tipificacion,
+                                asesor = asesor,
+                            )
+                        except Aspirantes.DoesNotExist:
+                            print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
+                        except Tipificacion.DoesNotExist:
+                            print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
+                        except Asesores.DoesNotExist:
+                            print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
+                        except Exception as e:
+                            print(f"Error procesando la fila: {e}")
         
 class EmpresaViewSet(viewsets.ModelViewSet):
     queryset = Empresa.objects.all()
@@ -496,3 +610,34 @@ class HistoricoViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         else:
             return Response({"error": "Número de celular no proporcionado"}, status=400)
+        
+class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
+    queryset = Asesores.objects.all()
+    serializer_class = ConsultaAsesoresSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AsesoresFilter
+
+    def get_queryset(self):
+        queryset = Asesores.objects.annotate(
+            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
+                output_field=models.IntegerField() )), 0),
+
+            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+                output_field=models.IntegerField())), 0),
+
+            cantidad_gestiones=Count('gestiones', distinct=True),
+
+        )
+
+        fecha_inicio = self.request.query_params.get('fecha_inicio')
+        fecha_fin = self.request.query_params.get('fecha_fin')
+
+        if fecha_inicio:
+            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+
+        return queryset.distinct()
