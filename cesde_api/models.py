@@ -78,7 +78,7 @@ class Gestiones(models.Model):
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
-    estado = models.ForeignKey(Estados, on_delete=models.CASCADE , default= 1   )
+    estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
