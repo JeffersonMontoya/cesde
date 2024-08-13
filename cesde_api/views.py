@@ -16,10 +16,8 @@ from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
-
-
 
 
 import logging
@@ -345,6 +343,28 @@ class Cargarcsv(APIView):
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                
+                columnas_deseadas=[
+                    'cel_modificado',
+                    'Identificacion',
+                    'DESCRIPTION_COD_ACT',
+                    'Estado',
+                    'NOMBRE',
+                    'CorreoElectronico',
+                    'Programa',
+                    'Sede',
+                    'AGENT_ID',
+                    'AGENT_NAME',
+                    'DATE',
+                    'COMMENTS',
+                    'PROCESO',
+                    'NitEmpresa'
+                    ]
+                
+                columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
+                
+                df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
+                df_result_llamadas = df_unido_llamadas[columnas_deseadas]
 
                 #funcion para validar los datos antes de ingresarlos a la BD                
                 def validarDatos(row):
@@ -401,11 +421,14 @@ class Cargarcsv(APIView):
                     else:
                         return row['Estado']
                     
-                df_unido_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                df_unido_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
-                    
-                self.llenarBD(df_unido_llamadas)
-                self.llenarBD(df_unido_whatsapp)
+                df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+
+                df_result_llamadas.to_csv('llamadas', index=False)
+                df_result_whatsapp.to_csv('whatsapp', index=False)
+                
+                self.llenarBD(df_result_llamadas)
+                self.llenarBD(df_result_whatsapp)
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -422,7 +445,7 @@ class Cargarcsv(APIView):
                         Estados.objects.update_or_create(
                             nombre=row['Estado']
                         ) 
-                        
+                         
                         #modelo procesos
                         Proceso.objects.update_or_create(
                             nombre=row['PROCESO']
@@ -499,7 +522,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                    
+                                                     
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -527,7 +550,7 @@ class Cargarcsv(APIView):
                                 'proceso': proceso,
                             }
                         )
-                        
+
                         
                         def validar_tipo_gestion(row, df):
                             # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -549,7 +572,7 @@ class Cargarcsv(APIView):
                         
                         def llenar_observaciones(row):
                             if pd.isna(row['COMMENTS']):
-                                return 'sin observaciones'
+                                 return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
                         #modelo gestiones

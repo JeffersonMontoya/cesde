@@ -25,9 +25,8 @@ class AspiranteSerializer(serializers.ModelSerializer):
         fields = [
             'nombre_completo',
             'nit', 
-            'estado_aspirante', 
             'sede',  
-            'patrocinio_empresa', 
+            'nit_empresa',
             'programa_formacion', 
             'proceso',
             'celular',
@@ -36,7 +35,8 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'cantidad_gestiones',
             'fecha_ultima_gestion', 
             'dias_ultima_gestion', 
-            'estado_ultima_gestion'
+            'ultima_tipificacion',
+            'estado_ultima_gestion',
         ]
 
 

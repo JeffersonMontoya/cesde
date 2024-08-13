@@ -49,10 +49,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         return 0
 
 
-<<<<<<< HEAD
-=======
 
->>>>>>> acb54233658a2f645dcafc176e279b478840b98b
     def get_cantidad_whatsapp(self, obj):
         whatsapp_gestion = Tipo_gestion.objects.filter(nombre='WhatsApp').first()
         if whatsapp_gestion:
