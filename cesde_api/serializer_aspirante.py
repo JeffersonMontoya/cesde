@@ -15,6 +15,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     ultima_tipificacion = serializers.SerializerMethodField()
     programa_formacion = serializers.CharField(source='programa.nombre')
     nit_empresa = serializers.CharField(source='empresa.nit')
+    nit_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
     estado_ultima_gestion = serializers.SerializerMethodField()
     
@@ -26,7 +27,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'nombre_completo', 'nit' , 'sede',  'nit_empresa', 'programa_formacion', 'proceso',
             'celular',
             'cantidad_llamadas',  'cantidad_whatsapp', 'cantidad_gestiones',
-            'fecha_ultima_gestion', 'dias_ultima_gestion', 'ultima_tipificacion' , 'estado_ulñtima_gestion'
+            'fecha_ultima_gestion', 'dias_ultima_gestion', 'ultima_tipificacion' , 'estado_ultima_gestion'
         ]
 
 

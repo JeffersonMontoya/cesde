@@ -11,14 +11,13 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When, IntegerField, Q
+from django.db.models import Sum, Count, Case, When
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
-from rest_framework.exceptions import NotFound
 from .estadisticas import *
 from rest_framework.decorators import action
 from django.db.models import Count, OuterRef, Subquery
-
+from django.shortcuts import get_object_or_404
 
 
 import logging
@@ -48,7 +47,6 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()
     serializer_class = AspiranteSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
 
 
 # view para filters generales 
@@ -59,6 +57,33 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    def empresa(self, request):
+        """
+        Filtro aspirantes para el proceso 'Empresa' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Empresa'  # Usar el nombre del proceso
+        return self.list(request)
+
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
+    def extensiones(self, request):
+        """
+        Filtro aspirantes para el proceso 'Extensiones' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Extensiones'
+        return self.list(request)
+
+    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
+    def tecnico(self, request):
+        """
+        Filtro aspirantes para el proceso 'Técnico' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Técnico'
+        return self.list(request)
 
 
 #  View para filters por procesos y por generales 
@@ -97,12 +122,13 @@ class FilterProcesosViewSet(viewsets.ViewSet):
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-1')
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def empresa(self, request):
         """
-        Filtro aspirantes para el proceso 1 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=1)
+        proceso = get_object_or_404(Proceso, nombre="empresa")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -112,18 +138,17 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-2')
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
     def extensiones(self, request):
         """
-        Filtro aspirantes para el proceso 2 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=2)
+        proceso = get_object_or_404(Proceso, nombre="extenciones")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -133,18 +158,17 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-3')
+    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
     def tecnico(self, request):
         """
-        Filtro aspirantes para el proceso 3 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=3)
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -154,8 +178,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
@@ -227,8 +249,6 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         queryset = self.get_queryset().filter(proceso_id=3)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
-
-
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -323,6 +343,28 @@ class Cargarcsv(APIView):
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                
+                columnas_deseadas=[
+                    'cel_modificado',
+                    'Identificacion',
+                    'DESCRIPTION_COD_ACT',
+                    'Estado',
+                    'NOMBRE',
+                    'CorreoElectronico',
+                    'Programa',
+                    'Sede',
+                    'AGENT_ID',
+                    'AGENT_NAME',
+                    'DATE',
+                    'COMMENTS',
+                    'PROCESO',
+                    'NitEmpresa'
+                    ]
+                
+                columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
+                
+                df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
+                df_result_llamadas = df_unido_llamadas[columnas_deseadas]
 
                 #funcion para validar los datos antes de ingresarlos a la BD                
                 def validarDatos(row):
@@ -379,11 +421,14 @@ class Cargarcsv(APIView):
                     else:
                         return row['Estado']
                     
-                df_unido_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                df_unido_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
-                    
-                self.llenarBD(df_unido_llamadas)
-                self.llenarBD(df_unido_whatsapp)
+                df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+
+                df_result_llamadas.to_csv('llamadas', index=False)
+                df_result_whatsapp.to_csv('whatsapp', index=False)
+                
+                self.llenarBD(df_result_llamadas)
+                self.llenarBD(df_result_whatsapp)
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -400,7 +445,7 @@ class Cargarcsv(APIView):
                         Estados.objects.update_or_create(
                             nombre=row['Estado']
                         ) 
-                        
+                         
                         #modelo procesos
                         Proceso.objects.update_or_create(
                             nombre=row['PROCESO']
@@ -477,7 +522,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                    
+                                                     
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -505,7 +550,7 @@ class Cargarcsv(APIView):
                                 'proceso': proceso,
                             }
                         )
-                        
+
                         
                         def validar_tipo_gestion(row, df):
                             # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -527,7 +572,7 @@ class Cargarcsv(APIView):
                         
                         def llenar_observaciones(row):
                             if pd.isna(row['COMMENTS']):
-                                return 'sin observaciones'
+                                 return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
                         #modelo gestiones

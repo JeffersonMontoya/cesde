@@ -22,10 +22,19 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Aspirantes
         fields = [
-            'nit', 'celular', 'nombre_completo', 'cantidad_llamadas',
-             'cantidad_whatsapp', 'cantidad_gestiones', 
-            'estado', 'tipificacion', 'dias_ultima_gestion', 'fecha_ultima_gestion',
-            'programa', 'sede', 'nit_empresa', 'proceso'
+            'nit', 
+            'celular',
+            'nombre_completo',
+            'cantidad_llamadas',
+            'cantidad_whatsapp',
+            'cantidad_gestiones', 
+            'estado', 'tipificacion', 
+            'dias_ultima_gestion', 
+            'fecha_ultima_gestion',
+            'programa', 
+            'sede', 
+            'nit_empresa', 
+            'proceso'
         ]
 
 
