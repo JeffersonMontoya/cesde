@@ -3,7 +3,6 @@ from .models import *
 from datetime import datetime
 
 
-
 class AspiranteSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -18,6 +17,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     programa_formacion = serializers.CharField(source='programa.nombre')
     patrocinio_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
+
 
     class Meta:
         model = Aspirantes
@@ -59,12 +59,13 @@ class AspiranteSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
-    # Función para obtener la fecha de la última gestión del celular adicional
+    # Función para obtener la fecha de la última gestión del celular adicional oeee
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-            return ultima_gestion.fecha
+        # Formatear la fecha para que solo devuelva año, mes y día
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return None
 
     def get_estado_ultima_gestion(self, obj):
