@@ -73,9 +73,26 @@ class SedeNameFilter(django_filters.ModelChoiceFilter):
             except Sede.DoesNotExist:
                 return qs.none()
         return qs
+    
+class ProcesoNameFilter(django_filters.ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
+        super().__init__(*args, **kwargs)
+    
+    def filter(self, qs, value):
+        if value:
+            try:
+                # Encuentra el proceso correspondiente por nombre
+                proceso = self.queryset.get(nombre=value)
+                return qs.filter(proceso=proceso).distinct()  # Usar 'proceso' en lugar de 'Proceso'
+            except Proceso.DoesNotExist:
+                return qs.none()
+        return qs
+
 
 
 class AspirantesFilter(django_filters.FilterSet):
+    proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
     cantidad_whatsapp = django_filters.NumberFilter(method='filter_cantidad_whatsapp', label='Cantidad de WhatsApp')
     cantidad_gestiones = django_filters.NumberFilter(method='filter_cantidad_gestiones', label='Cantidad de gestiones')
@@ -91,6 +108,7 @@ class AspirantesFilter(django_filters.FilterSet):
     class Meta:
         model = Aspirantes
         fields = [
+            'proceso_nombre',
             'cantidad_llamadas',
             'cantidad_whatsapp',
             'cantidad_gestiones',
@@ -102,6 +120,12 @@ class AspirantesFilter(django_filters.FilterSet):
             'sede',
             'nit_empresa'
         ]
+
+    def filter_by_proceso_nombre(self, queryset, name, value):
+        """
+        Filtra los aspirantes por el nombre del proceso y aplica filtros adicionales.
+        """
+        return queryset.filter(proceso__nombre=value)
 
 
     def filter_cantidad_llamadas(self, queryset, name, value):
