@@ -169,6 +169,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
         proceso = get_object_or_404(Proceso, nombre="técnicos")
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
@@ -186,11 +187,10 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 # Estadisticas genrales, por procesos y por fechas
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
-    Vista para mostrar estadisticas generales por fecha y por proceso.
+    Vista para mostrar estadísticas generales por fecha y por proceso.
     """
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtros aquí
-    
 
     def get_queryset(self):
         """
@@ -210,6 +210,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
     def estadisticas_por_fechas(self, request):
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
+        proceso_nombre = request.query_params.get('proceso_nombre')  # Usar nombre del proceso
 
         if not fecha_inicio or not fecha_fin:
             return Response({
@@ -224,7 +225,17 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        gestiones_queryset = Gestiones.objects.filter(fecha__date__range=[fecha_inicio, fecha_fin])
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+        if proceso_nombre:
+            proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
+            filtered_queryset = filtered_queryset.filter(proceso=proceso)
+        
+        # Filtra el queryset de gestiones en lugar de aspirantes
+        gestiones_queryset = Gestiones.objects.filter(
+            cel_aspirante__in=filtered_queryset,
+            fecha__date__range=[fecha_inicio, fecha_fin]
+        )
+        
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(gestiones_queryset, fecha_inicio, fecha_fin)
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
@@ -233,23 +244,27 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'contactabilidad': contactabilidad,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-1')
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def estadisticas_empresas(self, request):
-        queryset = self.get_queryset().filter(proceso_id=1)
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_empresas': estadisticas_generales})
+    
+        return self.get_proceso_estadisticas(request, 'empresa')
 
-    @action(detail=False, methods=['get'], url_path='proceso-2')
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
     def estadisticas_extenciones(self, request):
-        queryset = self.get_queryset().filter(proceso_id=2)
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_extensiones': estadisticas_generales})
 
-    @action(detail=False, methods=['get'], url_path='proceso-3')
+        return self.get_proceso_estadisticas(request, 'extenciones')
+
+    @action(detail=False, methods=['get'], url_path='proceso-tecnicos')
     def estadisticas_tecnicos(self, request):
         queryset = self.get_queryset().filter(proceso_id=3)
+        return self.get_proceso_estadisticas(request, 'técnicos')
+
+    def get_proceso_estadisticas(self, request, proceso_nombre):
+        proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
+        filtered_queryset = self.filter_queryset(self.get_queryset())
+        queryset = filtered_queryset.filter(proceso=proceso)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_tecnicos': estadisticas_generales})
+        return Response({'estadisticas_generales': estadisticas_generales})
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
