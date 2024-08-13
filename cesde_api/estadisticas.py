@@ -3,7 +3,7 @@ from .models import *
 
 def obtener_estadisticas_generales(queryset):
     # Obtener estadísticas básicas por estado y proceso
-    estadisticas_basicas = queryset.values('estado__nombre').annotate(count=Count('estado')).order_by('-count')
+    estadisticas_basicas = queryset.values('gestiones__estado__nombre').annotate(count=Count('gestiones__estado')).order_by('-count')
 
     # Contar gestiones por tipo de contacto
     gestiones_totales = queryset.filter(gestiones__isnull=False).count()
@@ -41,11 +41,12 @@ def obtener_estadisticas_por_fechas(queryset, fecha_inicio, fecha_fin):
     aspirantes_filtrados = Aspirantes.objects.filter(celular__in=aspirantes_ids)
     
     # Obtener estadísticas básicas por estado para los aspirantes filtrados
-    estadisticas = aspirantes_filtrados.values('estado__nombre').annotate(count=Count('estado')).order_by('-count')
+    estadisticas = aspirantes_filtrados.values('gestiones__estado__nombre').annotate(count=Count('gestiones__estado')).order_by('-count')
 
     return {
         'estadisticas': list(estadisticas),
     }
+
 
 
 def obtener_contactabilidad(gestiones_queryset):
@@ -70,12 +71,3 @@ def obtener_contactabilidad(gestiones_queryset):
             'percentage': no_contactabilidad_percentage,
         },
     }
-
-
-
-
-
-
-
-
-
