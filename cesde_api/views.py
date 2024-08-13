@@ -21,6 +21,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 
 
+
 import logging
 
 # Configurar el logger
@@ -35,7 +36,7 @@ class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
     filter_backends = (DjangoFilterBackend,)
-
+    
 
 class EstadoViewSet(viewsets.ModelViewSet):
     queryset = Estados.objects.all()
