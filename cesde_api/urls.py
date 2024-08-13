@@ -17,7 +17,6 @@ router.register(r'procesos', ProcesoViewSet )
 router.register(r'tipificaciones' , TipificacionViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'historico', HistoricoViewSet, basename='historico')
-router.register(r'sede', SedeViewSet)
 
 
 
