@@ -18,7 +18,6 @@ from .estadisticas import *
 from rest_framework.decorators import action
 from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
 
 
 
@@ -662,7 +661,6 @@ class ProcesoViewSet(viewsets.ModelViewSet):
 class TipificacionViewSet(viewsets.ModelViewSet, APIView):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer
-    permission_classes = [IsAuthenticated]
     
     def create(self, request, *args, **kwargs):
         # Extraer datos del cuerpo de la solicitud
