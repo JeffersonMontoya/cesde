@@ -169,7 +169,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="técnico")
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
@@ -247,15 +247,15 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def estadisticas_empresas(self, request):
-        return self.get_proceso_estadisticas(request, 'Empresa')
+        return self.get_proceso_estadisticas(request, 'empresa')
 
     @action(detail=False, methods=['get'], url_path='proceso-extensiones')
     def estadisticas_extenciones(self, request):
-        return self.get_proceso_estadisticas(request, 'Extensiones')
+        return self.get_proceso_estadisticas(request, 'extenciones')
 
     @action(detail=False, methods=['get'], url_path='proceso-tecnicos')
     def estadisticas_tecnicos(self, request):
-        return self.get_proceso_estadisticas(request, 'Técnicos')
+        return self.get_proceso_estadisticas(request, 'técnicos')
 
     def get_proceso_estadisticas(self, request, proceso_nombre):
         proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
