@@ -48,14 +48,11 @@ class Aspirantes(models.Model):
         return f" {self.nombre} {self.celular}  "
 
 
-
-
 class Tipo_gestion(models.Model):
     nombre = models.CharField(max_length=12)
 
     def __str__(self):
         return self.nombre
-
 
 
 class Asesores(models.Model):
@@ -64,7 +61,6 @@ class Asesores(models.Model):
 
     def __str__(self):
         return f"{self.id} - {self.nombre_completo}"
-
 
 
 class Tipificacion(models.Model):

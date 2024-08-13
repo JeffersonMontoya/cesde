@@ -11,13 +11,14 @@ from .serializer_historico import *
 from .serializer_aspirante import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When, IntegerField, Q
+from django.db.models import Sum, Count, Case, When
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
-from rest_framework.exceptions import NotFound
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count
+from django.shortcuts import get_object_or_404
+
 
 
 
@@ -48,7 +49,6 @@ class AspiranteViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()
     serializer_class = AspiranteSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_class = ProcesosFilter  # Especifica la clase de filtro aquí
 
 
 # view para filters generales 
@@ -59,6 +59,33 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
+
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    def empresa(self, request):
+        """
+        Filtro aspirantes para el proceso 'Empresa' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Empresa'  # Usar el nombre del proceso
+        return self.list(request)
+
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
+    def extensiones(self, request):
+        """
+        Filtro aspirantes para el proceso 'Extensiones' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Extensiones'
+        return self.list(request)
+
+    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
+    def tecnico(self, request):
+        """
+        Filtro aspirantes para el proceso 'Técnico' y aplica filtros generales.
+        """
+        request.GET = request.GET.copy()
+        request.GET['proceso_nombre'] = 'Técnico'
+        return self.list(request)
 
 
 #  View para filters por procesos y por generales 
@@ -97,12 +124,13 @@ class FilterProcesosViewSet(viewsets.ViewSet):
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-1')
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def empresa(self, request):
         """
-        Filtro aspirantes para el proceso 1 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=1)
+        proceso = get_object_or_404(Proceso, nombre="empresa")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -112,18 +140,17 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-2')
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
     def extensiones(self, request):
         """
-        Filtro aspirantes para el proceso 2 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=2)
+        proceso = get_object_or_404(Proceso, nombre="extenciones")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -133,18 +160,17 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-3')
+    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
     def tecnico(self, request):
         """
-        Filtro aspirantes para el proceso 3 y aplica filtros generales.
+        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        queryset = self.get_queryset().filter(proceso_id=3)
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
+        queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -154,8 +180,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         # Serializa los datos
         serializer = AspiranteFilterSerializer(queryset, many=True)
         
-        # Obtiene estadísticas generales
-
         return Response({
             'aspirantes': serializer.data,
         })
@@ -227,8 +251,6 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         queryset = self.get_queryset().filter(proceso_id=3)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
-
-
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
