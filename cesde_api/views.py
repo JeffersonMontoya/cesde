@@ -357,6 +357,29 @@ class Cargarcsv(APIView):
                 df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
+                
+                columnas_deseadas=[
+                    'cel_modificado',
+                    'Identificacion',
+                    'DESCRIPTION_COD_ACT',
+                    'Estado',
+                    'NOMBRE',
+                    'CorreoElectronico',
+                    'Programa',
+                    'Sede',
+                    'AGENT_ID',
+                    'AGENT_NAME',
+                    'DATE',
+                    'COMMENTS',
+                    'PROCESO',
+                    'NitEmpresa'
+                    ]
+                
+                columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
+                
+                df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
+                df_result_llamadas = df_unido_llamadas[columnas_deseadas]
+
                 #funcion para validar los datos antes de ingresarlos a la BD                
                 def validarDatos(row):
                     #validar Estado
@@ -412,11 +435,11 @@ class Cargarcsv(APIView):
                     else:
                         return row['Estado']
                     
-                df_unido_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                df_unido_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+                df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
                     
-                self.llenarBD(df_unido_llamadas)
-                self.llenarBD(df_unido_whatsapp)
+                self.llenarBD(df_result_llamadas)
+                self.llenarBD(df_result_whatsapp)
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
