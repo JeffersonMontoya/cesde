@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import *
 from datetime import datetime
-
+from .models import *
 
 
 class SedeSerializer(serializers.ModelSerializer):
@@ -17,28 +17,22 @@ class EstadoSerializer(serializers.ModelSerializer):
         fields = ['nombre']
 
 
-
-class EstadoSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Estados
-        fields = '__all__'
-
-
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipo_gestion
-        fields = ['nombre']
+        fields = '__all__'
 
 
 class GestionSerializer(serializers.ModelSerializer):
     tipo_gestion = serializers.SerializerMethodField()
     tipificacion = serializers.SerializerMethodField()
-    asesor = serializers.SerializerMethodField()  # Agrega el campo para el asesor
+    asesor = serializers.SerializerMethodField()  # Campo asesor corregido
+    estado_aspirante = serializers.CharField(source='estado.nombre')
 
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                'observaciones', 'tipificacion' , 'asesor']
+                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre
@@ -55,36 +49,28 @@ class GestionSerializer(serializers.ModelSerializer):
             }
         return None
 
-
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa
-        fields = ['nombre']
-
+        fields = '__all__'
 
 class EmpresaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empresa
-        fields = ['nit']
-
+        fields = '__all__'
 
 class ProcesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proceso
-        fields = ['nombre']
-
-
-class TipificacionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tipificacion
-        fields = ['nombre']
-
-
-
+        fields = '__all__'
 
 class AsesorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asesores
         fields = '__all__'
 
+class TipificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tipificacion
+        fields = '__all__'
 
