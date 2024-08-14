@@ -455,43 +455,60 @@ class Cargarcsv(APIView):
     def llenarBD(self,df):
                     for index, row in df.iterrows():
                         #modelo estado
-                        if pd.notna(row['Estado']):
-                            Estados.objects.update_or_create(
-                                nombre=row['Estado']
-                            ) 
-                         
+                        try:
+                            if pd.notna(row['Estado']):
+                                Estados.objects.update_or_create(
+                                    nombre=row['Estado']
+                                ) 
+                        except Exception as e: 
+                            return f"no se actualizó el modelo estados: {e}"
                         #modelo procesos
-                        if pd.notna(row['PROCESO']):
-                            Proceso.objects.update_or_create(
-                                nombre=row['PROCESO']
-                            )
+                        try:
+                            if pd.notna(row['PROCESO']):
+                                Proceso.objects.update_or_create(
+                                    nombre=row['PROCESO']
+                                )
+                        except Exception as e:
+                            return f"no se actualizó el modelo procesos: {e}"
                         
                         #modelo asesores
-                        if pd.notna(row['AGENT_ID']):
-                            Asesores.objects.update_or_create(
-                                id = row['AGENT_ID'],
-                                defaults={
-                                    'nombre_completo' : row['AGENT_NAME'] 
-                                }
-                            )
+                        try:
+                            if pd.notna(row['AGENT_ID']):
+                                Asesores.objects.update_or_create(
+                                    id = row['AGENT_ID'],
+                                    defaults={
+                                        'nombre_completo' : row['AGENT_NAME'] 
+                                    }
+                                )
+                        except Exception as e:
+                            return f"no se actualizó el modelo: {e}"
                         
                         #modelo programa 
-                        if pd.notna(row['Programa']):
-                            Programa.objects.update_or_create(
-                                nombre = row['Programa']
-                            )
+                        try: 
+                            if pd.notna(row['Programa']):
+                                Programa.objects.update_or_create(
+                                    nombre = row['Programa']
+                                )
+                        except Exception as e:
+                            return f"no se actualizó el modelo: {e}"
                         
                         #modelo sede
-                        if pd.notna(row['Sede']):
-                            Sede.objects.update_or_create(
-                                nombre = row['Sede']
-                            )
+                        try:
+                            if pd.notna(row['Sede']):
+                                Sede.objects.update_or_create(
+                                    nombre = row['Sede']
+                                )
+                        except Exception as e:
+                            return f"no se actualizó el modelo: {e}"
                         
                         #modelo empresa
-                        if pd.notna(row['NitEmpresa']):
-                            Empresa.objects.update_or_create(
-                                nit = row['NitEmpresa']
-                            )
+                        try:
+                            if pd.notna(row['NitEmpresa']):
+                                Empresa.objects.update_or_create(
+                                    nit = row['NitEmpresa']
+                                )
+                        except Exception as e:
+                            return f"no se actualizó el modelo: {e}"
                         
                         # validando si hubo contacto o no en base a las tipificaciones
                         contacto = [
@@ -562,7 +579,7 @@ class Cargarcsv(APIView):
                             '-': 33.0
                         }
                         if pd.isna(row['DESCRIPTION_COD_ACT']) or row['DESCRIPTION_COD_ACT'].strip() == '':
-                            valor_tipificacion = 31.0  # Valor por defecto para 'nan' o cadenas vacías
+                            valor_tipificacion = 34.0  # Valor por defecto para 'nan' o cadenas vacías
                         else:
                             valor_tipificacion = tipificaciones.get(row['DESCRIPTION_COD_ACT'], 0.0)
                         Tipificacion.objects.update_or_create(
@@ -573,11 +590,14 @@ class Cargarcsv(APIView):
                             }
                         )
                         #modelo tipo_gestión
-                        lista_tipo_gestion = ['WhatsApp','Llamada']
-                        for tipo in lista_tipo_gestion:
-                            Tipo_gestion.objects.update_or_create(
-                                nombre = tipo
-                            ) 
+                        try:
+                            lista_tipo_gestion = ['WhatsApp','Llamada']
+                            for tipo in lista_tipo_gestion:
+                                Tipo_gestion.objects.update_or_create(
+                                    nombre = tipo
+                                ) 
+                        except Exception as e: 
+                            return f"no se actualizó el modelo: {e}"
                         
                         #validaciones para llenar el modelo Aspirantes
                         def llenar_correo(row):
@@ -594,26 +614,28 @@ class Cargarcsv(APIView):
                             
                             
                         #modelo aspirantes
-                        documento = llenar_documento(row)
-                        correo = llenar_correo(row)
-                        sede = Sede.objects.get(nombre=row['Sede'])
-                        programa = Programa.objects.get(nombre=row['Programa'])
-                        empresa = Empresa.objects.get(nit=row['NitEmpresa'])
-                        proceso = Proceso.objects.get(nombre=row['PROCESO'])
-                        
-                        Aspirantes.objects.update_or_create(
-                            celular=row['cel_modificado'],  # Campo único para buscar o crear
-                            defaults={
-                                'nombre': row['NOMBRE'],
-                                'documento': documento,
-                                'correo': correo,
-                                'sede': sede,
-                                'programa': programa,
-                                'empresa': empresa,
-                                'proceso': proceso,
-                            }
-                        )
+                        try:
+                            documento = llenar_documento(row)
+                            correo = llenar_correo(row)
+                            sede = Sede.objects.get(nombre=row['Sede'])
+                            programa = Programa.objects.get(nombre=row['Programa'])
+                            empresa = Empresa.objects.get(nit=row['NitEmpresa'])
+                            proceso = Proceso.objects.get(nombre=row['PROCESO'])
 
+                            Aspirantes.objects.update_or_create(
+                                celular=row['cel_modificado'],  # Campo único para buscar o crear
+                                defaults={
+                                    'nombre': row['NOMBRE'],
+                                    'documento': documento,
+                                    'correo': correo,
+                                    'sede': sede,
+                                    'programa': programa,
+                                    'empresa': empresa,
+                                    'proceso': proceso,
+                                }
+                            )
+                        except Exception as e: 
+                            return f"no se actualizó el modelo: {e}"
                         
                         def validar_tipo_gestion(row, df):
                             # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -638,7 +660,7 @@ class Cargarcsv(APIView):
                                  return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
-                        #modelo gestiones
+                        # modelo gestiones
                         try:
                             aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
                             tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
@@ -648,16 +670,19 @@ class Cargarcsv(APIView):
                             tipo_gestion = validar_tipo_gestion(row, df)
                             fecha_convertida = convertir_fecha(row['DATE'])
                             observaciones = llenar_observaciones(row)
-    
-                            Gestiones.objects.update_or_create(
-                                cel_aspirante = aspirante,
-                                fecha = fecha_convertida,
-                                tipo_gestion = tipo_gestion,
-                                observaciones = observaciones , 
-                                estado = estado,
-                                tipificacion = tipificacion,
-                                asesor = asesor,
+
+                            # Crear una nueva instancia de Gestiones sin buscar un registro existente
+                            nueva_gestion = Gestiones(
+                                cel_aspirante=aspirante,
+                                fecha=fecha_convertida,
+                                tipo_gestion=tipo_gestion,
+                                observaciones=observaciones,
+                                estado=estado,
+                                tipificacion=tipificacion,
+                                asesor=asesor,
                             )
+                            nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
+
                         except Aspirantes.DoesNotExist:
                             print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
                         except Tipificacion.DoesNotExist:
