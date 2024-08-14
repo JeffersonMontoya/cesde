@@ -11,7 +11,7 @@ class HistoricoGestionesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Gestiones
         fields = ['nombre_completo_aspirante', 'cel_aspirante', 'fecha', 'tipo_gestion_nombre', 'observaciones',
-                  'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre']
+                    'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre']
 
     def get_tipo_gestion_nombre(self, obj):
         return obj.tipo_gestion.nombre if obj.tipo_gestion else None
