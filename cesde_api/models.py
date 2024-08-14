@@ -59,7 +59,7 @@ class Asesores(models.Model):
     nombre_completo = models.CharField(max_length=70)
 
     def __str__(self):
-        return f"{self.id} - {self.nombre_completo}"
+        return f"{str(self.id)} - {self.nombre_completo}"
 
 
 class Tipificacion(models.Model):
