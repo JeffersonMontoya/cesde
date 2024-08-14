@@ -120,7 +120,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
-    # Función para obtener la fecha de la última gestión del celular adicional oeee
+    # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
@@ -138,7 +138,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
         # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
             return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
         return None
-    
+
 
     def get_ultima_tipificacion(self, obj):
         ultima_tipificacion = Gestiones.objects.filter(

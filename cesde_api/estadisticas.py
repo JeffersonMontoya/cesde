@@ -48,7 +48,6 @@ def obtener_estadisticas_por_fechas(queryset, fecha_inicio, fecha_fin):
     }
 
 
-
 def obtener_contactabilidad(gestiones_queryset):
     # Total de gestiones
     gestiones_totales = gestiones_queryset.count()
