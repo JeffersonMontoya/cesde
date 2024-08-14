@@ -19,10 +19,7 @@ from rest_framework.decorators import action
 from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
 
-
-
 import logging
-
 # Configurar el logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -59,32 +56,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
-        """
-        Filtro aspirantes para el proceso 'Empresa' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Empresa'  # Usar el nombre del proceso
-        return self.list(request)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso 'Extensiones' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Extensiones'
-        return self.list(request)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso 'Técnico' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Técnico'
-        return self.list(request)
+    
 
 
 #  View para filters por procesos y por generales 
@@ -187,10 +159,11 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 # Estadisticas genrales, por procesos y por fechas
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
-    Vista para mostrar estadísticas generales por fecha y por proceso.
+    Vista para mostrar estadisticas generales por fecha y por proceso.
     """
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtros aquí
+    
 
     def get_queryset(self):
         """
@@ -210,7 +183,6 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
     def estadisticas_por_fechas(self, request):
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        proceso_nombre = request.query_params.get('proceso_nombre')  # Usar nombre del proceso
 
         if not fecha_inicio or not fecha_fin:
             return Response({
@@ -225,17 +197,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        filtered_queryset = self.filter_queryset(self.get_queryset())
-        if proceso_nombre:
-            proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
-            filtered_queryset = filtered_queryset.filter(proceso=proceso)
-        
-        # Filtra el queryset de gestiones en lugar de aspirantes
-        gestiones_queryset = Gestiones.objects.filter(
-            cel_aspirante__in=filtered_queryset,
-            fecha__date__range=[fecha_inicio, fecha_fin]
-        )
-        
+        gestiones_queryset = Gestiones.objects.filter(fecha__date__range=[fecha_inicio, fecha_fin])
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(gestiones_queryset, fecha_inicio, fecha_fin)
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
@@ -244,7 +206,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'contactabilidad': contactabilidad,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    @action(detail=False, methods=['get'], url_path='proceso-1')
     def estadisticas_empresas(self, request):
     
         return self.get_proceso_estadisticas(request, 'empresa')
@@ -264,7 +226,20 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         filtered_queryset = self.filter_queryset(self.get_queryset())
         queryset = filtered_queryset.filter(proceso=proceso)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_generales': estadisticas_generales})
+        return Response({'estadisticas_empresas': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def estadisticas_extenciones(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_extensiones': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def estadisticas_tecnicos(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_tecnicos': estadisticas_generales})
+
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -437,12 +412,34 @@ class Cargarcsv(APIView):
                     else:
                         return row['Estado']
                     
+                #llenando datos vacíos con valores predeterminados
                 df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
                 df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
 
                 df_result_llamadas['DESCRIPTION_COD_ACT'].fillna('no', inplace=True)
                 df_result_whatsapp['DESCRIPTION_COD_ACT'].fillna('no', inplace=True)
-
+                
+                df_result_llamadas['Identificacion'].fillna('sin nit', inplace=True)
+                df_result_whatsapp['Identificacion'].fillna('sin nit', inplace=True)
+                
+                df_result_llamadas['CorreoElectronico'].fillna('sin correo', inplace=True)
+                df_result_whatsapp['CorreoElectronico'].fillna('sin correo', inplace=True)
+                
+                df_result_llamadas['Programa'].fillna('sin programa', inplace=True)
+                df_result_whatsapp['Programa'].fillna('sin programa', inplace=True)
+                
+                df_result_llamadas['Sede'].fillna('sin sede', inplace=True)
+                df_result_whatsapp['Sede'].fillna('sin sede', inplace=True)
+                
+                df_result_whatsapp['AGENT_ID'].fillna(0, inplace=True)
+                df_result_llamadas['AGENT_ID'].fillna(0, inplace=True)
+                df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].astype(int)
+                df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].astype(int)
+                
+                df_result_whatsapp['NitEmpresa'].fillna('sin empresa', inplace=True)
+                df_result_llamadas['NitEmpresa'].fillna('sin empresa', inplace=True)
+                
+                
                 df_result_llamadas.to_csv('llamadas', index=False)
                 df_result_whatsapp.to_csv('whatsapp', index=False)
                 
@@ -461,35 +458,43 @@ class Cargarcsv(APIView):
     def llenarBD(self,df):
                     for index, row in df.iterrows():
                         #modelo estado
-                        Estados.objects.update_or_create(
-                            nombre=row['Estado']
-                        ) 
+                        if pd.notna(row['Estado']):
+                            Estados.objects.update_or_create(
+                                nombre=row['Estado']
+                            ) 
                          
                         #modelo procesos
-                        Proceso.objects.update_or_create(
-                            nombre=row['PROCESO']
-                        )
+                        if pd.notna(row['PROCESO']):
+                            Proceso.objects.update_or_create(
+                                nombre=row['PROCESO']
+                            )
                         
                         #modelo asesores
-                        Asesores.objects.update_or_create(
-                            id = row['AGENT_ID'],
-                            nombre_completo = row['AGENT_NAME'] 
-                        )
+                        if pd.notna(row['AGENT_ID']):
+                            Asesores.objects.update_or_create(
+                                id = row['AGENT_ID'],
+                                defaults={
+                                    'nombre_completo' : row['AGENT_NAME'] 
+                                }
+                            )
                         
                         #modelo programa 
-                        Programa.objects.update_or_create(
-                            nombre = row['Programa']
-                        )
+                        if pd.notna(row['Programa']):
+                            Programa.objects.update_or_create(
+                                nombre = row['Programa']
+                            )
                         
                         #modelo sede
-                        Sede.objects.update_or_create(
-                            nombre = row['Sede']
-                        )
+                        if pd.notna(row['Sede']):
+                            Sede.objects.update_or_create(
+                                nombre = row['Sede']
+                            )
                         
                         #modelo empresa
-                        Empresa.objects.update_or_create(
-                            nit = row['NitEmpresa']
-                        )
+                        if pd.notna(row['NitEmpresa']):
+                            Empresa.objects.update_or_create(
+                                nit = row['NitEmpresa']
+                            )
                         
                         # validando si hubo contacto o no en base a las tipificaciones
                         contacto = [
@@ -552,10 +557,12 @@ class Cargarcsv(APIView):
                             'TIMEOUTCHAT':25.0,
                             'Equivocado': 26.0,
                             'Se_remite_a_otras_áreas': 27.0,
-                            'TIMEOUTACW': 28.0,
-                            'Cuelga_Telefono': 29.0,
-                            '': 30.0,
-                            'nan':31.0
+                            'Otra_area_de_interes':28.0,
+                            'TIMEOUTACW': 29.0,
+                            'Cuelga_Telefono': 30.0,
+                            'nan':31.0,
+                            '': 32.0,
+                            '-': 33.0
                         }
                         if pd.isna(row['DESCRIPTION_COD_ACT']) or row['DESCRIPTION_COD_ACT'].strip() == '':
                             valor_tipificacion = 31.0  # Valor por defecto para 'nan' o cadenas vacías
@@ -581,7 +588,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                     
+                            
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -726,11 +733,14 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
 
         fecha_inicio = self.request.query_params.get('fecha_inicio')
         fecha_fin = self.request.query_params.get('fecha_fin')
+        id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
             queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
         if fecha_fin:
             queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+        if id_asesor:
+            queryset = queryset.filter(id=id_asesor)
 
         return queryset.distinct()
     
