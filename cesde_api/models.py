@@ -65,12 +65,11 @@ class Asesores(models.Model):
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
-    valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2 , default=0.00) 
-    
+    valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
     def __str__(self):
         return self.nombre
-
-
+    
 class Gestiones(models.Model):
     cel_aspirante = models.ForeignKey(Aspirantes, on_delete=models.CASCADE)
     fecha = models.DateTimeField()
@@ -78,7 +77,7 @@ class Gestiones(models.Model):
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
-    estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
+    estado = models.ForeignKey(Estados, on_delete=models.CASCADE , default= 1   )
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"

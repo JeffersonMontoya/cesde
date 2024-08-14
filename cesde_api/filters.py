@@ -271,7 +271,9 @@ class GestionesFilter(django_filters.FilterSet):
 class AsesoresFilter(django_filters.FilterSet):
     fecha_inicio = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='gte', label='fecha inicio')
     fecha_fin = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='lte', label='fecha final')
+    id = django_filters.CharFilter(field_name='id', label='id')
+    
 
     class Meta:
         model = Asesores
-        fields = ['fecha_inicio', 'fecha_fin']
+        fields = ['fecha_inicio', 'fecha_fin', 'id']

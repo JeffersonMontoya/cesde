@@ -49,33 +49,28 @@ class GestionSerializer(serializers.ModelSerializer):
             }
         return None
 
-
-
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa
         fields = '__all__'
-
 
 class EmpresaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empresa
         fields = '__all__'
 
-
 class ProcesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proceso
         fields = '__all__'
 
+class AsesorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asesores
+        fields = '__all__'
 
 class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = '__all__'
 
-
-class AsesorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asesores
-        fields = '__all__'

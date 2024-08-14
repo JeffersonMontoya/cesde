@@ -16,10 +16,8 @@ from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.db.models import Count
+from django.db.models import Count, OuterRef, Subquery
 from django.shortcuts import get_object_or_404
-
-
 
 
 import logging
@@ -169,7 +167,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="técnico")
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
         
         # Aplica filtros generales
@@ -184,14 +182,14 @@ class FilterProcesosViewSet(viewsets.ViewSet):
             'aspirantes': serializer.data,
         })
 
-
 # Estadisticas genrales, por procesos y por fechas
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
-    Vista para mostrar estadísticas generales por fecha y por proceso.
+    Vista para mostrar estadisticas generales por fecha y por proceso.
     """
     filter_backends = [DjangoFilterBackend]
     filterset_class = ProcesosFilter  # Especifica la clase de filtros aquí
+    
 
     def get_queryset(self):
         """
@@ -211,7 +209,6 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
     def estadisticas_por_fechas(self, request):
         fecha_inicio = request.query_params.get('fecha_inicio')
         fecha_fin = request.query_params.get('fecha_fin')
-        proceso_nombre = request.query_params.get('proceso_nombre')  # Usar nombre del proceso
 
         if not fecha_inicio or not fecha_fin:
             return Response({
@@ -226,17 +223,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        filtered_queryset = self.filter_queryset(self.get_queryset())
-        if proceso_nombre:
-            proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
-            filtered_queryset = filtered_queryset.filter(proceso=proceso)
-        
-        # Filtra el queryset de gestiones en lugar de aspirantes
-        gestiones_queryset = Gestiones.objects.filter(
-            cel_aspirante__in=filtered_queryset,
-            fecha__date__range=[fecha_inicio, fecha_fin]
-        )
-        
+        gestiones_queryset = Gestiones.objects.filter(fecha__date__range=[fecha_inicio, fecha_fin])
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(gestiones_queryset, fecha_inicio, fecha_fin)
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
@@ -245,24 +232,24 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'contactabilidad': contactabilidad,
         })
 
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    @action(detail=False, methods=['get'], url_path='proceso-1')
     def estadisticas_empresas(self, request):
-        return self.get_proceso_estadisticas(request, 'Empresa')
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def estadisticas_extenciones(self, request):
-        return self.get_proceso_estadisticas(request, 'Extensiones')
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnicos')
-    def estadisticas_tecnicos(self, request):
-        return self.get_proceso_estadisticas(request, 'Técnicos')
-
-    def get_proceso_estadisticas(self, request, proceso_nombre):
-        proceso = get_object_or_404(Proceso, nombre=proceso_nombre)
-        filtered_queryset = self.filter_queryset(self.get_queryset())
-        queryset = filtered_queryset.filter(proceso=proceso)
+        queryset = self.get_queryset().filter(proceso_id=1)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_generales': estadisticas_generales})
+        return Response({'estadisticas_empresas': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-2')
+    def estadisticas_extenciones(self, request):
+        queryset = self.get_queryset().filter(proceso_id=2)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_extensiones': estadisticas_generales})
+
+    @action(detail=False, methods=['get'], url_path='proceso-3')
+    def estadisticas_tecnicos(self, request):
+        queryset = self.get_queryset().filter(proceso_id=3)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_tecnicos': estadisticas_generales})
+
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
     queryset = Tipo_gestion.objects.all()
@@ -356,6 +343,28 @@ class Cargarcsv(APIView):
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                
+                columnas_deseadas=[
+                    'cel_modificado',
+                    'Identificacion',
+                    'DESCRIPTION_COD_ACT',
+                    'Estado',
+                    'NOMBRE',
+                    'CorreoElectronico',
+                    'Programa',
+                    'Sede',
+                    'AGENT_ID',
+                    'AGENT_NAME',
+                    'DATE',
+                    'COMMENTS',
+                    'PROCESO',
+                    'NitEmpresa'
+                    ]
+                
+                columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
+                
+                df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
+                df_result_llamadas = df_unido_llamadas[columnas_deseadas]
 
                 #funcion para validar los datos antes de ingresarlos a la BD                
                 def validarDatos(row):
@@ -412,11 +421,14 @@ class Cargarcsv(APIView):
                     else:
                         return row['Estado']
                     
-                df_unido_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                df_unido_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
-                    
-                self.llenarBD(df_unido_llamadas)
-                self.llenarBD(df_unido_whatsapp)
+                df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+
+                df_result_llamadas.to_csv('llamadas', index=False)
+                df_result_whatsapp.to_csv('whatsapp', index=False)
+                
+                self.llenarBD(df_result_llamadas)
+                self.llenarBD(df_result_whatsapp)
                 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -433,7 +445,7 @@ class Cargarcsv(APIView):
                         Estados.objects.update_or_create(
                             nombre=row['Estado']
                         ) 
-                        
+                         
                         #modelo procesos
                         Proceso.objects.update_or_create(
                             nombre=row['PROCESO']
@@ -510,7 +522,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                    
+                                                     
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -538,6 +550,7 @@ class Cargarcsv(APIView):
                                 'proceso': proceso,
                             }
                         )
+
                         
                         def validar_tipo_gestion(row, df):
                             # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -559,7 +572,7 @@ class Cargarcsv(APIView):
                         
                         def llenar_observaciones(row):
                             if pd.isna(row['COMMENTS']):
-                                return 'sin observaciones'
+                                 return 'sin observaciones'
                             else:
                                 return row['COMMENTS']
                         #modelo gestiones
@@ -578,9 +591,9 @@ class Cargarcsv(APIView):
                                 fecha = fecha_convertida,
                                 tipo_gestion = tipo_gestion,
                                 observaciones = observaciones , 
+                                estado = estado,
                                 tipificacion = tipificacion,
                                 asesor = asesor,
-                                estado = estado
                             )
                         except Aspirantes.DoesNotExist:
                             print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
@@ -600,10 +613,6 @@ class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer
 
-
-class TipificacionViewSet(viewsets.ModelViewSet):
-    queryset = Tipificacion.objects.all()
-    serializer_class = TipificacionSerializer
 
 class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
@@ -643,10 +652,14 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
 
         fecha_inicio = self.request.query_params.get('fecha_inicio')
         fecha_fin = self.request.query_params.get('fecha_fin')
+        id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
             queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
         if fecha_fin:
             queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+        if id_asesor:
+            queryset = queryset.filter(id=id_asesor)
 
         return queryset.distinct()
+
