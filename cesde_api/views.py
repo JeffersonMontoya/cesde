@@ -59,32 +59,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
-        """
-        Filtro aspirantes para el proceso 'Empresa' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Empresa'  # Usar el nombre del proceso
-        return self.list(request)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso 'Extensiones' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Extensiones'
-        return self.list(request)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso 'Técnico' y aplica filtros generales.
-        """
-        request.GET = request.GET.copy()
-        request.GET['proceso_nombre'] = 'Técnico'
-        return self.list(request)
+    
 
 
 #  View para filters por procesos y por generales 
@@ -581,7 +556,7 @@ class Cargarcsv(APIView):
                                 return 'sin correo'
                             else: 
                                 return row['CorreoElectronico']
-                                                     
+                            
                         def llenar_documento(row):
                             if pd.isna(row['Identificacion']):
                                 return 'sin ID' 
@@ -662,7 +637,8 @@ class Cargarcsv(APIView):
                             print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
                         except Exception as e:
                             print(f"Error procesando la fila: {e}")
-        
+
+
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer
