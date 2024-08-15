@@ -16,7 +16,7 @@ from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 
 import logging
@@ -320,6 +320,11 @@ class Cargarcsv(APIView):
         for gestion in ultimas_gestiones:
             try:
                 aspirante = Aspirantes.objects.get(celular=gestion['cel_aspirante'])
+
+                # Evitar la actualización si el aspirante ya está en estado 'matriculado' o 'liquidado'
+                if aspirante.estado.nombre in ['matriculado', 'liquidado']:
+                    continue  # Saltar al siguiente aspirante
+
                 ultima_gestion = Gestiones.objects.filter(
                     cel_aspirante=gestion['cel_aspirante'],
                     fecha=gestion['ultima_fecha']
@@ -335,7 +340,7 @@ class Cargarcsv(APIView):
                     elif tipificacion in self.estado_liquidado:
                         nombre_nuevo_estado = 'liquidado'
                     else:
-                        nombre_nuevo_estado = 'En Gestión'  # Cambiado de 'sin gestion' a 'En Gestión'
+                        nombre_nuevo_estado = 'En Gestión'
 
                     try:
                         nuevo_estado = Estados.objects.get(nombre=nombre_nuevo_estado)
@@ -360,9 +365,10 @@ class Cargarcsv(APIView):
         )
         sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
         for aspirante in aspirantes_sin_gestiones:
-            aspirante.estado = sin_gestion_estado
-            aspirante.save()
-        
+            # Evitar la actualización si el aspirante ya está en estado 'matriculado' o 'liquidado'
+            if aspirante.estado.nombre not in ['matriculado', 'liquidado']:
+                aspirante.estado = sin_gestion_estado
+                aspirante.save()
     #función para conectar los archivos csv 
     def post(self, request, format=None):
         try:
