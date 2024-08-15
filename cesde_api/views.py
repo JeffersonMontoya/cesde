@@ -212,23 +212,23 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'contactabilidad': contactabilidad,
         })
     
-    @action(detail=False, methods=['get'], url_path='proceso-1')
+    @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='extenciones')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
-    @action(detail=False, methods=['get'], url_path='proceso-2')
+    @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='técnicos')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
-    @action(detail=False, methods=['get'], url_path='proceso-3')
-    def estadisticas_extensiones(self, request):
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    def estadisticas_empresa(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='empresa')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_extensiones': estadisticas_generales})
+        return Response({'estadisticas_empresa': estadisticas_generales})
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
@@ -693,48 +693,49 @@ class Cargarcsv(APIView):
                                 print(f"Error al convertir la fecha: {e}")
                                 return None
                     
-                    def llenar_observaciones(row):
-                        if pd.isna(row['COMMENTS']):
-                                 return 'sin observaciones'
+                def llenar_observaciones(row):
+                    if pd.isna(row['COMMENTS']):
+                                return 'sin observaciones'
+                    else:
+                            return row['COMMENTS']
+                    
+                # Modelo Gestiones
+                if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_ID']):
+                    try:
+                        aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
+                        tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
+                        asesor = Asesores.objects.get(id=row['AGENT_ID'])
+                        tipo_gestion = validar_tipo_gestion(row, df)
+                        fecha_convertida = convertir_fecha(row['DATE'])
+                        observaciones = llenar_observaciones(row)
+                        # Verificar que todos los datos necesarios están disponibles
+                        if all([aspirante, tipificacion, asesor, tipo_gestion]):
+                            nueva_gestion = Gestiones(
+                                    cel_aspirante=aspirante,
+                                    fecha=fecha_convertida,
+                                    tipo_gestion=tipo_gestion,
+                                    observaciones=observaciones,
+                                    tipificacion=tipificacion,
+                                    asesor=asesor,
+                                )
+                            nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
                         else:
-                                return row['COMMENTS']
+                                print(f"Datos incompletos para la gestión con celular {row['cel_modificado']}.")
+                    except Aspirantes.DoesNotExist:
+                        print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
+                    except Tipificacion.DoesNotExist:
+                        print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
+                    except Asesores.DoesNotExist:
+                        print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
+                    except Exception as e:
+                        print(f"Error procesando la fila: {e}")
                         
-                    # Modelo Gestiones
-                    if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_ID']):
-                       try:
-                           aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
-                           tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
-                           asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                           tipo_gestion = validar_tipo_gestion(row, df)
-                           fecha_convertida = convertir_fecha(row['DATE'])
-                           observaciones = llenar_observaciones(row)
-                           # Verificar que todos los datos necesarios están disponibles
-                           if all([aspirante, tipificacion, asesor, tipo_gestion]):
-                               nueva_gestion = Gestiones(
-                                       cel_aspirante=aspirante,
-                                       fecha=fecha_convertida,
-                                       tipo_gestion=tipo_gestion,
-                                       observaciones=observaciones,
-                                       tipificacion=tipificacion,
-                                       asesor=asesor,
-                                   )
-                               nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
-                           else:
-                                   print(f"Datos incompletos para la gestión con celular {row['cel_modificado']}.")
-                       except Aspirantes.DoesNotExist:
-                           print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
-                       except Tipificacion.DoesNotExist:
-                           print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
-                       except Asesores.DoesNotExist:
-                           print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
-                       except Exception as e:
-                           print(f"Error procesando la fila: {e}")
-                           
                 Gestiones.objects.bulk_create([Gestiones(**gestion) for gestion in self.gestiones_acumuladas])
     
                 # Actualizar estados de todos los aspirantes
                 self.actualizar_estados_aspirantes()   
-          
+
+
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer
