@@ -52,8 +52,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
     # Serializador para convertir datos a JSON
     serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend,)# Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
 
@@ -601,6 +600,7 @@ class Cargarcsv(APIView):
                         programa = Programa.objects.get(nombre=row['Programa'])
                         empresa = Empresa.objects.get(nit=row['NitEmpresa'])
                         proceso = Proceso.objects.get(nombre=row['PROCESO'])
+                        estado = Estados.objects.get(nombre=row['Estado'])
                         
                         Aspirantes.objects.update_or_create(
                             celular=row['cel_modificado'],  # Campo único para buscar o crear
@@ -612,6 +612,7 @@ class Cargarcsv(APIView):
                                 'programa': programa,
                                 'empresa': empresa,
                                 'proceso': proceso,
+                                'estado': estado
                             }
                         )
 
@@ -644,7 +645,6 @@ class Cargarcsv(APIView):
                             aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
                             tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
                             asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                            estado = Estados.objects.get(nombre=row['Estado'])
 
                             tipo_gestion = validar_tipo_gestion(row, df)
                             fecha_convertida = convertir_fecha(row['DATE'])
@@ -655,7 +655,6 @@ class Cargarcsv(APIView):
                                 fecha = fecha_convertida,
                                 tipo_gestion = tipo_gestion,
                                 observaciones = observaciones , 
-                                estado = estado,
                                 tipificacion = tipificacion,
                                 asesor = asesor,
                             )

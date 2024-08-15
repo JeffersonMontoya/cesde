@@ -42,7 +42,7 @@ class Aspirantes(models.Model):
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
-    estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
+    estado = models.ForeignKey(Estados, on_delete=models.CASCADE, default=1)
 
 
     def __str__(self):

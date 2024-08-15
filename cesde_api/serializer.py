@@ -26,8 +26,8 @@ class TipoGestionSerializer(serializers.ModelSerializer):
 class GestionSerializer(serializers.ModelSerializer):
     tipo_gestion = serializers.SerializerMethodField()
     tipificacion = serializers.SerializerMethodField()
-    asesor = serializers.SerializerMethodField()  # Campo asesor corregido
-    estado_aspirante = serializers.CharField(source='estado.nombre')
+    asesor = serializers.SerializerMethodField()
+    estado_aspirante = serializers.CharField(source='cel_aspirante.estado.nombre')
 
     class Meta:
         model = Gestiones
@@ -41,13 +41,13 @@ class GestionSerializer(serializers.ModelSerializer):
         return obj.tipificacion.nombre
 
     def get_asesor(self, obj):
-        # Retorna la información del asesor, puedes ajustar el campo retornado si es necesario
         if obj.asesor:
             return {
                 'id': obj.asesor.id,
                 'nombre_completo': obj.asesor.nombre_completo
             }
         return None
+
 
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
