@@ -212,23 +212,23 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'contactabilidad': contactabilidad,
         })
     
-    @action(detail=False, methods=['get'], url_path='proceso-1')
+    @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='extenciones')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
-    @action(detail=False, methods=['get'], url_path='proceso-2')
+    @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='técnicos')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
-    @action(detail=False, methods=['get'], url_path='proceso-3')
-    def estadisticas_extensiones(self, request):
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    def estadisticas_empresa(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='empresa')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_extensiones': estadisticas_generales})
+        return Response({'estadisticas_empresa': estadisticas_generales})
 
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
