@@ -30,15 +30,9 @@ class TipificacionNameFilter(django_filters.ModelChoiceFilter):
         return qs
     
 class EstadoAspiranteNameFilter(django_filters.ModelChoiceFilter):
-<<<<<<< HEAD
-    def __init__(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Usa el nombre del estado para el filtro
-        super().__init__(*args, **kwargs)
-=======
     def _init_(self, *args, **kwargs):
         kwargs['to_field_name'] = 'nombre'  # Usa el nombre del estado para el filtro
         super()._init_(*args, **kwargs)
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
 
     def filter(self, qs, value):
         if value:
@@ -107,11 +101,7 @@ class AspirantesFilter(django_filters.FilterSet):
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
     programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
-<<<<<<< HEAD
-    nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
-=======
     # nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
 
     class Meta:
@@ -127,11 +117,7 @@ class AspirantesFilter(django_filters.FilterSet):
             'estado_ultima_gestion',
             'programa',
             'sede',
-<<<<<<< HEAD
-            'nit_empresa',
-=======
             # 'nit_empresa',
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
             'mejor_gestion',
             # 'gestion_final',
         ]
@@ -173,11 +159,6 @@ class AspirantesFilter(django_filters.FilterSet):
             # Filtrar aspirantes por el estado directamente
             return queryset.filter(estado__nombre=value)
         return queryset
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
 
 
     def filter_dias_ultima_gestion(self, queryset, name, value):
@@ -247,21 +228,12 @@ class AspirantesFilter(django_filters.FilterSet):
                 mejor_gestion_pk=Subquery(mejor_gestion)
             ).filter(
                 gestiones__pk=F('mejor_gestion_pk'),
-<<<<<<< HEAD
-                gestiones__tipificacion__nombre=value
-=======
                 gestiones__tipificacion__nombre=value  # Ajustar el campo aquí
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
             ).distinct()
 
             return queryset
         return queryset
 
-<<<<<<< HEAD
-=======
-
-
->>>>>>> 8716a9b7d7fef2abfe226d2975e90a763ac81fbd
 
 # Filters para los procesos
 class ProcesosFilter(django_filters.FilterSet):
