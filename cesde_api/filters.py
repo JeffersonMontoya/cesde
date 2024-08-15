@@ -242,8 +242,7 @@ class ProgramaFilter(django_filters.FilterSet):
     class Meta:
         model = Programa
         fields = ['nombre', 'descripcion']
-
-
+        
 class EmpresaFilter(django_filters.FilterSet):
     nit = django_filters.CharFilter(lookup_expr='icontains')
 
@@ -251,6 +250,7 @@ class EmpresaFilter(django_filters.FilterSet):
     class Meta: 
         model = Empresa
         fields = ['nit']
+
 
 
 class Tipo_gestionFilter(django_filters.FilterSet):
