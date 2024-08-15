@@ -126,7 +126,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if ultima_gestion:
         # Formatear la fecha para que solo devuelva año, mes y día
             return ultima_gestion.fecha.strftime('%Y-%m-%d')
-        return "-"
+        return None
     
     # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
@@ -142,7 +142,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if ultima_tipificacion:
             # El estado de la última gestión se obtiene de la tipificación relacionada
             return ultima_tipificacion.tipificacion.nombre
-        return "-"
+        return None
 
     def get_dias_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
@@ -154,7 +154,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
                 ultima_gestion.fecha, datetime) else ultima_gestion.fecha
             delta = datetime.now().date() - fecha_ultima
             return delta.days
-        return "-"
+        return None
     
     # codigo nuevo
     def get_mejor_gestion(self, obj):
@@ -163,7 +163,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
             if mejor_tipificacion:
                 return mejor_tipificacion.tipificacion.nombre
-        return "-"
+        return None
 
     def get_gestion_final(self, obj):
         gestiones = Gestiones.objects.filter(cel_aspirante=obj)
