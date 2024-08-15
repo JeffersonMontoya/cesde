@@ -1,90 +1,77 @@
 import django_filters
+from django_filters import ModelChoiceFilter
 from .models import *
-from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
 
 
 # Para devolver el nombre por get 
-class TipificacionNameFilter(django_filters.ModelChoiceFilter):
-    def _init_(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
-        super()._init_(*args, **kwargs)
+class TipificacionNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'
+        kwargs['field_name'] = 'nombre'
+        super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
-            # Obtener la última gestión para cada aspirante
+            # Subquery para obtener la última gestión de cada aspirante
             latest_gestion = Gestiones.objects.filter(
                 cel_aspirante=OuterRef('pk')
-            ).order_by('-fecha')
+            ).order_by('-fecha').values('tipificacion__nombre')[:1]
 
             # Filtrar el queryset de aspirantes según la última tipificación
             return qs.annotate(
-                ultima_tipificacion_id=Subquery(latest_gestion.values('tipificacion_id')[:1])
+                ultima_tipificacion_nombre=Subquery(latest_gestion)
             ).filter(
-                ultima_tipificacion_id=value.id  # Filtrar por la ID de la tipificación seleccionada
+                ultima_tipificacion_nombre=value.nombre
             ).distinct()
         return qs
     
-class EstadoAspiranteNameFilter(django_filters.ModelChoiceFilter):
-    def _init_(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Usa el nombre del estado para el filtro
-        super()._init_(*args, **kwargs)
+from django_filters import ModelChoiceFilter
+
+class EstadoAspiranteNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'
+        kwargs['field_name'] = 'nombre'
+        super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
-            return qs.filter(estado__nombre=value)
+            return qs.filter(estado__nombre=value.nombre)
         return qs
 
+class ProgramaNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'
+        kwargs['field_name'] = 'nombre'
+        super().__init__(*args, **kwargs)
 
-class ProgramaNameFilter(django_filters.ModelChoiceFilter):
-    def _init_(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
-        super()._init_(*args, **kwargs)
-    
     def filter(self, qs, value):
         if value:
-            try:
-                # Encuentra el Programa correspondiente por nombre
-                programa = self.queryset.get(nombre=value)
-                return qs.filter(
-                    programa=programa
-                ).distinct()
-            except Programa.DoesNotExist:
-                return qs.none()
+            return qs.filter(programa__nombre=value.nombre)
         return qs
-    
-class SedeNameFilter(django_filters.ModelChoiceFilter):
-    def _init_(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
-        super()._init_(*args, **kwargs)
-    
+
+class SedeNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'
+        kwargs['field_name'] = 'nombre'
+        super().__init__(*args, **kwargs)
+
     def filter(self, qs, value):
         if value:
-            try:
-                # Encuentra la Sede correspondiente por nombre
-                sede = self.queryset.get(nombre=value)
-                return qs.filter(
-                    sede=sede
-                ).distinct()
-            except Sede.DoesNotExist:
-                return qs.none()
+            return qs.filter(sede__nombre=value.nombre)
         return qs
-    
-class ProcesoNameFilter(django_filters.ModelChoiceFilter):
-    def _init_(self, *args, **kwargs):
-        kwargs['to_field_name'] = 'nombre'  # Configura el campo de filtrado por nombre
-        super()._init_(*args, **kwargs)
-    
+
+class ProcesoNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        kwargs['to_field_name'] = 'nombre'
+        kwargs['field_name'] = 'nombre'
+        super().__init__(*args, **kwargs)
+
     def filter(self, qs, value):
         if value:
-            try:
-                # Encuentra el proceso correspondiente por nombre
-                proceso = self.queryset.get(nombre=value)
-                return qs.filter(proceso=proceso).distinct()  # Usar 'proceso' en lugar de 'Proceso'
-            except Proceso.DoesNotExist:
-                return qs.none()
+            return qs.filter(proceso__nombre=value.nombre)
         return qs
 
 
@@ -159,8 +146,6 @@ class AspirantesFilter(django_filters.FilterSet):
         return queryset
 
 
-
-
     def filter_dias_ultima_gestion(self, queryset, name, value):
         if value:
             try:
@@ -174,31 +159,31 @@ class AspirantesFilter(django_filters.FilterSet):
 
                 # Filtrar aspirantes cuya última gestión sea exactamente hace el número de días especificado
                 return queryset.filter(
-                    dias_ultima_gestion__date=fecha_limite
+                    dias_ultima_gestion=fecha_limite
                 )
             except ValueError:
                 return queryset.none()
         return queryset
 
 
+
     def filter_fecha_ultima_gestion(self, queryset, name, value):
         if value:
-            fecha_limite = value
-            # Anotar con la última fecha de gestión
+            # Subquery para obtener la última fecha de gestión por cada aspirante
+            subquery = Gestiones.objects.filter(
+                cel_aspirante=OuterRef('celular')
+            ).values('cel_aspirante').annotate(
+                ultima_fecha=Max('fecha')
+            ).values('ultima_fecha')
+
+            # Anotar el queryset con la última fecha de gestión
             queryset = queryset.annotate(
-                fecha_ultima_gestion=Max('gestiones__fecha')
+                fecha_ultima_gestion=Subquery(subquery)
+            ).filter(
+                fecha_ultima_gestion=value
             )
-            # Comparar solo la parte de la fecha
-            return queryset.filter(
-                fecha_ultima_gestion__date=fecha_limite
-            )
+
         return queryset
-
-
-    # def filter_nit_empresa(self, queryset, name, value):
-    #     if value:
-    #         return queryset.filter(empresa__nit=value)
-    #     return queryset
 
 
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
@@ -235,15 +220,15 @@ class AspirantesFilter(django_filters.FilterSet):
 
 
 
-
 # Filters para los procesos
 class ProcesosFilter(django_filters.FilterSet):
     proceso = django_filters.NumberFilter(field_name='proceso_id')
-    fecha = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='exact')
+    fecha_inicio = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='gte')
+    fecha_fin = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='lte')
 
     class Meta:
         model = Aspirantes
-        fields = ['proceso', 'fecha']
+        fields = ['proceso', 'fecha_inicio', 'fecha_fin']
 
 
 class EstadosFilter(django_filters.FilterSet):
