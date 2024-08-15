@@ -56,8 +56,6 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
 
-    
-
 
 #  View para filters por procesos y por generales 
 class FilterProcesosViewSet(viewsets.ViewSet):

@@ -15,11 +15,9 @@ router.register(r'tipo-gestion', TipoGestionViewSet)
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
 router.register(r'procesos', ProcesoViewSet )
-# router.register(r'tipificaciones' , TipificacionViewSet)
+router.register(r'tipificaciones' , TipificacionViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'historico', HistoricoViewSet, basename='historico')
-
-
 
 
 urlpatterns = [

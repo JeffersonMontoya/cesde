@@ -42,6 +42,8 @@ class Aspirantes(models.Model):
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
+    estado = models.ForeignKey(Estados, on_delete=models.CASCADE)
+
 
     def __str__(self):
         return f" {self.nombre} {self.celular}  "
@@ -77,7 +79,9 @@ class Gestiones(models.Model):
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
-    estado = models.ForeignKey(Estados, on_delete=models.CASCADE , default= 1   )
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
+
+
+
