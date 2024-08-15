@@ -62,8 +62,9 @@ class AspiranteSerializer(serializers.ModelSerializer):
     ultima_tipificacion = serializers.SerializerMethodField()
     programa_formacion = serializers.CharField(source='programa.nombre')
     nit_empresa = serializers.CharField(source='empresa.nit')
+    nit_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
-    estado_ultima_gestion = serializers.SerializerMethodField()
+    # estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
         
@@ -84,11 +85,10 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'fecha_ultima_gestion', 
             'dias_ultima_gestion',
             'ultima_tipificacion', 
-            'estado_ultima_gestion',
+            # 'estado_ultima_gestion',
             'mejor_gestion', 
             'gestion_final'
         ]
-
 
 
     # Funcion para traer el nombre completo del aspirante
@@ -123,21 +123,27 @@ class AspiranteSerializer(serializers.ModelSerializer):
     # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+    
         if ultima_gestion:
         # Formatear la fecha para que solo devuelva año, mes y día
             return ultima_gestion.fecha.strftime('%Y-%m-%d')
+    
+        # Si no hay gestiones, retornar un mensaje específico
         return None
+
     
     # Función para obtener el estado de la última gestión del celular adicional
-    def get_estado_ultima_gestion(self, obj):
-        ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj
-        ).order_by('-fecha').first()
-        if ultima_gestion:
-        # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
-            return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
-        return None
+    # def get_estado_ultima_gestion(self, obj):
+    #     ultima_gestion = Gestiones.objects.filter(
+    #         cel_aspirante=obj
+    #     ).order_by('-fecha').first()
+    #     if ultima_gestion:
+    #     # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
+    #         return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
+    #     return None
+
+
 
 
     def get_ultima_tipificacion(self, obj):
@@ -189,42 +195,3 @@ class AspiranteSerializer(serializers.ModelSerializer):
         elif nombre_tipificacion in TIPIFICACIONES_OPCIONALES:
             return 'Tipificaciones opcionales'
         return 'Desconocido'
-    
-    # # Obtiene la última tipificación 
-    # def get_valor_tipificacion(self, obj):
-    #     # Obtiene el valor más pequeño de las tipificaciones relacionadas con las gestiones del aspirante
-    #     gestiones = obj.gestiones.all()
-    #     if gestiones.exists():
-    #         tipificaciones = gestiones.values_list('tipificacion__valor', flat=True)
-    #         if tipificaciones:
-    #             # Retorna la tipificación más baja (mejor)
-    #             return min(tipificaciones)
-    #     return None
-
-    # # Obtiene la gestion final según la mejor Tipificacion
-    # def get_gestion_final(self, obj):
-    #     # Lógica para obtener la gestión final basada en la última tipificación
-    #     ultima_gestion = obj.gestiones.order_by('-fecha_gestion').first()
-    #     if ultima_gestion and ultima_gestion.tipificacion:
-    #         valor_tipificacion = ultima_gestion.tipificacion.valor
-    #         # Lógica para determinar la categoría final basada en el valor de la tipificación
-            
-    #         # Tipificaciones y sus categorías:
-    #         interesado = [1.0, 2.0, 14.0, 15.0]
-    #         en_seguimiento = [16.0]
-    #         no_contactado = [20.0, 19.0, 18.0, 17.0]
-    #         descartado = [3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0]
-    #         tipificaciones_opcionales = [21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0]
-
-    #         if valor_tipificacion in interesado:
-    #             return "Interesado"
-    #         elif valor_tipificacion in en_seguimiento:
-    #             return "En seguimiento"
-    #         elif valor_tipificacion in no_contactado:
-    #             return "No contactado"
-    #         elif valor_tipificacion in descartado:
-    #             return "Descartado"
-    #         elif valor_tipificacion in tipificaciones_opcionales:
-    #             return "Tipificaciones opcionales"
-        
-    #     return None
