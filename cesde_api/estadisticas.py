@@ -3,7 +3,7 @@ from .models import *
 
 def obtener_estadisticas_generales(queryset):
     # Obtener estadísticas básicas por estado y proceso
-    estadisticas_basicas = queryset.values('gestiones__estado__nombre').annotate(count=Count('gestiones__estado')).order_by('-count')
+    estadisticas_basicas = queryset.values('estado__nombre').annotate(count=Count('estado')).order_by('-count')
 
     # Contar gestiones por tipo de contacto
     gestiones_totales = queryset.filter(gestiones__isnull=False).count()
@@ -32,7 +32,7 @@ def obtener_estadisticas_generales(queryset):
 
 def obtener_estadisticas_por_fechas(queryset, fecha_inicio, fecha_fin):
     # Filtrar gestiones por el rango de fechas
-    gestiones_filtradas = queryset.filter(fecha__date__range=[fecha_inicio, fecha_fin])
+    gestiones_filtradas = queryset.filter(fecha__range=[fecha_inicio, fecha_fin])
     
     # Obtener los IDs de los aspirantes relacionados con las gestiones filtradas
     aspirantes_ids = gestiones_filtradas.values_list('cel_aspirante_id', flat=True).distinct()
@@ -41,7 +41,7 @@ def obtener_estadisticas_por_fechas(queryset, fecha_inicio, fecha_fin):
     aspirantes_filtrados = Aspirantes.objects.filter(celular__in=aspirantes_ids)
     
     # Obtener estadísticas básicas por estado para los aspirantes filtrados
-    estadisticas = aspirantes_filtrados.values('gestiones__estado__nombre').annotate(count=Count('gestiones__estado')).order_by('-count')
+    estadisticas = aspirantes_filtrados.values('estado__nombre').annotate(count=Count('estado')).order_by('-count')
 
     return {
         'estadisticas': list(estadisticas),
