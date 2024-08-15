@@ -721,9 +721,6 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
             cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
                 output_field=models.IntegerField())), 0),
 
-            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
-                output_field=models.IntegerField() )), 0),
-
             cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
                 output_field=models.IntegerField())), 0),
 
