@@ -64,7 +64,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
     nit_empresa = serializers.CharField(source='empresa.nit')
     nit_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
-    estado_ultima_gestion = serializers.SerializerMethodField()
+    # estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
         
@@ -85,7 +85,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'fecha_ultima_gestion', 
             'dias_ultima_gestion',
             'ultima_tipificacion', 
-            'estado_ultima_gestion',
+            # 'estado_ultima_gestion',
             'mejor_gestion', 
             'gestion_final'
         ]
@@ -134,14 +134,14 @@ class AspiranteSerializer(serializers.ModelSerializer):
 
     
     # Función para obtener el estado de la última gestión del celular adicional
-    def get_estado_ultima_gestion(self, obj):
-        ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj
-        ).order_by('-fecha').first()
-        if ultima_gestion:
-        # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
-            return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
-        return None
+    # def get_estado_ultima_gestion(self, obj):
+    #     ultima_gestion = Gestiones.objects.filter(
+    #         cel_aspirante=obj
+    #     ).order_by('-fecha').first()
+    #     if ultima_gestion:
+    #     # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
+    #         return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
+    #     return None
 
 
 
