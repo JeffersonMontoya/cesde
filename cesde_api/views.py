@@ -663,10 +663,7 @@ class Cargarcsv(APIView):
                         except Exception as e:
                             print(f"Error procesando la fila: {e}")
         
-class EmpresaViewSet(viewsets.ModelViewSet):
-    queryset = Empresa.objects.all()
-    serializer_class = EmpresaSerializer
-    serializer_class = EmpresaSerializer
+
 
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()

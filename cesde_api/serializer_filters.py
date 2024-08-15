@@ -9,7 +9,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     cantidad_llamadas = serializers.SerializerMethodField()
     cantidad_whatsapp = serializers.SerializerMethodField()
     cantidad_gestiones = serializers.SerializerMethodField()
-    estado_ultima_gestion = serializers.SerializerMethodField()
     dias_ultima_gestion = serializers.SerializerMethodField()
     fecha_ultima_gestion = serializers.SerializerMethodField()
     tipificacion = serializers.SerializerMethodField()
@@ -17,7 +16,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     sede = serializers.CharField(source='sede.nombre')
     nit_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
-
+    estado_ultima_gestion = serializers.SerializerMethodField()
 
     class Meta:
         model = Aspirantes
@@ -28,14 +27,14 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'cantidad_llamadas',
             'cantidad_whatsapp',
             'cantidad_gestiones', 
-            'estado_ultima_gestion', 
             'tipificacion', 
             'dias_ultima_gestion', 
             'fecha_ultima_gestion',
             'programa', 
             'sede', 
             'nit_empresa', 
-            'proceso'
+            'proceso',
+            'estado_ultima_gestion', 
         ]
 
 
@@ -80,18 +79,25 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         return None
 
 
+    # Función para obtener la fecha de la última gestión del celular adicional oeee
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj,
-            fecha__isnull=False
-        ).order_by('-fecha').first()
+             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+    
         if ultima_gestion:
-            return ultima_gestion.fecha
+        # Formatear la fecha para que solo devuelva año, mes y día
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
+    
+        # Si no hay gestiones, retornar un mensaje específico
         return None
     
+    
+        # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
-        # Obtener la gestión más reciente del aspirante
-        ultima_gestion = obj.gestiones_set.order_by('-fecha').first()
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj
+        ).order_by('-fecha').first()
         if ultima_gestion:
-            return ultima_gestion.estado.nombre
-        return None  # O un valor predeterminado si no hay
+        # Asumiendo que el estado está relacionado con la gestión y tiene un campo accesible
+            return ultima_gestion.estado.nombre  # Cambia 'estado.nombre' según tu estructura de modelo
+        return  None
