@@ -11,8 +11,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     cantidad_gestiones = serializers.SerializerMethodField()
     cantidad_matriculas = serializers.SerializerMethodField()
     cantidad_liquidaciones = serializers.SerializerMethodField()
-    fecha_inicio = serializers.DateField(write_only=True, required=False)
-    fecha_fin = serializers.DateField(write_only=True, required=False)
+    fecha_inicio = serializers.SerializerMethodField()
+    fecha_fin = serializers.SerializerMethodField()
 
     class Meta:
         model = Asesores
@@ -94,3 +94,20 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
         if fecha_fin:
             query = query.filter(fecha__lte=fecha_fin)
         return query.distinct().count()
+
+    # Función para obtener la fecha de la primera gestión (fecha_inicio)
+    def get_fecha_inicio(self, obj):
+        primera_gestion = Gestiones.objects.filter(
+            asesor=obj, fecha__isnull=False).order_by('fecha').first()
+        if primera_gestion:
+            return primera_gestion.fecha.strftime('%Y-%m-%d')
+        return None
+
+    # Función para obtener la fecha de la última gestión (fecha_fin)
+    def get_fecha_fin(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            asesor=obj, fecha__isnull=False).order_by('-fecha').first()
+        if ultima_gestion:
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
+        return None
+    

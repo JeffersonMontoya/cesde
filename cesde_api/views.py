@@ -267,6 +267,7 @@ class AsesorViewSet(viewsets.ModelViewSet):
     serializer_class = AsesorSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
+    
 
 
 class ProgramaViewSet(viewsets.ModelViewSet):
