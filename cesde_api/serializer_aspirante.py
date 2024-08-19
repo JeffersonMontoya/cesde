@@ -85,7 +85,7 @@ class AspiranteSerializer(serializers.ModelSerializer):
             'fecha_ultima_gestion', 
             'dias_ultima_gestion',
             'ultima_tipificacion', 
-            # 'estado_ultima_gestion',
+            'estado_ultima_gestion',
             'mejor_gestion', 
             'gestion_final'
         ]
