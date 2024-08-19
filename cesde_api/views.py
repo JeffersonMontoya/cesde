@@ -313,63 +313,40 @@ class Cargarcsv(APIView):
     ]
                     
     def actualizar_estados_aspirantes(self):
-        # Obtener la última gestión para cada aspirante
-        ultimas_gestiones = Gestiones.objects.values('cel_aspirante').annotate(
-            ultima_fecha=Max('fecha')
-        ).values('cel_aspirante', 'ultima_fecha')
+        # Obtener todos los aspirantes menos los matriculados y liquidados
+        aspirantes = Aspirantes.objects.exclude(estado__nombre__in=['matriculado', 'liquidado'])
+        
+        for aspirante in aspirantes:
+            # Obtener la última gestión para este aspirante
+            ultima_gestion = Gestiones.objects.filter(cel_aspirante=aspirante).order_by('-fecha').first()
 
-        for gestion in ultimas_gestiones:
-            try:
-                aspirante = Aspirantes.objects.get(celular=gestion['cel_aspirante'])
+            if ultima_gestion:
+                tipificacion = ultima_gestion.tipificacion.nombre
 
-                # Evitar la actualización si el aspirante ya está en estado 'matriculado' o 'liquidado'
-                if aspirante.estado.nombre in ['matriculado', 'liquidado']:
-                    continue  # Saltar al siguiente aspirante
+                if tipificacion in self.estado_descargo:
+                    nombre_nuevo_estado = 'Descartado'
+                elif tipificacion in self.estado_en_gestion:
+                    nombre_nuevo_estado = 'En Gestión'
+                elif tipificacion in self.estado_liquidado:
+                    nombre_nuevo_estado = 'liquidado'
+                else:
+                    nombre_nuevo_estado = 'En Gestión'
 
-                ultima_gestion = Gestiones.objects.filter(
-                    cel_aspirante=gestion['cel_aspirante'],
-                    fecha=gestion['ultima_fecha']
-                ).first()
-
-                if ultima_gestion:
-                    tipificacion = ultima_gestion.tipificacion.nombre
-
-                    if tipificacion in self.estado_descargo:
-                        nombre_nuevo_estado = 'Descartado'
-                    elif tipificacion in self.estado_en_gestion:
-                        nombre_nuevo_estado = 'En Gestión'
-                    elif tipificacion in self.estado_liquidado:
-                        nombre_nuevo_estado = 'liquidado'
-                    else:
-                        nombre_nuevo_estado = 'En Gestión'
-
-                    try:
-                        nuevo_estado = Estados.objects.get(nombre=nombre_nuevo_estado)
+                try:
+                    nuevo_estado = Estados.objects.get(nombre=nombre_nuevo_estado)
+                    if aspirante.estado != nuevo_estado:
                         aspirante.estado = nuevo_estado
                         aspirante.save()
-                    except Exception as e:
-                        print(f"Error al procesar el estado para {aspirante.celular}: {e}")
-                else:
-                    # Si no hay gestión, asignar estado 'Sin gestión'
-                    sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
+                except Exception as e:
+                    print(f"Error al procesar el estado para {aspirante.celular}: {e}")
+            else:
+                # Si no hay gestión, asignar estado 'Sin gestión'
+                sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
+                if aspirante.estado != sin_gestion_estado:
                     aspirante.estado = sin_gestion_estado
                     aspirante.save()
 
-            except Aspirantes.DoesNotExist:
-                print(f"Aspirante con celular {gestion['cel_aspirante']} no encontrado.")
-            except Exception as e:
-                print(f"Error procesando aspirante {gestion['cel_aspirante']}: {e}")
-
-        # Actualizar aspirantes sin gestiones
-        aspirantes_sin_gestiones = Aspirantes.objects.exclude(
-            celular__in=ultimas_gestiones.values('cel_aspirante')
-        )
-        sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
-        for aspirante in aspirantes_sin_gestiones:
-            # Evitar la actualización si el aspirante ya está en estado 'matriculado' o 'liquidado'
-            if aspirante.estado.nombre not in ['matriculado', 'liquidado']:
-                aspirante.estado = sin_gestion_estado
-                aspirante.save()
+        print("Actualización de estados completada.")
     #función para conectar los archivos csv 
     def post(self, request, format=None):
         try:
@@ -394,8 +371,10 @@ class Cargarcsv(APIView):
                 io_string2 = StringIO(data_set2)
                 df2 = pd.read_csv(io_string2)
                 df2['TEL1'] = df2['TEL1'].astype(str)
-                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[2:] if len(
-                    x) == 12 else (x[1:] if len(x) == 11 else 'no válido'))
+                # Filtrar y ajustar los números de teléfono
+                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
+                # Eliminar las filas donde 'cel_modificado' es None (es decir, donde el número original tenía menos de 10 dígitos)
+                df2 = df2.dropna(subset=['cel_modificado'])
 
                 # BD Whatsapp
                 data_set3 = whatsapp_file.read().decode('UTF-8')
@@ -424,14 +403,15 @@ class Cargarcsv(APIView):
                     'Estado',
                     'NOMBRE',
                     'CorreoElectronico',
-                    'Programa',
+                    # 'Programa',
                     'Sede',
                     'AGENT_ID',
                     'AGENT_NAME',
                     'DATE',
                     'COMMENTS',
                     'PROCESO',
-                    'NitEmpresa'
+                    'NitEmpresa', 
+                    'Programa académico'
                     ]
                 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
@@ -455,7 +435,8 @@ class Cargarcsv(APIView):
                         'Por_ubicacion',
                         'Imposible_contacto',
                         'Numero_invalido',
-                        'Se_remite_a_otras_áreas_'
+                        'Se_remite_a_otras_áreas_',
+                        'No_Manifiesta_motivo',
                     ]
                     estado_en_gestion = [
                         'Volver_a_llamar',
@@ -508,7 +489,7 @@ class Cargarcsv(APIView):
                     'Estado': 'Sin gestión',
                     'Identificacion': '',
                     'CorreoElectronico': 'sin correo',
-                    'Programa': 'sin programa',
+                    'Programa académico': 'sin programa',
                     'Sede': 'sin sede',
                     'NitEmpresa': 'sin empresa',
                 }
@@ -553,8 +534,8 @@ class Cargarcsv(APIView):
                             self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={'nombre_completo': row['AGENT_NAME']})
                     
                     # Modelo Programa
-                    if pd.notna(row['Programa']):
-                            self.actualizar_o_crear_modelo(Programa, nombre=row['Programa'])
+                    if pd.notna(row['Programa académico']):
+                            self.actualizar_o_crear_modelo(Programa, nombre=row['Programa académico'])
                     
                     # Modelo Sede
                     if pd.notna(row['Sede']):
@@ -661,7 +642,7 @@ class Cargarcsv(APIView):
                     documento = llenar_documento(row)
                     correo = llenar_correo(row)
                     sede = Sede.objects.get(nombre=row['Sede'])
-                    programa = Programa.objects.get(nombre=row['Programa'])
+                    programa = Programa.objects.get(nombre=row['Programa académico'])
                     empresa = Empresa.objects.get(nit=row['NitEmpresa'])
                     proceso = Proceso.objects.get(nombre=row['PROCESO'])
                     estado = Estados.objects.get(nombre=row['Estado'])
