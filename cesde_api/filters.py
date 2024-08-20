@@ -1,7 +1,8 @@
 import django_filters
 from django_filters import ModelChoiceFilter
 from .models import *
-from django.db.models import Count, Q, Max, Subquery, OuterRef, F
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
 
