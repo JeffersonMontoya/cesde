@@ -81,12 +81,12 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-     'default': {
+    'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'HOST': 'localhost',
         'PORT': 5432,
         'NAME': 'cesde',
-        'USER': 'postgres', 
+        'USER': 'postgres',
         'PASSWORD': 'admin'
     }
 }
@@ -109,7 +109,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 
 # Internationalization
@@ -138,7 +137,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "http://localhost:5173",    
+    "http://localhost:5173",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -153,9 +152,11 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
         'rest_framework.filters.OrderingFilter',
     ],
-    
-}
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,  # Número de registros por página
 
+
+}
 
 
 APPEND_SLASH = False
