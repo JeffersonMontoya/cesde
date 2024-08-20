@@ -751,7 +751,7 @@ class Cargarcsv(APIView):
             }
             # Modelo Tipificación
             valor_tipificacion = tipificaciones.get(
-                row['DESCRIPTION_COD_ACT'], 0.0)
+                row['DESCRIPTION_COD_ACT'], 100.0)
             self.actualizar_o_crear_modelo(Tipificacion, nombre=row['DESCRIPTION_COD_ACT'], defaults={
                 'contacto': contactabilidad(row),
                 'valor_tipificacion': valor_tipificacion
