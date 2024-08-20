@@ -89,7 +89,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="empresa")
+        proceso = get_object_or_404(Proceso, nombre="Empresas")
         queryset = self.get_queryset().filter(proceso=proceso)
 
         # Aplica filtros generales
@@ -129,8 +129,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
+        proceso = get_object_or_404(Proceso, nombre="Técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
 
         # Aplica filtros generales
@@ -145,9 +144,8 @@ class FilterProcesosViewSet(viewsets.ViewSet):
             'aspirantes': serializer.data,
         })
 
+
 # Estadisticas genrales, por procesos y por fechas
-
-
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
@@ -216,13 +214,13 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='técnicos')
+        queryset = self.get_queryset().filter(proceso__nombre='Técnicos')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def estadisticas_empresa(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='empresa')
+        queryset = self.get_queryset().filter(proceso__nombre='Empresas')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_empresa': estadisticas_generales})
 
