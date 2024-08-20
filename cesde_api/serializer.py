@@ -48,7 +48,6 @@ class GestionSerializer(serializers.ModelSerializer):
             }
         return None
 
-
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Programa

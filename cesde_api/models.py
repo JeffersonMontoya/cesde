@@ -15,7 +15,7 @@ class Estados(models.Model):
 
 
 class Programa(models.Model):
-    nombre = models.CharField(max_length=70)
+    nombre = models.CharField(max_length=200)
     def __str__(self):
         return self.nombre
 
@@ -41,6 +41,8 @@ class Aspirantes(models.Model):
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
+    proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)
+    estado = models.ForeignKey(Estados, on_delete=models.CASCADE)  
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)  
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE, default=1)
 
