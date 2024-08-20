@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
 class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
@@ -34,6 +40,24 @@ class CustomPagination(PageNumberPagination):
     page_size = 20  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
+
+    def get_paginated_response(self, data):
+        """
+        Devuelve una respuesta paginada que incluye la información de paginación.
+        """
+        # Estructura la respuesta con la información de paginación en la parte superior
+        return Response({
+            'pagination': {
+                'count': self.page.paginator.count,
+                'total_pages': self.page.paginator.num_pages,
+                'current_page': self.page.number,
+                'page_size': self.page.paginator.per_page,
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'results': data
+        })
+
 
 
 class SedeViewSet(viewsets.ModelViewSet):
@@ -55,24 +79,14 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
-    filter_backends = (DjangoFilterBackend,)  # Habilita el filtrado usando django-filter
+    # Serializador para convertir datos a JSON
+    serializer_class = AspiranteFilterSerializer
+    # Habilita el filtrado usando django-filter
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
 
-#  View para filters por procesos y por generales
-
-    """
-    Vista para mostrar aspirantes con filtros por procesos y filtros generales.
-    """
-
-    def get_queryset(self):
-        """
-        Devuelve el queryset para aspirantes.
-        """
-        return Aspirantes.objects.all()
-
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """
         Devuelve la lista de aspirantes con filtros aplicados.
         """
@@ -88,12 +102,12 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(queryset, many=True)
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        return Response({
-            'aspirantes': serializer.data,
-        })
+        return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def empresa(self, request):
@@ -108,12 +122,12 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(queryset, many=True)
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        return Response({
-            'aspirantes': serializer.data,
-        })
+        return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-extensiones')
     def extensiones(self, request):
@@ -128,19 +142,18 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(queryset, many=True)
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        return Response({
-            'aspirantes': serializer.data,
-        })
+        return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-tecnico')
     def tecnico(self, request):
         """
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
         proceso = get_object_or_404(Proceso, nombre="técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
 
@@ -149,12 +162,14 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(queryset, many=True)
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        return Response({
-            'aspirantes': serializer.data,
-        })
+        return paginator.get_paginated_response(serializer.data)
+
+
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
@@ -261,7 +276,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 
         # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
-# Estadisticas genrales, por procesos y por fechas
+
 
 
 class EstadisticasViewSet(viewsets.GenericViewSet):
@@ -485,6 +500,8 @@ class Cargarcsv(APIView):
                 data_set3 = whatsapp_file.read().decode('UTF-8')
                 io_string3 = StringIO(data_set3)
                 df3 = pd.read_csv(io_string3)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                 df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                 df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
                     lambda x: x[2:] if len(x) == 12 else x)
@@ -493,6 +510,8 @@ class Cargarcsv(APIView):
                 data_set4 = sms_file.read().decode('UTF-8')
                 io_string4 = StringIO(data_set4)
                 df4 = pd.read_csv(io_string4)
+                df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
+                df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
                 df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                 df4['cel_modificado'] = df4['TELEPHONE'].apply(
                     lambda x: x[1:] if len(x) == 11 else x)
@@ -732,7 +751,7 @@ class Cargarcsv(APIView):
             }
             # Modelo Tipificación
             valor_tipificacion = tipificaciones.get(
-                row['DESCRIPTION_COD_ACT'], 0.0)
+                row['DESCRIPTION_COD_ACT'], 100.0)
             self.actualizar_o_crear_modelo(Tipificacion, nombre=row['DESCRIPTION_COD_ACT'], defaults={
                 'contacto': contactabilidad(row),
                 'valor_tipificacion': valor_tipificacion
