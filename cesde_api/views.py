@@ -254,7 +254,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
 
-
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
