@@ -7,8 +7,6 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-
-
 # Para devolver el nombre por get 
 class TipificacionNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
@@ -89,7 +87,6 @@ class AspirantesFilter(django_filters.FilterSet):
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
     programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
-    # nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
 
     class Meta:

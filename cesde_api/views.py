@@ -30,8 +30,6 @@ logging.basicConfig(level=logging.DEBUG)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
 
 class CustomPagination(PageNumberPagination):
     """
@@ -59,7 +57,6 @@ class CustomPagination(PageNumberPagination):
         })
 
 
-
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
@@ -79,10 +76,8 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
-    serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
-    filter_backends = (DjangoFilterBackend,)
+    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
+    filter_backends = (DjangoFilterBackend,)# Habilita el filtrado usando django-filter
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
 
@@ -96,66 +91,6 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         procesos_filter = ProcesosFilter(request.GET, queryset=queryset)
         if procesos_filter.is_valid():
             queryset = procesos_filter.qs
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="empresa")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="extenciones")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
-        queryset = self.get_queryset().filter(proceso=proceso)
 
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -346,13 +281,13 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='técnicos')
+        queryset = self.get_queryset().filter(proceso__nombre='Técnicos')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def estadisticas_empresa(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='empresa')
+        queryset = self.get_queryset().filter(proceso__nombre='Empresas')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_empresa': estadisticas_generales})
 
@@ -377,7 +312,6 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     serializer_class = ProgramaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ProgramaFilter
-    pagination_class = CustomPagination  # Usar la paginación personalizada
 
 
 # Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
@@ -910,7 +844,6 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = CustomPagination  # Usar la paginación personalizada
 
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
