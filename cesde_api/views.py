@@ -27,6 +27,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
+
 class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
@@ -39,13 +45,19 @@ class CustomPagination(PageNumberPagination):
         """
         Devuelve una respuesta paginada que incluye la información de paginación.
         """
+        # Estructura la respuesta con la información de paginación en la parte superior
         return Response({
-            'count': self.page.paginator.count,
-            'total_pages': self.page.paginator.num_pages,
-            'current_page': self.page.number,
-            'page_size': self.page.paginator.per_page,
+            'pagination': {
+                'count': self.page.paginator.count,
+                'total_pages': self.page.paginator.num_pages,
+                'current_page': self.page.number,
+                'page_size': self.page.paginator.per_page,
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
             'results': data
         })
+
 
 
 class SedeViewSet(viewsets.ModelViewSet):
@@ -264,6 +276,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 
         # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
+
 
 
 class EstadisticasViewSet(viewsets.GenericViewSet):
