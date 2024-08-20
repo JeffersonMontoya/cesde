@@ -55,18 +55,14 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
-    filter_backends = (DjangoFilterBackend,)  # Habilita el filtrado usando django-filter
+    # Serializador para convertir datos a JSON
+    serializer_class = AspiranteFilterSerializer
+    # Habilita el filtrado usando django-filter
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
 
-    def get_queryset(self):
-        """
-        Devuelve el queryset para aspirantes.
-        """
-        return Aspirantes.objects.all()
-
-    def list(self, request):
+    def list(self, request, *args, **kwargs):
         """
         Devuelve la lista de aspirantes con filtros aplicados.
         """
@@ -82,14 +78,11 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Pagina el queryset
+        # Aplica la paginación
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(paginated_queryset, many=True)
-
-        # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
@@ -105,14 +98,11 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Pagina el queryset
+        # Aplica la paginación
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(paginated_queryset, many=True)
-
-        # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-extensiones')
@@ -128,14 +118,11 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        # Pagina el queryset
+        # Aplica la paginación
         paginator = self.pagination_class()
         paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
 
-        # Serializa los datos
-        serializer = AspiranteFilterSerializer(paginated_queryset, many=True)
-
-        # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='proceso-tecnico')
@@ -143,8 +130,16 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         """
         Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
         """
-        proceso = get_object_or_404(Proceso, nombre="Técnicos")
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
+
+
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
 
 
 class FilterProcesosViewSet(viewsets.ViewSet):
@@ -253,7 +248,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 
         # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
-# Estadisticas genrales, por procesos y por fechas
+
 
 
 class EstadisticasViewSet(viewsets.GenericViewSet):
