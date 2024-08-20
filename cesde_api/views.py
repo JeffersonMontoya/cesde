@@ -514,213 +514,6 @@ class Cargarcsv(APIView):
 
     def actualizar_o_crear_modelo(self, Model, **kwargs):
         Model.objects.update_or_create(**kwargs)
-<<<<<<< HEAD
-        
-    # función para agregar a la base de datos    
-    def llenarBD(self,df):
-                for index, row in df.iterrows():
-                    # Modelo Estado
-                    if pd.notna(row['Estado']):
-                        self.actualizar_o_crear_modelo(Estados, nombre=row['Estado'])
-                     
-                     # Modelo Proceso
-                    if pd.notna(row['PROCESO']):
-                            self.actualizar_o_crear_modelo(Proceso, nombre=row['PROCESO'])
-                    
-                   # Modelo Asesores
-                    if pd.notna(row['AGENT_ID']):
-                            self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={'nombre_completo': row['AGENT_NAME']})
-                    
-                    # Modelo Programa
-                    if pd.notna(row['Programa']):
-                            self.actualizar_o_crear_modelo(Programa, nombre=row['Programa'])
-                    
-                    # Modelo Sede
-                    if pd.notna(row['Sede']):
-                            self.actualizar_o_crear_modelo(Sede, nombre=row['Sede'])
-                        
-                    # Modelo Empresa
-                    if pd.notna(row['NitEmpresa']):
-                            self.actualizar_o_crear_modelo(Empresa, nit=row['NitEmpresa'])
-                    
-                    # validando si hubo contacto o no en base a las tipificaciones
-                    contacto = [
-                            'Otra_area_de_interés', 
-                            'Ya_esta_estudiando_en_otra_universidad',
-                            'Sin_interes',
-                            'Sin_tiempo',
-                            'Eliminar_de_la_base',
-                            'Próxima_convocatorio',
-                            'No_Manifiesta_motivo',
-                            'Por_ubicación',
-                            'Matriculado',
-                            'Liquidacion',
-                            'En_proceso_de_selección',
-                            'Interesado_en_seguimiento',
-                            'Volver_a_llamar'
-                            ]
-                    
-                    no_contacto = [
-                            'Primer_intento_de_contacto',
-                            'Segundo_intento_de_contacto',
-                            'Tercer_intento_de_contacto',
-                            'Fuera_de_servicio',
-                            'Imposible_contacto',
-                            'Número_inválido',
-                            'Sin_perfil'
-                        ] 
-                    def contactabilidad(row):
-                        if row['DESCRIPTION_COD_ACT'] in no_contacto:
-                                return False
-                        elif row['DESCRIPTION_COD_ACT'] in contacto: 
-                                return True
-                        return False
-                    #modelo tipificacion
-                    tipificaciones = { 
-                        'Matriculado': 1.0,
-                        'Liquidacion': 2.0,
-                        'Número_inválido': 3.0,
-                        'Imposible_contacto': 4.0,
-                        'Por_ubicacion': 5.0,
-                        'No_Manifiesta_motivo':6.0,
-                        'Proxima_convocatoria': 7.0,
-                        'Eliminar_de_la_base': 8.0,
-                        'Sin_perfil': 9.0,
-                        'Sin_tiempo': 10.0,
-                        'Sin_interes': 11.0,
-                        'Ya_esta_estudiando_en_otra_universidad': 12.0,
-                        'Otra_area_de_interés': 13.0,
-                        'En_proceso_de_selección': 14.0,
-                        'Interesado_en_seguimiento': 15.0,
-                        'Volver_a_llamar': 16.0,
-                        'Fuera_de_servicio': 17.0,
-                        'Tercer_intento_de_contacto': 18.0,
-                        'Segundo_intento_de_contacto': 19.0,
-                        'Primer_intento_de_contacto': 20.0,
-                        'Informacion_general_': 21.0,
-                        'No_Manifiesta_motivo': 22.0,
-                        'no': 23.0,
-                        'Cliente_en_seguimiento': 24.0, 
-                        'TIMEOUTCHAT':25.0,
-                        'Equivocado': 26.0,
-                        'Se_remite_a_otras_áreas': 27.0,
-                        'Otra_area_de_interes':28.0,
-                        'TIMEOUTACW': 29.0,
-                        'Cuelga_Telefono': 30.0,
-                        'nan':31.0,
-                        '': 32.0,
-                        '-': 33.0
-                    }
-                     # Modelo Tipificación
-                    valor_tipificacion = tipificaciones.get(row['DESCRIPTION_COD_ACT'], 0.0)
-                    self.actualizar_o_crear_modelo(Tipificacion, nombre=row['DESCRIPTION_COD_ACT'], defaults={
-                        'contacto': contactabilidad(row),
-                        'valor_tipificacion': valor_tipificacion
-                    })
-                    
-                    # Modelo Tipo_gestion
-                    for tipo in ['WhatsApp', 'Llamada']:
-                        self.actualizar_o_crear_modelo(Tipo_gestion, nombre=tipo)
-                    
-                    #validaciones para llenar el modelo Aspirantes
-                    def llenar_correo(row):
-                        if pd.isna(row['CorreoElectronico']):
-                                return 'sin correo'
-                        else: 
-                                return row['CorreoElectronico']
-                        
-                    def llenar_documento(row):
-                        if pd.isna(row['Identificacion']):
-                                return 'sin ID' 
-                        else:
-                                return row['Identificacion']
-                        
-                        
-                    #modelo aspirantes
-                    documento = llenar_documento(row)
-                    correo = llenar_correo(row)
-                    sede = Sede.objects.get(nombre=row['Sede'])
-                    programa = Programa.objects.get(nombre=row['Programa'])
-                    empresa = Empresa.objects.get(nit=row['NitEmpresa'])
-                    proceso = Proceso.objects.get(nombre=row['PROCESO'])
-                    estado = Estados.objects.get(nombre=row['Estado'])
-                    
-                    Aspirantes.objects.update_or_create(
-                        celular=row['cel_modificado'],  # Campo único para buscar o crear
-                        defaults={
-                            'nombre': row['NOMBRE'],
-                            'documento': documento,
-                            'correo': correo,
-                            'sede': sede,
-                            'programa': programa,
-                            'empresa': empresa,
-                            'proceso': proceso,
-                            'estado': estado
-                        }
-                    )
-                    
-                    def validar_tipo_gestion(row, df):
-                        # Verificar si la columna 'CHANNEL' existe en el DataFrame
-                        if 'CHANNEL' in df.columns:
-                                # Verificar si el valor de 'CHANNEL' no es NaN
-                                if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
-                                    return Tipo_gestion.objects.get(nombre='WhatsApp')
-                        # Si la columna no existe o el valor es NaN, retornar 'llamadas'
-                        return Tipo_gestion.objects.get(nombre='Llamada')
-                    
-                    def convertir_fecha(fecha_str):
-                        if not fecha_str or pd.isna(fecha_str):
-                                return None  # Retorna None si la fecha está vacía o es NaN
-                        try:
-                                # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
-                                fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
-                                return fecha_convertida
-                        except ValueError as e:
-                                print(f"Error al convertir la fecha: {e}")
-                                return None
-                    
-                def llenar_observaciones(row):
-                    if pd.isna(row['COMMENTS']):
-                                return 'sin observaciones'
-                    else:
-                            return row['COMMENTS']
-                    
-                # Modelo Gestiones
-                if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_ID']):
-                    try:
-                        aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
-                        tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
-                        asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                        tipo_gestion = validar_tipo_gestion(row, df)
-                        fecha_convertida = convertir_fecha(row['DATE'])
-                        observaciones = llenar_observaciones(row)
-                        # Verificar que todos los datos necesarios están disponibles
-                        if all([aspirante, tipificacion, asesor, tipo_gestion]):
-                            nueva_gestion = Gestiones(
-                                    cel_aspirante=aspirante,
-                                    fecha=fecha_convertida,
-                                    tipo_gestion=tipo_gestion,
-                                    observaciones=observaciones,
-                                    tipificacion=tipificacion,
-                                    asesor=asesor,
-                                )
-                            nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
-                        else:
-                                print(f"Datos incompletos para la gestión con celular {row['cel_modificado']}.")
-                    except Aspirantes.DoesNotExist:
-                        print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
-                    except Tipificacion.DoesNotExist:
-                        print(f"Tipificación con código {row['DESCRIPTION_COD_ACT']} no encontrada.")
-                    except Asesores.DoesNotExist:
-                        print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
-                    except Exception as e:
-                        print(f"Error procesando la fila: {e}")
-                        
-                Gestiones.objects.bulk_create([Gestiones(**gestion) for gestion in self.gestiones_acumuladas])
-    
-                # Actualizar estados de todos los aspirantes
-                self.actualizar_estados_aspirantes()   
-=======
 
     # función para agregar a la base de datos
     def llenarBD(self, df):
@@ -938,7 +731,6 @@ class Cargarcsv(APIView):
         # Actualizar estados de todos los aspirantes
         self.actualizar_estados_aspirantes()
 
->>>>>>> f898f9cda0e509c1a2060558fe1a4dfc39bd9888
 
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
@@ -993,12 +785,9 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
             cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
                                                 output_field=models.IntegerField())), 0),
 
-<<<<<<< HEAD
-=======
             cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
-                                                      output_field=models.IntegerField())), 0),
+                                                output_field=models.IntegerField())), 0),
 
->>>>>>> f898f9cda0e509c1a2060558fe1a4dfc39bd9888
             cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
                                                 output_field=models.IntegerField())), 0),
 
