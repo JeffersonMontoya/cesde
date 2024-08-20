@@ -380,6 +380,8 @@ class Cargarcsv(APIView):
                 data_set3 = whatsapp_file.read().decode('UTF-8')
                 io_string3 = StringIO(data_set3)
                 df3 = pd.read_csv(io_string3)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                 df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                 df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
                     lambda x: x[2:] if len(x) == 12 else x)
@@ -388,6 +390,8 @@ class Cargarcsv(APIView):
                 data_set4 = sms_file.read().decode('UTF-8')
                 io_string4 = StringIO(data_set4)
                 df4 = pd.read_csv(io_string4)
+                df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
+                df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
                 df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                 df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[1:] if len(x) == 11 else x)
                 
@@ -503,7 +507,9 @@ class Cargarcsv(APIView):
                 
                 df_result_llamadas.to_csv('llamadas', index=False)
                 df_result_whatsapp.to_csv('whatsapp', index=False)
-                
+                df3.to_csv('df4', index=False)
+                df4.to_csv('df3', index=False)
+
                 self.llenarBD(df_result_whatsapp)
                 self.llenarBD(df_result_llamadas)
                 
