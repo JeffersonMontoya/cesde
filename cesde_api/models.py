@@ -75,8 +75,8 @@ class Tipificacion(models.Model):
         ('En seguimiento', 'En seguimiento'),
         ('No contactado', 'No contactado'),
         ('Descartado', 'Descartado'),
-        ('Tipificacion Adicional', 'Tipificacion Adicional'),
-    ], default='Tipificacion Adicional')
+        ('Opcional', 'Opcional'),
+    ], default='Opcional')
 
     def __str__(self):
         return self.nombre
@@ -91,6 +91,8 @@ class Gestiones(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
+    
+
 
 
 

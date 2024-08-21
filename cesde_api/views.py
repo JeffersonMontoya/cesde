@@ -589,14 +589,14 @@ class Cargarcsv(APIView):
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
                     df_result_llamadas.to_csv('llamadas', index=False)
-                    # self.llenarBD(df_result_llamadas)
+                    self.llenarBD(df_result_llamadas)
                 else:
                     print("no se trabajo con el archivo de llamadas.")
                 if whatsapp_file:
                     llenar_valores_predeterminados(df_result_whatsapp, valores_predeterminados)
                     df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].fillna(0).astype(int)
                     df_result_whatsapp.to_csv('whatsapp', index=False)
-                    # self.llenarBD(df_result_whatsapp)
+                    self.llenarBD(df_result_whatsapp)
                 else:
                     print("no se trabajo con el archivo de whatsapp.")
 
@@ -618,14 +618,14 @@ class Cargarcsv(APIView):
             if pd.notna(row['Estado']):
                 self.actualizar_o_crear_modelo(Estados, nombre=row['Estado'])
 
-             # Modelo Proceso
+            # Modelo Proceso
             if pd.notna(row['PROCESO']):
                 self.actualizar_o_crear_modelo(Proceso, nombre=row['PROCESO'])
 
-       # Modelo Asesores
+            # Modelo Asesores
             if pd.notna(row['AGENT_ID']):
                 self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={
-                                               'nombre_completo': row['AGENT_NAME']})
+                                            'nombre_completo': row['AGENT_NAME']})
 
             # Modelo Programa
             if pd.notna(row['Programa académico']):
@@ -841,34 +841,12 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
                 When(gestiones__tipo_gestion__nombre='Llamada', then=1),
                 output_field=IntegerField()
             )), 0),
-
             cantidad_whatsapp=Coalesce(Sum(Case(
                 When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
                 output_field=IntegerField()
             )), 0),
-
             cantidad_gestiones=Count('gestiones', distinct=True),
-        )
+        ).distinct()
 
-        fecha_inicio = self.request.query_params.get('fecha_inicio')
-        fecha_fin = self.request.query_params.get('fecha_fin')
-        id_asesor = self.request.query_params.get('id')
-
-        if fecha_inicio:
-            try:
-                fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
-                queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
-            except ValueError:
-                pass  # Manejar el error de formato de fecha según sea necesario
-
-        if fecha_fin:
-            try:
-                fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
-                queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
-            except ValueError:
-                pass  # Manejar el error de formato de fecha según sea necesario
-
-        if id_asesor:
-            queryset = queryset.filter(id=id_asesor)
-
-        return queryset.distinct()
+        # La filtración por fechas se maneja a través de DjangoFilterBackend y AsesoresFilter
+        return queryset
