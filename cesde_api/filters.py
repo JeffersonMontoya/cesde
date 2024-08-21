@@ -1,4 +1,5 @@
 import django_filters
+import datetime
 from django_filters import ModelChoiceFilter
 from .models import *
 from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
@@ -281,10 +282,27 @@ class GestionesFilter(django_filters.FilterSet):
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
 
 class AsesoresFilter(django_filters.FilterSet):
-    fecha_inicio = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='gte', label='fecha inicio')
-    fecha_fin = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='lte', label='fecha final')
-    id = django_filters.CharFilter(field_name='id', label='id')
-    
+    fecha_inicio = django_filters.CharFilter(method='filter_fecha_inicio', label='Fecha inicio')
+    fecha_fin = django_filters.CharFilter(method='filter_fecha_fin', label='Fecha final')
+    id = django_filters.NumberFilter(field_name='id', label='ID')
+
+    def filter_fecha_inicio(self, queryset, name, value):
+        if value:
+            try:
+                fecha_inicio = datetime.datetime.strptime(value, '%Y-%m-%d').date()
+                return queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            except (ValueError, TypeError):
+                return queryset
+        return queryset
+
+    def filter_fecha_fin(self, queryset, name, value):
+        if value:
+            try:
+                fecha_fin = datetime.datetime.strptime(value, '%Y-%m-%d').date()
+                return queryset.filter(gestiones__fecha__lte=fecha_fin)
+            except (ValueError, TypeError):
+                return queryset
+        return queryset
 
     class Meta:
         model = Asesores

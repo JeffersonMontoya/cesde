@@ -70,6 +70,13 @@ class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
     valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    categoria = models.CharField(max_length=50, choices=[
+        ('Interesado', 'Interesado'),
+        ('En seguimiento', 'En seguimiento'),
+        ('No contactado', 'No contactado'),
+        ('Descartado', 'Descartado'),
+        ('Opcional', 'Opcional'),
+    ], default='Opcional')
 
     def __str__(self):
         return self.nombre
@@ -84,6 +91,8 @@ class Gestiones(models.Model):
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
+    
+
 
 
 
