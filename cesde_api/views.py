@@ -47,9 +47,9 @@ class CustomPagination(PageNumberPagination):
             'total_pages': self.page.paginator.num_pages,
             'current_page': self.page.number,
             'page_size': self.page.paginator.per_page,
-            'results': data,
             'next': self.get_next_link(),
-            'previous': self.get_previous_link()
+            'previous': self.get_previous_link(),
+            'results': data
         })
 
 
@@ -589,14 +589,14 @@ class Cargarcsv(APIView):
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
                     df_result_llamadas.to_csv('llamadas', index=False)
-                    # self.llenarBD(df_result_llamadas)
+                    self.llenarBD(df_result_llamadas)
                 else:
                     print("no se trabajo con el archivo de llamadas.")
                 if whatsapp_file:
                     llenar_valores_predeterminados(df_result_whatsapp, valores_predeterminados)
                     df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].fillna(0).astype(int)
                     df_result_whatsapp.to_csv('whatsapp', index=False)
-                    # self.llenarBD(df_result_whatsapp)
+                    self.llenarBD(df_result_whatsapp)
                 else:
                     print("no se trabajo con el archivo de whatsapp.")
 
