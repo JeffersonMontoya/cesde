@@ -53,9 +53,6 @@ class CustomPagination(PageNumberPagination):
         })
 
 
-    
-
-
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
@@ -393,44 +390,24 @@ class Cargarcsv(APIView):
     permission_classes = [AllowAny]  # Permitir acceso a cualquiera
     gestiones_acumuladas = []
 
-    estado_descargo = [
-        'Sin_interes',
-        'Otra_area_de_interes',
-        'Ya_esta_estudiando_en_otra_universidad',
-        'Sin_tiempo',
-        'Sin_perfil',
-        'Eliminar_de_la_base',
-        'Proxima_convocatoria',
-        'No_manifiesta_motivo',
-        'Por_ubicacion',
-        'Imposible_contacto',
-        'Numero_invalido',
-        'Se_remite_a_otras_áreas_'
+    #estados del aspirante segun la tipificación
+    estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
     ]
-    estado_en_gestion = [
-        'Volver_a_llamar',
-        'Primer_intento_de_contacto',
-        'Segundo_intento_de_contacto',
-        'Tercer_intento_de_contacto',
-        'Fuera_de_servicio',
-        'TIMEOUTACW',
-        'Interesado_en_seguimiento',
-        'En_proceso_de_selección',
-        'Cliente_en_seguimiento',
-        'Informacion_general_',
-        'Cuelga_Telefono',
-        'Liquidacion'
+    
+    estado_en_gestion = ['Volver_a_llamar','Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','TIMEOUTACW','Interesado_en_seguimiento','En_proceso_de_selección','Cliente_en_seguimiento','Informacion_general_','Cuelga_Telefono','Liquidacion'
     ]
+    
     estado_liquidado = [
         'Matriculado',
     ]
     
+    #contactabilidad segun la tipificación 
     contacto = ['Otra_area_de_interés','Ya_esta_estudiando_en_otra_universidad','Sin_interes','Sin_tiempo','Eliminar_de_la_base','Próxima_convocatorio','No_Manifiesta_motivo','Por_ubicación','Matriculado','Liquidacion','En_proceso_de_selección','Interesado_en_seguimiento','Volver_a_llamar'
-            ]
+    ]
 
     no_contacto = ['Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','Imposible_contacto','Número_inválido','Sin_perfil'
     ]
-
+    #funcion para actualizar el estado del aspirante
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
@@ -460,8 +437,7 @@ class Cargarcsv(APIView):
                         aspirante.estado = nuevo_estado
                         aspirante.save()
                 except Exception as e:
-                    print(f"Error al procesar el estado para {
-                          aspirante.celular}: {e}")
+                    print(f"Error al procesar el estado para {aspirante.celular}: {e}")
             else:
                 # Si no hay gestión, asignar estado 'Sin gestión'
                 sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
@@ -470,8 +446,8 @@ class Cargarcsv(APIView):
                     aspirante.save()
 
         print("Actualización de estados completada.")
+        
     # función para conectar los archivos csv
-
     def post(self, request, format=None):
         try:
             predictivo_file = request.FILES.get('predictivo')
@@ -589,14 +565,14 @@ class Cargarcsv(APIView):
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
                     df_result_llamadas.to_csv('llamadas', index=False)
-                    # self.llenarBD(df_result_llamadas)
+                    self.llenarBD(df_result_llamadas)
                 else:
                     print("no se trabajo con el archivo de llamadas.")
                 if whatsapp_file:
                     llenar_valores_predeterminados(df_result_whatsapp, valores_predeterminados)
                     df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].fillna(0).astype(int)
                     df_result_whatsapp.to_csv('whatsapp', index=False)
-                    # self.llenarBD(df_result_whatsapp)
+                    self.llenarBD(df_result_whatsapp)
                 else:
                     print("no se trabajo con el archivo de whatsapp.")
 
@@ -618,19 +594,17 @@ class Cargarcsv(APIView):
             if pd.notna(row['Estado']):
                 self.actualizar_o_crear_modelo(Estados, nombre=row['Estado'])
 
-             # Modelo Proceso
+            # Modelo Proceso
             if pd.notna(row['PROCESO']):
                 self.actualizar_o_crear_modelo(Proceso, nombre=row['PROCESO'])
 
-       # Modelo Asesores
+            # Modelo Asesores
             if pd.notna(row['AGENT_ID']):
-                self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={
-                                               'nombre_completo': row['AGENT_NAME']})
+                self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={'nombre_completo': row['AGENT_NAME']})
 
             # Modelo Programa
             if pd.notna(row['Programa académico']):
-                self.actualizar_o_crear_modelo(
-                    Programa, nombre=row['Programa académico'])
+                self.actualizar_o_crear_modelo(Programa, nombre=row['Programa académico'])
 
             # Modelo Sede
             if pd.notna(row['Sede']):
@@ -641,8 +615,6 @@ class Cargarcsv(APIView):
                 self.actualizar_o_crear_modelo(Empresa, nit=row['NitEmpresa'])
 
             # validando si hubo contacto o no en base a las tipificaciones
-            
-
             def contactabilidad(row):
                 if row['DESCRIPTION_COD_ACT'] in self.no_contacto:
                     return False
@@ -760,7 +732,7 @@ class Cargarcsv(APIView):
                                 tipificacion=tipificacion,
                                 asesor=asesor,
                             )
-                            nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
+                            self.gestiones_acumuladas.append(nueva_gestion)
                     else:
                         print(f"Datos incompletos para la gestión con celular {
                               row['cel_modificado']}.")
@@ -775,9 +747,9 @@ class Cargarcsv(APIView):
                 except Exception as e:
                     print(f"Error procesando la fila: {e}")
 
-        Gestiones.objects.bulk_create(
-            [Gestiones(**gestion) for gestion in self.gestiones_acumuladas])
-
+        Gestiones.objects.bulk_create(self.gestiones_acumuladas)
+        
+        self.gestiones_acumuladas = []
         # Actualizar estados de todos los aspirantes
         self.actualizar_estados_aspirantes()
 
