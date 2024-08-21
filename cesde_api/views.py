@@ -19,6 +19,7 @@ from rest_framework.decorators import action
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
+import pytz
 
 
 import logging
@@ -686,9 +687,12 @@ class Cargarcsv(APIView):
                 if not fecha_str or pd.isna(fecha_str):
                     return None  # Retorna None si la fecha está vacía o es NaN
                 try:
-                    # Convertir la fecha de "MM/DD/YYYY HH:MM" a "YYYY-MM-DD HH:MM[:ss[.uuuuuu]]"
-                    fecha_convertida = datetime.strptime(
-                        fecha_str, "%m/%d/%Y %H:%M")
+                    # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
+                    fecha_convertida = datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                    # Asignar la zona horaria deseada (por ejemplo, 'UTC')
+                    zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
+                    # Hacer el datetime aware
+                    fecha_convertida = zona_horaria.localize(fecha_convertida)
                     return fecha_convertida
                 except ValueError as e:
                     print(f"Error al convertir la fecha: {e}")
