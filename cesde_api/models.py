@@ -76,13 +76,13 @@ class Tipificacion(models.Model):
     
 class Gestiones(models.Model):
     cel_aspirante = models.ForeignKey(Aspirantes, on_delete=models.CASCADE)
-    fecha = models.DateTimeField()
+    fecha = models.DateField()
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
 
-    def __str__(self):
+    def __str__(self):  
         return f"{self.fecha} - {self.cel_aspirante.celular}"
 
 
