@@ -126,7 +126,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
             # Formatear la fecha y hora
-            return ultima_gestion.fecha.strftime('%Y-%m-%d %H:%M:%S')
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return "Ninguno"
     
 
