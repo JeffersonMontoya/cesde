@@ -19,7 +19,8 @@ from rest_framework.decorators import action
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.response import Response
 
 import logging
 # Configurar el logger
@@ -27,18 +28,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
-
-<<<<<<< HEAD
-
-=======
->>>>>>> 086efd4d66e89faf26da28d14aa54a749a06e180
 class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
     """
-    page_size = 20  # Número de registros por página
+    page_size = 10  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
 
@@ -51,13 +45,11 @@ class CustomPagination(PageNumberPagination):
             'total_pages': self.page.paginator.num_pages,
             'current_page': self.page.number,
             'page_size': self.page.paginator.per_page,
+            'results': data,
             'next': self.get_next_link(),
-            'previous': self.get_previous_link(),
-            'results': data
+            'previous': self.get_previous_link()
         })
 
-
-    
 
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
@@ -80,8 +72,10 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    serializer_class = AspiranteFilterSerializer  # Serializador para convertir datos a JSON
-    filter_backends = (DjangoFilterBackend,)# Habilita el filtrado usando django-filter
+    # Serializador para convertir datos a JSON
+    serializer_class = AspiranteFilterSerializer
+    # Habilita el filtrado usando django-filter
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
 
@@ -107,6 +101,75 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='proceso-empresa')
+    def empresa(self, request):
+        """
+        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
+        """
+        proceso = get_object_or_404(Proceso, nombre="empresa")
+        queryset = self.get_queryset().filter(proceso=proceso)
+
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
+    def extensiones(self, request):
+        """
+        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
+        """
+        proceso = get_object_or_404(Proceso, nombre="extenciones")
+        queryset = self.get_queryset().filter(proceso=proceso)
+
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
+    def tecnico(self, request):
+        """
+        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
+        """
+        proceso = get_object_or_404(Proceso, nombre="técnicos")
+        queryset = self.get_queryset().filter(proceso=proceso)
+
+
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
+class AspiranteFilter2ViewSet(viewsets.ModelViewSet):
+    """
+    Vista para mostrar aspirantes con filtrado y paginación.
+    """
+    queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
+    # Serializador para convertir datos a JSON
+    serializer_class = AspiranteFilterSerializer
+    # Habilita el filtrado usando django-filter
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AspirantesFilter  # Especifica la clase de filtro
+    pagination_class = None
+
 
 
 class FilterProcesosViewSet(viewsets.ViewSet):
@@ -217,6 +280,7 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
 
+
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
@@ -265,7 +329,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         # Aplicar filtro por nombre del proceso si está presente
         if proceso_nombre:
             gestiones_queryset = gestiones_queryset.filter(
-                cel_aspirante__proceso__nombre=proceso_nombre
+                cel_aspirante_proceso_nombre=proceso_nombre
             )
 
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(
@@ -276,7 +340,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
             'estadisticas_por_fechas': estadisticas_por_fechas,
             'contactabilidad': contactabilidad,
         })
-    
+
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='extenciones')
@@ -364,17 +428,11 @@ class Cargarcsv(APIView):
     estado_liquidado = [
         'Matriculado',
     ]
-    
-    contacto = ['Otra_area_de_interés','Ya_esta_estudiando_en_otra_universidad','Sin_interes','Sin_tiempo','Eliminar_de_la_base','Próxima_convocatorio','No_Manifiesta_motivo','Por_ubicación','Matriculado','Liquidacion','En_proceso_de_selección','Interesado_en_seguimiento','Volver_a_llamar'
-            ]
-
-    no_contacto = ['Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','Imposible_contacto','Número_inválido','Sin_perfil'
-    ]
 
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado'])
+            estado_nombre_in=['matriculado', 'liquidado'])
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
@@ -401,7 +459,7 @@ class Cargarcsv(APIView):
                         aspirante.save()
                 except Exception as e:
                     print(f"Error al procesar el estado para {
-                          aspirante.celular}: {e}")
+                        aspirante.celular}: {e}")
             else:
                 # Si no hay gestión, asignar estado 'Sin gestión'
                 sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
@@ -442,58 +500,102 @@ class Cargarcsv(APIView):
                 df2 = df2.dropna(subset=['cel_modificado'])
 
                 # BD Whatsapp
-                if whatsapp_file:
-                    data_set3 = whatsapp_file.read().decode('UTF-8')
-                    io_string3 = StringIO(data_set3)
-                    df3 = pd.read_csv(io_string3)
-                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
-                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
-                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
-                    df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
-                        lambda x: x[2:] if len(x) == 12 else x)
+                data_set3 = whatsapp_file.read().decode('UTF-8')
+                io_string3 = StringIO(data_set3)
+                df3 = pd.read_csv(io_string3)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
+                df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
+                df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
+                    lambda x: x[2:] if len(x) == 12 else x)
 
                 # BD SMS
-                if sms_file:
-                    data_set4 = sms_file.read().decode('UTF-8')
-                    io_string4 = StringIO(data_set4)
-                    df4 = pd.read_csv(io_string4)
-                    df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
-                    df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
-                    df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
-                    df4['cel_modificado'] = df4['TELEPHONE'].apply(
-                        lambda x: x[1:] if len(x) == 11 else x)
+                data_set4 = sms_file.read().decode('UTF-8')
+                io_string4 = StringIO(data_set4)
+                df4 = pd.read_csv(io_string4)
+                df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
+                df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
+                df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
+                df4['cel_modificado'] = df4['TELEPHONE'].apply(
+                    lambda x: x[1:] if len(x) == 11 else x)
 
                 # Unir los DataFrames
-                df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
-                if whatsapp_file:
-                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
-                if sms_file:
-                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                df_unido = pd.merge(
+                    df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
+                df_unido_whatsapp = pd.merge(
+                    df_unido, df3, on='cel_modificado', how='left')
+                df_unido_llamadas = pd.merge(
+                    df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','NitEmpresa','Programa académico'
+                columnas_deseadas = [
+                    'cel_modificado',
+                    'Identificacion',
+                    'DESCRIPTION_COD_ACT',
+                    'Estado',
+                    'NOMBRE',
+                    'CorreoElectronico',
+                    # 'Programa',
+                    'Sede',
+                    'AGENT_ID',
+                    'AGENT_NAME',
+                    'DATE',
+                    'COMMENTS',
+                    'PROCESO',
+                    'NitEmpresa',
+                    'Programa académico'
                 ]
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
-                if whatsapp_file:
-                    df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
-                if sms_file:
-                    df_result_llamadas = df_unido_llamadas[columnas_deseadas]
+                df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
+                df_result_llamadas = df_unido_llamadas[columnas_deseadas]
 
                 # funcion para validar los datos antes de ingresarlos a la BD
                 def validarDatos(row):
                     # validar Estado
                     validar_estado = ['DESCRIPTION_COD_ACT']
-                
+                    estado_descargo = [
+                        'Sin_interes',
+                        'Otra_area_de_interes',
+                        'Ya_esta_estudiando_en_otra_universidad',
+                        'Sin_tiempo',
+                        'Sin_perfil',
+                        'Eliminar_de_la_base',
+                        'Proxima_convocatoria',
+                        'No_manifiesta_motivo',
+                        'Por_ubicacion',
+                        'Imposible_contacto',
+                        'Numero_invalido',
+                        'Se_remite_a_otras_áreas_',
+                        'No_Manifiesta_motivo',
+                    ]
+                    estado_en_gestion = [
+                        'Volver_a_llamar',
+                        'Primer_intento_de_contacto',
+                        'Segundo_intento_de_contacto',
+                        'Tercer_intento_de_contacto',
+                        'Fuera_de_servicio',
+                        'TIMEOUTACW',
+                        'Interesado_en_seguimiento',
+                        'En_proceso_de_selección',
+                        'Cliente_en_seguimiento',
+                        'Informacion_general_',
+                        'Cuelga_Telefono',
+                        'Liquidacion'
+                    ]
+                    estado_liquidado = [
+                        'Matriculado',
+                    ]
+
                     if pd.isna(row['Estado']):
                         # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
-                        if any(row[col] in self.estado_descargo for col in validar_estado if col in row):
+                        if any(row[col] in estado_descargo for col in validar_estado if col in row):
                             return 'Descartado'
                         # verifica si alguna de las columnas en validar_estado tiene valor en estado_en_gestion
-                        if any(row[col] in self.estado_en_gestion for col in validar_estado if col in row):
+                        if any(row[col] in estado_en_gestion for col in validar_estado if col in row):
                             return 'En Gestión'
                         # verifica si alguna de las columnas en validar-estado tiene valor en estado_liquidado
-                        if any(row[col] in self.estado_liquidado for col in validar_estado if col in row):
+                        if any(row[col] in estado_liquidado for col in validar_estado if col in row):
                             return 'liquidado'
                         # Verificar si alguna de las columnas en validar_estado está vacía
                         if any(pd.isna(row[col]) for col in validar_estado if col in row):
@@ -505,10 +607,10 @@ class Cargarcsv(APIView):
                         return row['Estado']
 
                 # llenando datos vacíos con valores predeterminados
-                if whatsapp_file:
-                    df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                if sms_file:
-                    df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+                df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(
+                    lambda row: validarDatos(row), axis=1)
+                df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(
+                    lambda row: validarDatos(row), axis=1)
 
                 def llenar_valores_predeterminados(df, columnas):
                     for columna, valor in columnas.items():
@@ -525,20 +627,21 @@ class Cargarcsv(APIView):
                 }
 
                 # Aplicar la función a ambos DataFrames
-                if sms_file:
-                    llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
-                    df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
-                    df_result_llamadas.to_csv('llamadas', index=False)
-                    self.llenarBD(df_result_llamadas)
-                else:
-                    print("no se trabajo con el archivo de llamadas.")
-                if whatsapp_file:
-                    llenar_valores_predeterminados(df_result_whatsapp, valores_predeterminados)
-                    df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].fillna(0).astype(int)
-                    df_result_whatsapp.to_csv('whatsapp', index=False)
-                    self.llenarBD(df_result_whatsapp)
-                else:
-                    print("no se trabajo con el archivo de whatsapp.")
+                llenar_valores_predeterminados(
+                    df_result_llamadas, valores_predeterminados)
+                llenar_valores_predeterminados(
+                    df_result_whatsapp, valores_predeterminados)
+
+                df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(
+                    0).astype(int)
+                df_result_whatsapp['AGENT_ID'] = df_result_whatsapp['AGENT_ID'].fillna(
+                    0).astype(int)
+
+                df_result_llamadas.to_csv('llamadas', index=False)
+                df_result_whatsapp.to_csv('whatsapp', index=False)
+
+                self.llenarBD(df_result_whatsapp)
+                self.llenarBD(df_result_llamadas)
 
                 return Response("Los archivos se cargaron con éxito", status=status.HTTP_201_CREATED)
             except Exception as e:
@@ -581,16 +684,73 @@ class Cargarcsv(APIView):
                 self.actualizar_o_crear_modelo(Empresa, nit=row['NitEmpresa'])
 
             # validando si hubo contacto o no en base a las tipificaciones
-            
+            contacto = [
+                'Otra_area_de_interés',
+                'Ya_esta_estudiando_en_otra_universidad',
+                'Sin_interes',
+                'Sin_tiempo',
+                'Eliminar_de_la_base',
+                'Próxima_convocatorio',
+                'No_Manifiesta_motivo',
+                'Por_ubicación',
+                'Matriculado',
+                'Liquidacion',
+                'En_proceso_de_selección',
+                'Interesado_en_seguimiento',
+                'Volver_a_llamar'
+            ]
+
+            no_contacto = [
+                'Primer_intento_de_contacto',
+                'Segundo_intento_de_contacto',
+                'Tercer_intento_de_contacto',
+                'Fuera_de_servicio',
+                'Imposible_contacto',
+                'Número_inválido',
+                'Sin_perfil'
+            ]
 
             def contactabilidad(row):
-                if row['DESCRIPTION_COD_ACT'] in self.no_contacto:
+                if row['DESCRIPTION_COD_ACT'] in no_contacto:
                     return False
-                elif row['DESCRIPTION_COD_ACT'] in self.contacto:
+                elif row['DESCRIPTION_COD_ACT'] in contacto:
                     return True
                 return False
             # modelo tipificacion
-            tipificaciones = {'Matriculado': 1.0,'Liquidacion': 2.0,'Número_inválido': 3.0,'Imposible_contacto': 4.0,'Por_ubicacion': 5.0,'No_Manifiesta_motivo': 6.0,'Proxima_convocatoria': 7.0,'Eliminar_de_la_base': 8.0,'Sin_perfil': 9.0,'Sin_tiempo': 10.0,'Sin_interes': 11.0,'Ya_esta_estudiando_en_otra_universidad': 12.0,'Otra_area_de_interés': 13.0,'En_proceso_de_selección': 14.0,'Interesado_en_seguimiento': 15.0,'Volver_a_llamar': 16.0,'Fuera_de_servicio': 17.0,'Tercer_intento_de_contacto': 18.0,'Segundo_intento_de_contacto': 19.0,'Primer_intento_de_contacto': 20.0,'Informacion_general_': 21.0,'No_Manifiesta_motivo': 22.0,'no': 23.0,'Cliente_en_seguimiento': 24.0,'TIMEOUTCHAT': 25.0,'Equivocado': 26.0,'Se_remite_a_otras_áreas': 27.0,'Otra_area_de_interes': 28.0,'TIMEOUTACW': 29.0,'Cuelga_Telefono': 30.0,'nan': 31.0,'': 32.0,'-': 33.0
+            tipificaciones = {
+                'Matriculado': 1.0,
+                'Liquidacion': 2.0,
+                'Número_inválido': 3.0,
+                'Imposible_contacto': 4.0,
+                'Por_ubicacion': 5.0,
+                'No_Manifiesta_motivo': 6.0,
+                'Proxima_convocatoria': 7.0,
+                'Eliminar_de_la_base': 8.0,
+                'Sin_perfil': 9.0,
+                'Sin_tiempo': 10.0,
+                'Sin_interes': 11.0,
+                'Ya_esta_estudiando_en_otra_universidad': 12.0,
+                'Otra_area_de_interés': 13.0,
+                'En_proceso_de_selección': 14.0,
+                'Interesado_en_seguimiento': 15.0,
+                'Volver_a_llamar': 16.0,
+                'Fuera_de_servicio': 17.0,
+                'Tercer_intento_de_contacto': 18.0,
+                'Segundo_intento_de_contacto': 19.0,
+                'Primer_intento_de_contacto': 20.0,
+                'Informacion_general_': 21.0,
+                'No_Manifiesta_motivo': 22.0,
+                'no': 23.0,
+                'Cliente_en_seguimiento': 24.0,
+                'TIMEOUTCHAT': 25.0,
+                'Equivocado': 26.0,
+                'Se_remite_a_otras_áreas': 27.0,
+                'Otra_area_de_interes': 28.0,
+                'TIMEOUTACW': 29.0,
+                'Cuelga_Telefono': 30.0,
+                'nan': 31.0,
+                '': 32.0,
+                '-': 33.0
             }
             # Modelo Tipificación
             valor_tipificacion = tipificaciones.get(
@@ -672,35 +832,24 @@ class Cargarcsv(APIView):
             if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_ID']):
                 try:
                     aspirante = Aspirantes.objects.get(
-                    celular=row['cel_modificado'])
+                        celular=row['cel_modificado'])
                     tipificacion = Tipificacion.objects.get(
-                    nombre=row['DESCRIPTION_COD_ACT'])
+                        nombre=row['DESCRIPTION_COD_ACT'])
                     asesor = Asesores.objects.get(id=row['AGENT_ID'])
                     tipo_gestion = validar_tipo_gestion(row, df)
                     fecha_convertida = convertir_fecha(row['DATE'])
                     observaciones = llenar_observaciones(row)
-                    
                     # Verificar que todos los datos necesarios están disponibles
                     if all([aspirante, tipificacion, asesor, tipo_gestion]):
-                        gestion_existente = Gestiones.objects.filter(
+                        nueva_gestion = Gestiones(
                             cel_aspirante=aspirante,
-                                fecha=fecha_convertida,
-                                tipo_gestion=tipo_gestion,
-                                observaciones=observaciones,
-                                tipificacion=tipificacion,
-                                asesor=asesor,
-                        ).exists()
-                        
-                        if not gestion_existente:
-                            nueva_gestion = Gestiones(
-                                cel_aspirante=aspirante,
-                                fecha=fecha_convertida,
-                                tipo_gestion=tipo_gestion,
-                                observaciones=observaciones,
-                                tipificacion=tipificacion,
-                                asesor=asesor,
-                            )
-                            nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
+                            fecha=fecha_convertida,
+                            tipo_gestion=tipo_gestion,
+                            observaciones=observaciones,
+                            tipificacion=tipificacion,
+                            asesor=asesor,
+                        )
+                        nueva_gestion.save()  # Guardar el nuevo registro en la base de datos
                     else:
                         print(f"Datos incompletos para la gestión con celular {
                               row['cel_modificado']}.")
@@ -752,8 +901,6 @@ class TipificacionViewSet(viewsets.ModelViewSet, APIView):
 class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = HistoricoGestionesSerializer
-    # pagination_class = None  # Desactiva la paginación para esta vista
-
 
     
 
@@ -776,16 +923,16 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
     pagination_class = None  # Desactiva la paginación para esta vista
-
+  
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
-            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='Llamada', then=1),
                                                 output_field=models.IntegerField())), 0),
 
-            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
-                                                      output_field=models.IntegerField())), 0),
+            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='Mensaje de texto', then=1),
+                                                    output_field=models.IntegerField())), 0),
 
-            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='WhatsApp', then=1),
                                                 output_field=models.IntegerField())), 0),
 
             cantidad_gestiones=Count('gestiones', distinct=True),
@@ -796,9 +943,9 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
         id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
-            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            queryset = queryset.filter(gestiones_fecha_gte=fecha_inicio)
         if fecha_fin:
-            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+            queryset = queryset.filter(gestiones_fecha_lte=fecha_fin)
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 

@@ -166,36 +166,26 @@ class AspirantesFilter(django_filters.FilterSet):
 
 
 
-    def filter_fecha_ultima_gestion(self, queryset, name, value):
-        if value:
-            # Subquery para obtener la última fecha de gestión por cada aspirante
-            subquery = Gestiones.objects.filter(
-                cel_aspirante=OuterRef('celular')
-            ).values('cel_aspirante').annotate(
-                ultima_fecha=Max('fecha')
-            ).values('ultima_fecha')
-
-            # Anotar el queryset con la última fecha de gestión
-            queryset = queryset.annotate(
-                fecha_ultima_gestion=Subquery(subquery)
-            ).filter(
-                fecha_ultima_gestion=value
-            )
-
-        return queryset
-
-
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
         if value:
-            # Buscar la tipificación por nombre
+            # Obtener la tipificación por nombre
             try:
                 tipificacion = Tipificacion.objects.get(nombre=value)
-                # Filtrar por la tipificación encontrada
-                return queryset.filter(
-                    gestiones__tipificacion=tipificacion
-                ).order_by('-gestiones__fecha').distinct()
+
+                # Subquery para obtener la última gestión de cada aspirante
+                latest_gestion = Gestiones.objects.filter(
+                    cel_aspirante=OuterRef('pk')
+                ).order_by('-fecha').values('tipificacion__nombre')[:1]
+
+                # Filtrar el queryset de aspirantes según la última tipificación
+                return queryset.annotate(
+                    ultima_tipificacion_nombre=Subquery(latest_gestion)
+                ).filter(
+                    ultima_tipificacion_nombre=tipificacion.nombre
+                ).distinct()
             except Tipificacion.DoesNotExist:
                 return queryset.none()
+
         return queryset
 
 
