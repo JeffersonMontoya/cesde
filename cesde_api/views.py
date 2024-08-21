@@ -11,7 +11,7 @@ from .serializer_filters import *
 from .serializer_historico import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When
+from django.db.models import Sum, Count, Case, When, IntegerField
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
@@ -919,17 +919,17 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
-            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
-                                                output_field=models.IntegerField())), 0),
+            cantidad_llamadas=Coalesce(Sum(Case(
+                When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+                output_field=IntegerField()
+            )), 0),
 
-            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
-                                                output_field=models.IntegerField())), 0),
-
-            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
-                                                output_field=models.IntegerField())), 0),
+            cantidad_whatsapp=Coalesce(Sum(Case(
+                When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+                output_field=IntegerField()
+            )), 0),
 
             cantidad_gestiones=Count('gestiones', distinct=True),
-
         )
 
         fecha_inicio = self.request.query_params.get('fecha_inicio')
@@ -937,9 +937,19 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
         id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
-            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            try:
+                fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+                queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            except ValueError:
+                pass  # Manejar el error de formato de fecha según sea necesario
+
         if fecha_fin:
-            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+            try:
+                fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+                queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+            except ValueError:
+                pass  # Manejar el error de formato de fecha según sea necesario
+
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
