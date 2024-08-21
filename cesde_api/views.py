@@ -30,9 +30,6 @@ logging.basicConfig(level=logging.DEBUG)
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
-
 class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
@@ -45,25 +42,25 @@ class CustomPagination(PageNumberPagination):
         """
         Devuelve una respuesta paginada que incluye la información de paginación.
         """
-        # Estructura la respuesta con la información de paginación en la parte superior
         return Response({
-            'pagination': {
-                'count': self.page.paginator.count,
-                'total_pages': self.page.paginator.num_pages,
-                'current_page': self.page.number,
-                'page_size': self.page.paginator.per_page,
-                'next': self.get_next_link(),
-                'previous': self.get_previous_link()
-            },
-            'results': data
+            'count': self.page.paginator.count,
+            'total_pages': self.page.paginator.num_pages,
+            'current_page': self.page.number,
+            'page_size': self.page.paginator.per_page,
+            'results': data,
+            'next': self.get_next_link(),
+            'previous': self.get_previous_link()
         })
 
+
+    
 
 
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
     filter_backends = (DjangoFilterBackend,)
+    pagination_class = None  # Desactiva la paginación
 
 
 class EstadoViewSet(viewsets.ModelViewSet):
@@ -71,6 +68,7 @@ class EstadoViewSet(viewsets.ModelViewSet):
     serializer_class = EstadoSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EstadosFilter
+    pagination_class = None  # Desactiva la paginación
 
 
 # view para filters generales
@@ -347,13 +345,13 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='técnicos')
+        queryset = self.get_queryset().filter(proceso__nombre='Técnicos')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
     def estadisticas_empresa(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='empresa')
+        queryset = self.get_queryset().filter(proceso__nombre='Empresas')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_empresa': estadisticas_generales})
 
@@ -363,7 +361,7 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     serializer_class = TipoGestionSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = Tipo_gestionFilter
-
+    pagination_class = None  # Desactiva la paginación
 
 class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
@@ -379,7 +377,7 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = ProgramaFilter
     pagination_class = CustomPagination  # Usar la paginación personalizada
-
+    pagination_class = None  # Desactiva la paginación
 
 # Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
 class EmpresaViewSet(viewsets.ModelViewSet):
@@ -388,6 +386,7 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     serializer_class = EmpresaSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
+    pagination_class = None  # Desactiva la paginación
 
 
 class Cargarcsv(APIView):
@@ -786,11 +785,13 @@ class Cargarcsv(APIView):
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer
+    pagination_class = None  # Desactiva la paginación para esta vista
 
 
 class TipificacionViewSet(viewsets.ModelViewSet, APIView):
     queryset = Tipificacion.objects.all()
     serializer_class = TipificacionSerializer
+    pagination_class = None  # Desactiva la paginación para esta vista
 
     def create(self, request, *args, **kwargs):
         # Extraer datos del cuerpo de la solicitud
@@ -812,6 +813,8 @@ class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = HistoricoGestionesSerializer
 
+    
+
     @action(detail=False, methods=['get'])
     def historico(self, request):
         celular_aspirante = request.query_params.get('celular_aspirante')
@@ -830,8 +833,8 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = CustomPagination  # Usar la paginación personalizada
-
+    pagination_class = None  # Desactiva la paginación para esta vista
+  
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
             cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
@@ -844,7 +847,6 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
                                                 output_field=models.IntegerField())), 0),
 
             cantidad_gestiones=Count('gestiones', distinct=True),
-
         )
 
         fecha_inicio = self.request.query_params.get('fecha_inicio')
