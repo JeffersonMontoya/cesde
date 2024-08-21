@@ -83,7 +83,7 @@ class Tipificacion(models.Model):
     
 class Gestiones(models.Model):
     cel_aspirante = models.ForeignKey(Aspirantes, on_delete=models.CASCADE)
-    fecha = models.DateField()
+    fecha = models.DateTimeField()
     tipo_gestion = models.ForeignKey(Tipo_gestion, on_delete=models.CASCADE)
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)

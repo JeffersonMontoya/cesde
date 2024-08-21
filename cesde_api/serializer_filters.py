@@ -77,9 +77,10 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-        # Formatear la fecha para que solo devuelva año, mes y día
-            return ultima_gestion.fecha.strftime('%Y-%m-%d')
+            # Formatear la fecha y hora
+            return ultima_gestion.fecha.strftime('%Y-%m-%d %H:%M:%S')
         return "Ninguno"
+
     
     # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
