@@ -49,7 +49,6 @@ TIPIFICACIONES_OPCIONALES = {
     'nan': 31.0,
 }
 
-
 class AspiranteFilterSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -66,7 +65,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
-        
 
     class Meta:
         model = Aspirantes

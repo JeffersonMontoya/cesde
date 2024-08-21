@@ -819,6 +819,8 @@ class TipificacionViewSet(viewsets.ModelViewSet, APIView):
 class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = HistoricoGestionesSerializer
+    # pagination_class = None  # Desactiva la paginación para esta vista
+
 
     @action(detail=False, methods=['get'])
     def historico(self, request):

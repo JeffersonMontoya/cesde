@@ -5,7 +5,7 @@ from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Va
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
-
+from django_filters import ModelChoiceFilter
 
 # Para devolver el nombre por get 
 class TipificacionNameFilter(ModelChoiceFilter):
@@ -28,8 +28,7 @@ class TipificacionNameFilter(ModelChoiceFilter):
                 ultima_tipificacion_nombre=value.nombre
             ).distinct()
         return qs
-    
-from django_filters import ModelChoiceFilter
+
 
 class EstadoAspiranteNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
