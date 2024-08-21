@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import *
 from datetime import datetime
 
+<<<<<<< HEAD
 # Define las constantes con los valores proporcionados
 TIPIFICACIONES_INTERESADO = {
     'Matriculado': 1.0,
@@ -48,6 +49,8 @@ TIPIFICACIONES_OPCIONALES = {
     '': 30.0,
     'nan': 31.0,
 }
+=======
+>>>>>>> ae77b2e530bb7ac6ae840b744a78d74f789ccb85
 
 class AspiranteFilterSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
@@ -117,14 +120,16 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
-    # Función para obtener la fecha de la última gestión del celular adicional 
+   
+   # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
             # Formatear la fecha y hora
-            return ultima_gestion.fecha.strftime('%Y-%m-%d %H:%M:%S')
+            return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return "Ninguno"
+    
 
     
     # Función para obtener el estado de la última gestión del celular adicional
@@ -154,11 +159,12 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             delta = datetime.now().date() - fecha_ultima
             return delta.days
         return "Ninguno"
-    
-    # codigo nuevo
+
+# codigo nuevo
     def get_mejor_gestion(self, obj):
         gestiones = Gestiones.objects.filter(cel_aspirante=obj)
         if gestiones.exists():
+            # Encuentra la tipificación con el valor más bajo
             mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
             if mejor_tipificacion:
                 return mejor_tipificacion.tipificacion.nombre
@@ -169,18 +175,36 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if gestiones.exists():
             mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
             if mejor_tipificacion:
-                return self.determine_gestion_final(mejor_tipificacion.tipificacion.nombre)
+                return mejor_tipificacion.tipificacion.categoria
         return 'Desconocido'
 
-    def determine_gestion_final(self, nombre_tipificacion):
-        if nombre_tipificacion in TIPIFICACIONES_INTERESADO:
-            return 'Interesado'
-        elif nombre_tipificacion in TIPIFICACIONES_EN_SEGUIMIENTO:
-            return 'En seguimiento'
-        elif nombre_tipificacion in TIPIFICACIONES_NO_CONTACTADO:
-            return 'No contactado'
-        elif nombre_tipificacion in TIPIFICACIONES_DESCARTADO:
-            return 'Descartado'
-        elif nombre_tipificacion in TIPIFICACIONES_OPCIONALES:
-            return 'Tipificaciones opcionales'
-        return 'Desconocido'
+
+    # # codigo viejo
+    # def get_mejor_gestion(self, obj):
+    #     gestiones = Gestiones.objects.filter(cel_aspirante=obj)
+    #     if gestiones.exists():
+    #         mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
+    #         if mejor_tipificacion:
+    #             return mejor_tipificacion.tipificacion.nombre
+    #     return "Ninguno"
+
+    # def get_gestion_final(self, obj):
+    #     gestiones = Gestiones.objects.filter(cel_aspirante=obj)
+    #     if gestiones.exists():
+    #         mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
+    #         if mejor_tipificacion:
+    #             return self.determine_gestion_final(mejor_tipificacion.tipificacion.nombre)
+    #     return 'Desconocido'
+
+    # def determine_gestion_final(self, nombre_tipificacion):
+    #     if nombre_tipificacion in TIPIFICACIONES_INTERESADO:
+    #         return 'Interesado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_EN_SEGUIMIENTO:
+    #         return 'En seguimiento'
+    #     elif nombre_tipificacion in TIPIFICACIONES_NO_CONTACTADO:
+    #         return 'No contactado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_DESCARTADO:
+    #         return 'Descartado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_OPCIONALES:
+    #         return 'Tipificaciones opcionales'
+    #     return 'Desconocido'

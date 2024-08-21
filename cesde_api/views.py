@@ -11,7 +11,7 @@ from .serializer_filters import *
 from .serializer_historico import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When
+from django.db.models import Sum, Count, Case, When, IntegerField
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
@@ -104,67 +104,6 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="empresa")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="extenciones")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
 
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
@@ -813,17 +752,16 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
-            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='Llamada', then=1),
-                                                output_field=models.IntegerField())), 0),
-
-            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='Mensaje de texto', then=1),
-                                                    output_field=models.IntegerField())), 0),
-
-            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones_tipo_gestion_nombre='WhatsApp', then=1),
-                                                output_field=models.IntegerField())), 0),
-
+            cantidad_llamadas=Coalesce(Sum(Case(
+                When(gestiones__tipo_gestion__nombre='Llamada', then=1),
+                output_field=IntegerField()
+            )), 0),
+            cantidad_whatsapp=Coalesce(Sum(Case(
+                When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
+                output_field=IntegerField()
+            )), 0),
             cantidad_gestiones=Count('gestiones', distinct=True),
-        )
+        ).distinct()
 
         fecha_inicio = self.request.query_params.get('fecha_inicio')
         fecha_fin = self.request.query_params.get('fecha_fin')
