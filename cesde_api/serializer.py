@@ -63,10 +63,7 @@ class ProcesoSerializer(serializers.ModelSerializer):
         model = Proceso
         fields = '__all__'
 
-class AsesorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Asesores
-        fields = '__all__'
+
 
 class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
