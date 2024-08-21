@@ -105,67 +105,6 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
 
         return paginator.get_paginated_response(serializer.data)
 
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="empresa")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="extenciones")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
