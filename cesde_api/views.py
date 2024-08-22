@@ -1,7 +1,7 @@
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import pandas as pd
@@ -11,7 +11,7 @@ from .serializer_filters import *
 from .serializer_historico import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When
+from django.db.models import Sum, Count, Case, When, IntegerField, Subquery, OuterRef
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
@@ -21,6 +21,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 import pytz
 from django.db import IntegrityError
+
+
 
 
 import logging
@@ -36,7 +38,7 @@ class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
     """
-    page_size = 20  # Número de registros por página
+    page_size = 10  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
 
@@ -76,9 +78,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
     serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
@@ -87,10 +87,8 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         """
         Devuelve la lista de aspirantes con filtros aplicados.
         """
-        queryset = self.get_queryset()
-
         # Inicializa el filtro de procesos
-        procesos_filter = ProcesosFilter(request.GET, queryset=queryset)
+        procesos_filter = ProcesosFilter(request.GET, queryset=self.queryset)
         if procesos_filter.is_valid():
             queryset = procesos_filter.qs
 
@@ -105,68 +103,25 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def empresa(self, request):
+    
+    @action(detail=False, methods=['get'], url_path='buscar-por-celular')
+    def retrieve_by_celular(self, request, *args, **kwargs):
         """
-        Filtro aspirantes para el proceso con nombre 'Empresa' y aplica filtros generales.
+        Devuelve un aspirante específico por número de celular.
         """
-        proceso = get_object_or_404(Proceso, nombre="empresa")
-        queryset = self.get_queryset().filter(proceso=proceso)
+        celular = request.query_params.get('celular', None)
+        
+        if not celular:
+            return Response({'detail': 'El parámetro celular es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-extensiones')
-    def extensiones(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Extensiones' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="extenciones")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-    @action(detail=False, methods=['get'], url_path='proceso-tecnico')
-    def tecnico(self, request):
-        """
-        Filtro aspirantes para el proceso con nombre 'Técnico' y aplica filtros generales.
-        """
-        proceso = get_object_or_404(Proceso, nombre="técnicos")
-        queryset = self.get_queryset().filter(proceso=proceso)
-
-        # Aplica filtros generales
-        filterset = AspirantesFilter(request.GET, queryset=queryset)
-        if filterset.is_valid():
-            queryset = filterset.qs
-
-        # Aplica la paginación
-        paginator = self.pagination_class()
-        paginated_queryset = paginator.paginate_queryset(queryset, request)
-        serializer = self.get_serializer(paginated_queryset, many=True)
-
-        return paginator.get_paginated_response(serializer.data)
-
-
+        try:
+            aspirante = self.queryset.get(celular=celular)
+            serializer = self.get_serializer(aspirante)
+            return Response(serializer.data)
+        except Aspirantes.DoesNotExist:
+            return Response({'detail': 'Aspirante no encontrado.'}, status=status.HTTP_404_NOT_FOUND)  
+    
+    
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
@@ -275,7 +230,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
 
-
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
@@ -304,31 +258,38 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         fecha_fin = request.query_params.get('fecha_fin')
         proceso_nombre = request.query_params.get('proceso_nombre')
 
+        # Verifica que las fechas de inicio y fin estén presentes en los parámetros de la URL
         if not fecha_inicio or not fecha_fin:
             return Response({
                 'detail': 'Las fechas de inicio y fin son requeridas en el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Convierte las fechas de cadena a objetos de fecha
             fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
         except ValueError:
+            # Devuelve un error si el formato de la fecha es inválido
             return Response({
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Filtrar gestiones por fecha
+        # Filtrar gestiones por el rango de fechas especificado
         gestiones_queryset = Gestiones.objects.filter(
             fecha__range=[fecha_inicio, fecha_fin])
 
         # Aplicar filtro por nombre del proceso si está presente
         if proceso_nombre:
+            proceso_nombre = proceso_nombre.capitalize()  # Esto convierte solo la primera letra a mayúscula
             gestiones_queryset = gestiones_queryset.filter(
                 cel_aspirante__proceso__nombre=proceso_nombre
             )
 
+        # Obtener las estadísticas para el rango de fechas filtrado
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(
-            gestiones_queryset, fecha_inicio, fecha_fin)
+            gestiones_queryset, fecha_inicio, fecha_fin
+        )
+        # Obtener la contactabilidad para el rango de fechas filtrado
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
         return Response({
@@ -338,7 +299,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='extenciones')
+        queryset = self.get_queryset().filter(proceso__nombre='Extenciones')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
@@ -388,6 +349,8 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     pagination_class = None  # Desactiva la paginación
 
 
+
+
 class ProcesoViewSet(viewsets.ModelViewSet):
     queryset = Proceso.objects.all()
     serializer_class = ProcesoSerializer
@@ -434,36 +397,36 @@ class HistoricoViewSet(viewsets.ModelViewSet):
             return Response({"error": "Número de celular no proporcionado"}, status=400)
 
 
-class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
-    queryset = Asesores.objects.all()
+class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = None  # Desactiva la paginación para esta vista
-  
+    pagination_class = CustomPagination
+
     def get_queryset(self):
-        queryset = Asesores.objects.annotate(
-            cantidad_llamadas=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Llamada', then=1),
-                                                output_field=models.IntegerField())), 0),
+        return self.get_filtered_queryset()
 
-            cantidad_mensajes_texto=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='Mensaje de texto', then=1),
-                                                      output_field=models.IntegerField())), 0),
-
-            cantidad_whatsapp=Coalesce(Sum(Case(When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
-                                                output_field=models.IntegerField())), 0),
-
-            cantidad_gestiones=Count('gestiones', distinct=True),
-        )
-
+    def get_filtered_queryset(self):
         fecha_inicio = self.request.query_params.get('fecha_inicio')
         fecha_fin = self.request.query_params.get('fecha_fin')
         id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
-            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            queryset = queryset.filter(gestiones_fecha_gte=fecha_inicio)
         if fecha_fin:
-            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+            queryset = queryset.filter(gestiones_fecha_lte=fecha_fin)
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
-        return queryset.distinct()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

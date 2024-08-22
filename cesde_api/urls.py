@@ -3,6 +3,8 @@ from rest_framework.routers import DefaultRouter
 from .views import *
 from .cargarcsv import Cargarcsv
 
+
+
 router = DefaultRouter()
 router.register(r'sede', SedeViewSet)
 router.register(r'estados', EstadoViewSet)
@@ -13,8 +15,8 @@ router.register(r'estadisticas', EstadisticasViewSet, basename='estadisticas')
 router.register(r'tipo-gestion', TipoGestionViewSet)
 router.register(r'programas', ProgramaViewSet)
 router.register(r'empresas', EmpresaViewSet)
-router.register(r'procesos', ProcesoViewSet )
-router.register(r'tipificaciones' , TipificacionViewSet)
+router.register(r'procesos', ProcesoViewSet)
+router.register(r'tipificaciones', TipificacionViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'historico', HistoricoViewSet, basename='historico')
 
