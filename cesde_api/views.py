@@ -22,8 +22,6 @@ from rest_framework.pagination import PageNumberPagination
 import pytz
 
 
-
-
 import logging
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -779,10 +777,19 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         fecha_fin = self.request.query_params.get('fecha_fin')
         id_asesor = self.request.query_params.get('id')
 
-        if fecha_inicio:
-            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
-        if fecha_fin:
-            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
+        gestiones_subquery = Gestiones.objects.filter(
+            asesor=OuterRef('pk')
+        )
+
+        if fecha_inicio and fecha_fin:
+            gestiones_subquery = gestiones_subquery.filter(
+                fecha__range=[fecha_inicio, fecha_fin]
+            )
+
+        queryset = Asesores.objects.annotate(
+            tiene_gestiones=Subquery(gestiones_subquery.values('id')[:1])
+        ).filter(tiene_gestiones__isnull=False)
+
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
