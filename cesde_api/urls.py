@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import *
+from .cargarcsv import Cargarcsv
 
 router = DefaultRouter()
 router.register(r'sede', SedeViewSet)
