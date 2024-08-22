@@ -46,7 +46,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     def get_nombre_completo(self, obj):
         return obj.nombre
 
-
     # Funcion para llevar el conteo de llamadas del aspirante
     def get_cantidad_llamadas(self, obj):
         llamadas_gestion = Tipo_gestion.objects.filter(
@@ -65,13 +64,11 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=whatsapp_gestion).count()
         return 0
 
-
     # Funcion para llevar el conteo  de gestiones
     def get_cantidad_gestiones(self, obj):
         cantidad_gestiones = Gestiones.objects.filter(
             cel_aspirante=obj).count()
         return cantidad_gestiones
-
 
     # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
@@ -89,8 +86,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if obj.estado:
             return obj.estado.nombre  # Accede al nombre del estado
         return "Ninguno"
-
-
+    
     def get_ultima_tipificacion(self, obj):
         ultima_tipificacion = Gestiones.objects.filter(
             cel_aspirante=obj
