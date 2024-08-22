@@ -2,53 +2,6 @@ from rest_framework import serializers
 from .models import *
 from datetime import datetime
 
-# Define las constantes con los valores proporcionados
-TIPIFICACIONES_INTERESADO = {
-    'Matriculado': 1.0,
-    'Liquidacion': 2.0,
-    'En_proceso_de_selección': 14.0,
-    'Interesado_en_seguimiento': 15.0,
-}
-
-TIPIFICACIONES_EN_SEGUIMIENTO = {
-    'Volver_a_llamar': 16.0,
-}
-
-TIPIFICACIONES_NO_CONTACTADO = {
-    'Primer_intento_de_contacto': 20.0,
-    'Segundo_intento_de_contacto': 19.0,
-    'Tercer_intento_de_contacto': 18.0,
-    'Fuera_de_servicio': 17.0,
-}
-
-TIPIFICACIONES_DESCARTADO = {
-    'Número_inválido': 3.0,
-    'Imposible_contacto': 4.0,
-    'Por_ubicacion': 5.0,
-    'No_Manifiesta_motivo': 6.0,
-    'Proxima_convocatoria': 7.0,
-    'Eliminar_de_la_base': 8.0,
-    'Sin_perfil': 9.0,
-    'Sin_tiempo': 10.0,
-    'Sin_interes': 11.0,
-    'Ya_esta_estudiando_en_otra_universidad': 12.0,
-    'Otra_area_de_interés': 13.0,
-}
-
-TIPIFICACIONES_OPCIONALES = {
-    'Informacion_general_': 21.0,
-    'No_Manifiesta_motivo': 22.0,
-    'no': 23.0,
-    'Cliente_en_seguimiento': 24.0,
-    'TIMEOUTCHAT': 25.0,
-    'Equivocado': 26.0,
-    'Se_remite_a_otras_áreas': 27.0,
-    'TIMEOUTACW': 28.0,
-    'Cuelga_Telefono': 29.0,
-    '': 30.0,
-    'nan': 31.0,
-}
-
 
 class AspiranteFilterSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
@@ -66,7 +19,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
-        
 
     class Meta:
         model = Aspirantes
@@ -119,14 +71,17 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
-    # Función para obtener la fecha de la última gestión del celular adicional 
+   
+   # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-        # Formatear la fecha para que solo devuelva año, mes y día
+            # Formatear la fecha y hora
             return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return "Ninguno"
+    
+
     
     # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
@@ -155,11 +110,12 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             delta = datetime.now().date() - fecha_ultima
             return delta.days
         return "Ninguno"
-    
-    # codigo nuevo
+
+# codigo nuevo
     def get_mejor_gestion(self, obj):
         gestiones = Gestiones.objects.filter(cel_aspirante=obj)
         if gestiones.exists():
+            # Encuentra la tipificación con el valor más bajo
             mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
             if mejor_tipificacion:
                 return mejor_tipificacion.tipificacion.nombre
@@ -170,18 +126,36 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         if gestiones.exists():
             mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
             if mejor_tipificacion:
-                return self.determine_gestion_final(mejor_tipificacion.tipificacion.nombre)
+                return mejor_tipificacion.tipificacion.categoria
         return 'Desconocido'
 
-    def determine_gestion_final(self, nombre_tipificacion):
-        if nombre_tipificacion in TIPIFICACIONES_INTERESADO:
-            return 'Interesado'
-        elif nombre_tipificacion in TIPIFICACIONES_EN_SEGUIMIENTO:
-            return 'En seguimiento'
-        elif nombre_tipificacion in TIPIFICACIONES_NO_CONTACTADO:
-            return 'No contactado'
-        elif nombre_tipificacion in TIPIFICACIONES_DESCARTADO:
-            return 'Descartado'
-        elif nombre_tipificacion in TIPIFICACIONES_OPCIONALES:
-            return 'Tipificaciones opcionales'
-        return 'Desconocido'
+
+    # # codigo viejo
+    # def get_mejor_gestion(self, obj):
+    #     gestiones = Gestiones.objects.filter(cel_aspirante=obj)
+    #     if gestiones.exists():
+    #         mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
+    #         if mejor_tipificacion:
+    #             return mejor_tipificacion.tipificacion.nombre
+    #     return "Ninguno"
+
+    # def get_gestion_final(self, obj):
+    #     gestiones = Gestiones.objects.filter(cel_aspirante=obj)
+    #     if gestiones.exists():
+    #         mejor_tipificacion = gestiones.order_by('tipificacion__valor_tipificacion').first()
+    #         if mejor_tipificacion:
+    #             return self.determine_gestion_final(mejor_tipificacion.tipificacion.nombre)
+    #     return 'Desconocido'
+
+    # def determine_gestion_final(self, nombre_tipificacion):
+    #     if nombre_tipificacion in TIPIFICACIONES_INTERESADO:
+    #         return 'Interesado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_EN_SEGUIMIENTO:
+    #         return 'En seguimiento'
+    #     elif nombre_tipificacion in TIPIFICACIONES_NO_CONTACTADO:
+    #         return 'No contactado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_DESCARTADO:
+    #         return 'Descartado'
+    #     elif nombre_tipificacion in TIPIFICACIONES_OPCIONALES:
+    #         return 'Tipificaciones opcionales'
+    #     return 'Desconocido'

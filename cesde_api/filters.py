@@ -1,13 +1,12 @@
 import django_filters
+import datetime
 from django_filters import ModelChoiceFilter
 from .models import *
 from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
-
-
-
+from django_filters import ModelChoiceFilter
 
 # Para devolver el nombre por get 
 class TipificacionNameFilter(ModelChoiceFilter):
@@ -30,8 +29,7 @@ class TipificacionNameFilter(ModelChoiceFilter):
                 ultima_tipificacion_nombre=value.nombre
             ).distinct()
         return qs
-    
-from django_filters import ModelChoiceFilter
+
 
 class EstadoAspiranteNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
@@ -89,7 +87,6 @@ class AspirantesFilter(django_filters.FilterSet):
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
     programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
-    # nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
 
     class Meta:
@@ -165,9 +162,11 @@ class AspirantesFilter(django_filters.FilterSet):
                     dias_ultima_gestion=fecha_limite
                 )
             except ValueError:
+                # Si el valor proporcionado no es un número válido, devolver un queryset vacío
                 return queryset.none()
-        return queryset
 
+        # Si no hay valor proporcionado, devolver el queryset sin filtrar
+        return queryset
 
 
     def filter_fecha_ultima_gestion(self, queryset, name, value):
@@ -191,15 +190,24 @@ class AspirantesFilter(django_filters.FilterSet):
 
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
         if value:
-            # Buscar la tipificación por nombre
+            # Obtener la tipificación por nombre
             try:
                 tipificacion = Tipificacion.objects.get(nombre=value)
-                # Filtrar por la tipificación encontrada
-                return queryset.filter(
-                    gestiones__tipificacion=tipificacion
-                ).order_by('-gestiones__fecha').distinct()
+
+                # Subquery para obtener la última gestión de cada aspirante
+                latest_gestion = Gestiones.objects.filter(
+                    cel_aspirante=OuterRef('pk')
+                ).order_by('-fecha_hora').values('tipificacion__nombre')[:1]
+
+                # Filtrar el queryset de aspirantes según la última tipificación
+                return queryset.annotate(
+                    ultima_tipificacion_nombre=Subquery(latest_gestion)
+                ).filter(
+                    ultima_tipificacion_nombre=tipificacion.nombre
+                ).distinct()
             except Tipificacion.DoesNotExist:
                 return queryset.none()
+
         return queryset
 
 
@@ -281,10 +289,27 @@ class GestionesFilter(django_filters.FilterSet):
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
 
 class AsesoresFilter(django_filters.FilterSet):
-    fecha_inicio = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='gte', label='fecha inicio')
-    fecha_fin = django_filters.DateFilter(field_name='gestiones__fecha', lookup_expr='lte', label='fecha final')
-    id = django_filters.CharFilter(field_name='id', label='id')
-    
+    fecha_inicio = django_filters.CharFilter(method='filter_fecha_inicio', label='Fecha inicio')
+    fecha_fin = django_filters.CharFilter(method='filter_fecha_fin', label='Fecha final')
+    id = django_filters.NumberFilter(field_name='id', label='ID')
+
+    def filter_fecha_inicio(self, queryset, name, value):
+        if value:
+            try:
+                fecha_inicio = datetime.datetime.strptime(value, '%Y-%m-%d').date()
+                return queryset.filter(gestiones__fecha__gte=fecha_inicio)
+            except (ValueError, TypeError):
+                return queryset
+        return queryset
+
+    def filter_fecha_fin(self, queryset, name, value):
+        if value:
+            try:
+                fecha_fin = datetime.datetime.strptime(value, '%Y-%m-%d').date()
+                return queryset.filter(gestiones__fecha__lte=fecha_fin)
+            except (ValueError, TypeError):
+                return queryset
+        return queryset
 
     class Meta:
         model = Asesores
