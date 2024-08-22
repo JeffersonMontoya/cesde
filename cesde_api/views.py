@@ -770,7 +770,7 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = None  # Desactiva la paginación para esta vista
+    # pagination_class = None  # Desactiva la paginación para esta vista
 
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
@@ -790,10 +790,24 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
         id_asesor = self.request.query_params.get('id')
 
         if fecha_inicio:
-            queryset = queryset.filter(gestiones_fecha_gte=fecha_inicio)
+            queryset = queryset.filter(gestiones__fecha__gte=fecha_inicio)
         if fecha_fin:
-            queryset = queryset.filter(gestiones_fecha_lte=fecha_fin)
+            queryset = queryset.filter(gestiones__fecha__lte=fecha_fin)
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
         return queryset.distinct()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Aplica la paginación solo si se están filtrando resultados
+        if 'fecha_inicio' in request.query_params or 'fecha_fin' in request.query_params or 'id' in request.query_params:
+            paginator = self.pagination_class()
+            paginated_queryset = paginator.paginate_queryset(queryset, request, view=self)
+            serializer = self.get_serializer(paginated_queryset, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        
+        # Si no hay filtro, se retorna la consulta sin paginación
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
