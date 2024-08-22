@@ -7,7 +7,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django_filters import ModelChoiceFilter
 
-# Para devolver el nombre por get 
+# Clases ModelChoice para devolver el nombre por la url, para hacer el consumo de la api
 class TipificacionNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
         kwargs['to_field_name'] = 'nombre'
@@ -16,16 +16,16 @@ class TipificacionNameFilter(ModelChoiceFilter):
 
     def filter(self, qs, value):
         if value:
-            # Subquery para obtener la última gestión de cada aspirante
+            # Subquery para obtener la gestión más reciente para cada aspirante
             latest_gestion = Gestiones.objects.filter(
-                cel_aspirante=OuterRef('pk')
-            ).order_by('-fecha').values('tipificacion__nombre')[:1]
+                cel_aspirante=OuterRef('celular') # Se utilizo celular como campo de referencia 
+            ).order_by('-fecha', '-id').values('id')[:1]
 
-            # Filtrar el queryset de aspirantes según la última tipificación
-            return qs.annotate(
-                ultima_tipificacion_nombre=Subquery(latest_gestion)
-            ).filter(
-                ultima_tipificacion_nombre=value.nombre
+            # Filtrar el queryset de aspirantes
+            return qs.filter(
+                # Q Objects para combinar las condicones del filtrado, que sea especificamente el que se filtra
+                Q(gestiones__id__in=Subquery(latest_gestion)) &
+                Q(gestiones__tipificacion__nombre=value)
             ).distinct()
         return qs
 
@@ -192,26 +192,20 @@ class AspirantesFilter(django_filters.FilterSet):
 
         return queryset
 
-
+    # Tipificacion ajustada
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
         if value:
-            # Obtener la tipificación por nombre
-            try:
-                tipificacion = Tipificacion.objects.get(nombre=value)
+            # Subquery para obtener la gestión más reciente para cada aspirante
+            latest_gestion = Gestiones.objects.filter(
+                cel_aspirante=OuterRef('celular') # Se utilizo celular como campo de referencia 
+            ).order_by('-fecha', '-id').values('id')[:1]
 
-                # Subquery para obtener la última gestión de cada aspirante
-                latest_gestion = Gestiones.objects.filter(
-                    cel_aspirante=OuterRef('pk')
-                ).order_by('-fecha_hora').values('tipificacion__nombre')[:1]
-
-                # Filtrar el queryset de aspirantes según la última tipificación
-                return queryset.annotate(
-                    ultima_tipificacion_nombre=Subquery(latest_gestion)
-                ).filter(
-                    ultima_tipificacion_nombre=tipificacion.nombre
-                ).distinct()
-            except Tipificacion.DoesNotExist:
-                return queryset.none()
+            # Filtrar el queryset de aspirantes
+            return queryset.filter(
+                # Q Objects para combinar las condicones del filtrado, que sea especificamente el que se filtra
+                Q(gestiones__id__in=Subquery(latest_gestion)) &
+                Q(gestiones__tipificacion__nombre=value)
+            ).distinct()
 
         return queryset
 

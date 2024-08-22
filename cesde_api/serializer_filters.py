@@ -93,9 +93,9 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
 
     def get_ultima_tipificacion(self, obj):
         ultima_tipificacion = Gestiones.objects.filter(
-            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+            cel_aspirante=obj
+        ).order_by('-fecha', '-id').first()
         if ultima_tipificacion:
-            # El estado de la última gestión se obtiene de la tipificación relacionada
             return ultima_tipificacion.tipificacion.nombre
         return "Ninguno"
 
