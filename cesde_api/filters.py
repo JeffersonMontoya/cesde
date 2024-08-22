@@ -2,8 +2,7 @@ import django_filters
 import datetime
 from django_filters import ModelChoiceFilter
 from .models import *
-from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
 from django_filters import ModelChoiceFilter
@@ -33,49 +32,57 @@ class TipificacionNameFilter(ModelChoiceFilter):
 
 class EstadoAspiranteNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del estado
             return qs.filter(estado__nombre=value.nombre)
         return qs
 
 class ProgramaNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del programa
             return qs.filter(programa__nombre=value.nombre)
         return qs
 
 class SedeNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre de la sede
             return qs.filter(sede__nombre=value.nombre)
         return qs
 
 class ProcesoNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del proceso
             return qs.filter(proceso__nombre=value.nombre)
         return qs
 
-
+# Clase con todos los campos a filtrar
 class AspirantesFilter(django_filters.FilterSet):
     proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
@@ -102,9 +109,7 @@ class AspirantesFilter(django_filters.FilterSet):
             'estado_ultima_gestion',
             'programa',
             'sede',
-            # 'nit_empresa',
             'mejor_gestion',
-            # 'gestion_final',
         ]
 
 
