@@ -78,6 +78,26 @@ class Tipificacion(models.Model):
         ('Opcional', 'Opcional'),
     ], default='Opcional')
 
+    def save(self, *args, **kwargs):
+        self.categoria = self.asignar_categoria()
+        super().save(*args, **kwargs)
+
+    def asignar_categoria(self):
+        categorias = {
+            'Interesado': ['Matriculado', 'Liquidacion', 'En_proceso_de_selección', 'Interesado_en_seguimiento'],
+            'En seguimiento': ['Volver_a_llamar'],
+            'No contactado': ['Primer_intento_de_contacto', 'Segundo_intento_de_contacto', 'Tercer_intento_de_contacto', 'Fuera_de_servicio'],
+            'Descartado': ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo', 'Proxima_convocatoria', 'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad', 'Otra_area_de_interés'],
+        }
+
+        for categoria, tipificaciones in categorias.items():
+            if self.nombre in tipificaciones:
+                return categoria
+        return 'Opcional'
+
+    def __str__(self):
+        return self.nombre
+
     def __str__(self):
         return self.nombre
     

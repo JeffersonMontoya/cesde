@@ -2,7 +2,7 @@ import django_filters
 import datetime
 from django_filters import ModelChoiceFilter
 from .models import *
-from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When, Prefetch, Avg
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import timedelta
@@ -282,28 +282,31 @@ class GestionesFilter(django_filters.FilterSet):
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
 
 class AsesoresFilter(django_filters.FilterSet):
-    fecha_inicio = django_filters.CharFilter(method='filter_fecha_inicio', label='Fecha inicio')
-    fecha_fin = django_filters.CharFilter(method='filter_fecha_fin', label='Fecha final')
-    id = django_filters.NumberFilter(field_name='id', label='ID')
+    fecha_inicio = django_filters.DateFilter(method='filter_fecha', label='Fecha inicio')
+    fecha_fin = django_filters.DateFilter(method='filter_fecha', label='Fecha final')
+    id = django_filters.CharFilter(field_name='id', label='ID')
 
-    def filter_fecha_inicio(self, queryset, name, value):
-        if value:
-            try:
-                fecha_inicio = datetime.datetime.strptime(value, '%Y-%m-%d').date()
-                return queryset.filter(gestiones__fecha__gte=fecha_inicio)
-            except (ValueError, TypeError):
-                return queryset
-        return queryset
-
-    def filter_fecha_fin(self, queryset, name, value):
-        if value:
-            try:
-                fecha_fin = datetime.datetime.strptime(value, '%Y-%m-%d').date()
-                return queryset.filter(gestiones__fecha__lte=fecha_fin)
-            except (ValueError, TypeError):
-                return queryset
-        return queryset
+    def filter_fecha(self, queryset, name, value):
+        if name == 'fecha_inicio':
+            return queryset.filter(gestiones__fecha__gte=value)
+        elif name == 'fecha_fin':
+            return queryset.filter(gestiones__fecha__lte=value)
 
     class Meta:
         model = Asesores
         fields = ['fecha_inicio', 'fecha_fin', 'id']
+
+    @property
+    def qs(self):
+        parent = super().qs
+        fecha_inicio = self.form.cleaned_data.get('fecha_inicio')
+        fecha_fin = self.form.cleaned_data.get('fecha_fin')
+
+        if fecha_inicio and fecha_fin:
+            return parent.annotate(
+                num_gestiones=Count(
+                    'gestiones',
+                    filter=Q(gestiones__fecha__range=[fecha_inicio, fecha_fin])
+                )
+            ).filter(num_gestiones__gt=0)
+        return parent
