@@ -22,6 +22,8 @@ from rest_framework.pagination import PageNumberPagination
 import pytz
 
 
+
+
 import logging
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
     """
-    page_size = 20  # Número de registros por página
+    page_size = 10  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
 
@@ -75,9 +77,7 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
     Vista para mostrar aspirantes con filtrado y paginación.
     """
     queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
-    # Serializador para convertir datos a JSON
     serializer_class = AspiranteFilterSerializer
-    # Habilita el filtrado usando django-filter
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AspirantesFilter  # Especifica la clase de filtro
     pagination_class = CustomPagination  # Configura la paginación personalizada
@@ -86,10 +86,8 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         """
         Devuelve la lista de aspirantes con filtros aplicados.
         """
-        queryset = self.get_queryset()
-
         # Inicializa el filtro de procesos
-        procesos_filter = ProcesosFilter(request.GET, queryset=queryset)
+        procesos_filter = ProcesosFilter(request.GET, queryset=self.queryset)
         if procesos_filter.is_valid():
             queryset = procesos_filter.qs
 
@@ -104,7 +102,25 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='buscar-por-celular')
+    def retrieve_by_celular(self, request, *args, **kwargs):
+        """
+        Devuelve un aspirante específico por número de celular.
+        """
+        celular = request.query_params.get('celular', None)
+        
+        if not celular:
+            return Response({'detail': 'El parámetro celular es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            aspirante = self.queryset.get(celular=celular)
+            serializer = self.get_serializer(aspirante)
+            return Response(serializer.data)
+        except Aspirantes.DoesNotExist:
+            return Response({'detail': 'Aspirante no encontrado.'}, status=status.HTTP_404_NOT_FOUND)  
+    
+    
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
@@ -213,7 +229,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
 
-
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
@@ -242,31 +257,38 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         fecha_fin = request.query_params.get('fecha_fin')
         proceso_nombre = request.query_params.get('proceso_nombre')
 
+        # Verifica que las fechas de inicio y fin estén presentes en los parámetros de la URL
         if not fecha_inicio or not fecha_fin:
             return Response({
                 'detail': 'Las fechas de inicio y fin son requeridas en el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Convierte las fechas de cadena a objetos de fecha
             fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
         except ValueError:
+            # Devuelve un error si el formato de la fecha es inválido
             return Response({
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Filtrar gestiones por fecha
+        # Filtrar gestiones por el rango de fechas especificado
         gestiones_queryset = Gestiones.objects.filter(
             fecha__range=[fecha_inicio, fecha_fin])
 
         # Aplicar filtro por nombre del proceso si está presente
         if proceso_nombre:
+            proceso_nombre = proceso_nombre.capitalize()  # Esto convierte solo la primera letra a mayúscula
             gestiones_queryset = gestiones_queryset.filter(
                 cel_aspirante__proceso__nombre=proceso_nombre
             )
 
+        # Obtener las estadísticas para el rango de fechas filtrado
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(
-            gestiones_queryset, fecha_inicio, fecha_fin)
+            gestiones_queryset, fecha_inicio, fecha_fin
+        )
+        # Obtener la contactabilidad para el rango de fechas filtrado
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
         return Response({
@@ -276,7 +298,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='extenciones')
+        queryset = self.get_queryset().filter(proceso__nombre='Extenciones')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
@@ -351,7 +373,7 @@ class Cargarcsv(APIView):
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado'])
+            estado_nombre_in=['matriculado', 'liquidado'])
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
@@ -678,13 +700,13 @@ class Cargarcsv(APIView):
                             self.gestiones_acumuladas.append(nueva_gestion)
                     else:
                         print(f"Datos incompletos para la gestión con celular {
-                              row['cel_modificado']}.")
+                            row['cel_modificado']}.")
                 except Aspirantes.DoesNotExist:
                     print(f"Aspirante con celular {
-                          row['cel_modificado']} no encontrado.")
+                        row['cel_modificado']} no encontrado.")
                 except Tipificacion.DoesNotExist:
                     print(f"Tipificación con código {
-                          row['DESCRIPTION_COD_ACT']} no encontrada.")
+                        row['DESCRIPTION_COD_ACT']} no encontrada.")
                 except Asesores.DoesNotExist:
                     print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
                 except Exception as e:
@@ -757,19 +779,10 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         fecha_fin = self.request.query_params.get('fecha_fin')
         id_asesor = self.request.query_params.get('id')
 
-        gestiones_subquery = Gestiones.objects.filter(
-            asesor=OuterRef('pk')
-        )
-
-        if fecha_inicio and fecha_fin:
-            gestiones_subquery = gestiones_subquery.filter(
-                fecha__range=[fecha_inicio, fecha_fin]
-            )
-
-        queryset = Asesores.objects.annotate(
-            tiene_gestiones=Subquery(gestiones_subquery.values('id')[:1])
-        ).filter(tiene_gestiones__isnull=False)
-
+        if fecha_inicio:
+            queryset = queryset.filter(gestiones_fecha_gte=fecha_inicio)
+        if fecha_fin:
+            queryset = queryset.filter(gestiones_fecha_lte=fecha_fin)
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 

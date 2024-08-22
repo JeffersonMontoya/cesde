@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import *
 from datetime import datetime
 
-
+# Serializer para devoler la consulta despues de filtrar
 class AspiranteFilterSerializer(serializers.ModelSerializer):
     nit = serializers.CharField(source='documento')
     nombre_completo = serializers.SerializerMethodField()
@@ -19,7 +19,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
-        
 
     class Meta:
         model = Aspirantes
@@ -55,6 +54,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=llamadas_gestion).count()
         return 0
 
+
     def get_cantidad_whatsapp(self, obj):
         whatsapp_gestion = Tipo_gestion.objects.filter(
             nombre='WhatsApp').first()
@@ -78,7 +78,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             # Formatear la fecha y hora
             return ultima_gestion.fecha.strftime('%Y-%m-%d')
         return "Ninguno"
-    
+
+
     # Función para obtener el estado de la última gestión del celular adicional
     def get_estado_ultima_gestion(self, obj):
         # Obtener el estado directamente desde el modelo Aspirantes
@@ -88,11 +89,12 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     
     def get_ultima_tipificacion(self, obj):
         ultima_tipificacion = Gestiones.objects.filter(
-            cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
+            cel_aspirante=obj
+        ).order_by('-fecha', '-id').first()
         if ultima_tipificacion:
-            # El estado de la última gestión se obtiene de la tipificación relacionada
             return ultima_tipificacion.tipificacion.nombre
         return "Ninguno"
+
 
     def get_dias_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
@@ -106,7 +108,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             return delta.days
         return "Ninguno"
 
-# codigo nuevo
+
+    # codigo nuevo
     def get_mejor_gestion(self, obj):
         gestiones = Gestiones.objects.filter(cel_aspirante=obj)
         if gestiones.exists():
@@ -123,4 +126,3 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             if mejor_tipificacion:
                 return mejor_tipificacion.tipificacion.categoria
         return 'Desconocido'
-
