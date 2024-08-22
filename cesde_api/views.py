@@ -22,6 +22,8 @@ from rest_framework.pagination import PageNumberPagination
 import pytz
 
 
+
+
 import logging
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -35,7 +37,7 @@ class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
     """
-    page_size = 20  # Número de registros por página
+    page_size = 10  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
 
@@ -52,8 +54,31 @@ class CustomPagination(PageNumberPagination):
             'previous': self.get_previous_link(),
             'results': data
         })
+        
+          
+   
+        """
+        Vista para obtener los datos de un aspirante por su número de celular.
+        """
 
+        @action(detail=False, methods=['get'])
+        def buscar_por_celular(self, request):
+            celular = request.query_params.get('celular')
 
+            if not celular:
+                return Response({"error": "El número de celular es requerido."},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                aspirante = Aspirantes.objects.get(celular=celular)
+            except Aspirantes.DoesNotExist:
+                return Response({"error": "Aspirante no encontrado."},
+                                status=status.HTTP_404_NOT_FOUND)
+
+            serializer = AspiranteFilterSerializer(aspirante)
+            return Response(serializer.data, status=status.HTTP_200_OK)    
+        
+        
 class SedeViewSet(viewsets.ModelViewSet):
     queryset = Sede.objects.all()
     serializer_class = SedeSerializer
@@ -70,7 +95,7 @@ class EstadoViewSet(viewsets.ModelViewSet):
 
 
 # view para filters generales
-class AspiranteFilterViewSet(viewsets.ModelViewSet):
+# class AspiranteFilterViewSet(viewsets.ModelViewSet):
     """
     Vista para mostrar aspirantes con filtrado y paginación.
     """
@@ -104,7 +129,55 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
+class AspiranteFilterViewSet(viewsets.ModelViewSet):
+    """
+    Vista para mostrar aspirantes con filtrado y paginación.
+    """
+    queryset = Aspirantes.objects.all()  # Conjunto de datos a mostrar
+    serializer_class = AspiranteFilterSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = AspirantesFilter  # Especifica la clase de filtro
+    pagination_class = CustomPagination  # Configura la paginación personalizada
 
+    def list(self, request, *args, **kwargs):
+        """
+        Devuelve la lista de aspirantes con filtros aplicados.
+        """
+        # Inicializa el filtro de procesos
+        procesos_filter = ProcesosFilter(request.GET, queryset=self.queryset)
+        if procesos_filter.is_valid():
+            queryset = procesos_filter.qs
+
+        # Aplica filtros generales
+        filterset = AspirantesFilter(request.GET, queryset=queryset)
+        if filterset.is_valid():
+            queryset = filterset.qs
+
+        # Aplica la paginación
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+        serializer = self.get_serializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+    
+    @action(detail=False, methods=['get'], url_path='buscar-por-celular')
+    def retrieve_by_celular(self, request, *args, **kwargs):
+        """
+        Devuelve un aspirante específico por número de celular.
+        """
+        celular = request.query_params.get('celular', None)
+        
+        if not celular:
+            return Response({'detail': 'El parámetro celular es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            aspirante = self.queryset.get(celular=celular)
+            serializer = self.get_serializer(aspirante)
+            return Response(serializer.data)
+        except Aspirantes.DoesNotExist:
+            return Response({'detail': 'Aspirante no encontrado.'}, status=status.HTTP_404_NOT_FOUND)  
+    
+    
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
@@ -775,3 +848,5 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(id=id_asesor)
 
         return queryset.distinct()
+
+    
