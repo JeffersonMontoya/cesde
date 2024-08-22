@@ -35,7 +35,7 @@ class CustomPagination(PageNumberPagination):
     """
     Clase de paginación personalizada para usar con DRF.
     """
-    page_size = 20  # Número de registros por página
+    page_size = 10  # Número de registros por página
     page_size_query_param = 'page_size'
     max_page_size = 100  # Tamaño máximo de página permitido
 
@@ -213,7 +213,6 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         return paginator.get_paginated_response(serializer.data)
 
 
-
 class EstadisticasViewSet(viewsets.GenericViewSet):
     """
     Vista para mostrar estadisticas generales por fecha y por proceso.
@@ -242,31 +241,38 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         fecha_fin = request.query_params.get('fecha_fin')
         proceso_nombre = request.query_params.get('proceso_nombre')
 
+        # Verifica que las fechas de inicio y fin estén presentes en los parámetros de la URL
         if not fecha_inicio or not fecha_fin:
             return Response({
                 'detail': 'Las fechas de inicio y fin son requeridas en el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            # Convierte las fechas de cadena a objetos de fecha
             fecha_inicio = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
             fecha_fin = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
         except ValueError:
+            # Devuelve un error si el formato de la fecha es inválido
             return Response({
                 'detail': 'Formato de fecha inválido. Use el formato YYYY-MM-DD.'
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # Filtrar gestiones por fecha
+        # Filtrar gestiones por el rango de fechas especificado
         gestiones_queryset = Gestiones.objects.filter(
             fecha__range=[fecha_inicio, fecha_fin])
 
         # Aplicar filtro por nombre del proceso si está presente
         if proceso_nombre:
+            proceso_nombre = proceso_nombre.capitalize()  # Esto convierte solo la primera letra a mayúscula
             gestiones_queryset = gestiones_queryset.filter(
-                cel_aspirante_proceso_nombre=proceso_nombre
+                cel_aspirante__proceso__nombre=proceso_nombre
             )
 
+        # Obtener las estadísticas para el rango de fechas filtrado
         estadisticas_por_fechas = obtener_estadisticas_por_fechas(
-            gestiones_queryset, fecha_inicio, fecha_fin)
+            gestiones_queryset, fecha_inicio, fecha_fin
+        )
+        # Obtener la contactabilidad para el rango de fechas filtrado
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
         return Response({
@@ -276,7 +282,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
-        queryset = self.get_queryset().filter(proceso__nombre='extenciones')
+        queryset = self.get_queryset().filter(proceso__nombre='Extenciones')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
