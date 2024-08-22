@@ -2,13 +2,10 @@ import django_filters
 import datetime
 from django_filters import ModelChoiceFilter
 from .models import *
-from django.db.models import Count, Q, Max, Subquery, OuterRef, F, CharField, Value, Case, When
-from django.db.models.functions import Coalesce
+from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
-
-
-
+from django_filters import ModelChoiceFilter
 
 # Para devolver el nombre por get 
 class TipificacionNameFilter(ModelChoiceFilter):
@@ -31,54 +28,61 @@ class TipificacionNameFilter(ModelChoiceFilter):
                 ultima_tipificacion_nombre=value.nombre
             ).distinct()
         return qs
-    
-from django_filters import ModelChoiceFilter
+
 
 class EstadoAspiranteNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del estado
             return qs.filter(estado__nombre=value.nombre)
         return qs
 
 class ProgramaNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del programa
             return qs.filter(programa__nombre=value.nombre)
         return qs
 
 class SedeNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre de la sede
             return qs.filter(sede__nombre=value.nombre)
         return qs
 
 class ProcesoNameFilter(ModelChoiceFilter):
     def __init__(self, *args, **kwargs):
+        # Se especifica el nombre del campo relacionado en el modelo para usar como filtro
         kwargs['to_field_name'] = 'nombre'
         kwargs['field_name'] = 'nombre'
         super().__init__(*args, **kwargs)
 
     def filter(self, qs, value):
         if value:
+            # Filtra el queryset por el nombre del proceso
             return qs.filter(proceso__nombre=value.nombre)
         return qs
 
-
+# Clase con todos los campos a filtrar
 class AspirantesFilter(django_filters.FilterSet):
     proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
     cantidad_llamadas = django_filters.NumberFilter(method='filter_cantidad_llamadas', label='Cantidad de llamadas')
@@ -90,7 +94,6 @@ class AspirantesFilter(django_filters.FilterSet):
     tipificacion_ultima_gestion = TipificacionNameFilter(queryset=Tipificacion.objects.all(), label='Tipificacion última gestión')
     programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
-    # nit_empresa = django_filters.CharFilter(method='filter_nit_empresa', label='Nit empresa')
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
 
     class Meta:
@@ -106,9 +109,7 @@ class AspirantesFilter(django_filters.FilterSet):
             'estado_ultima_gestion',
             'programa',
             'sede',
-            # 'nit_empresa',
             'mejor_gestion',
-            # 'gestion_final',
         ]
 
 
@@ -166,9 +167,11 @@ class AspirantesFilter(django_filters.FilterSet):
                     dias_ultima_gestion=fecha_limite
                 )
             except ValueError:
+                # Si el valor proporcionado no es un número válido, devolver un queryset vacío
                 return queryset.none()
-        return queryset
 
+        # Si no hay valor proporcionado, devolver el queryset sin filtrar
+        return queryset
 
 
     def filter_fecha_ultima_gestion(self, queryset, name, value):
@@ -192,15 +195,24 @@ class AspirantesFilter(django_filters.FilterSet):
 
     def filter_tipificacion_ultima_gestion(self, queryset, name, value):
         if value:
-            # Buscar la tipificación por nombre
+            # Obtener la tipificación por nombre
             try:
                 tipificacion = Tipificacion.objects.get(nombre=value)
-                # Filtrar por la tipificación encontrada
-                return queryset.filter(
-                    gestiones__tipificacion=tipificacion
-                ).order_by('-gestiones__fecha').distinct()
+
+                # Subquery para obtener la última gestión de cada aspirante
+                latest_gestion = Gestiones.objects.filter(
+                    cel_aspirante=OuterRef('pk')
+                ).order_by('-fecha_hora').values('tipificacion__nombre')[:1]
+
+                # Filtrar el queryset de aspirantes según la última tipificación
+                return queryset.annotate(
+                    ultima_tipificacion_nombre=Subquery(latest_gestion)
+                ).filter(
+                    ultima_tipificacion_nombre=tipificacion.nombre
+                ).distinct()
             except Tipificacion.DoesNotExist:
                 return queryset.none()
+
         return queryset
 
 

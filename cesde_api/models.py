@@ -89,7 +89,7 @@ class Gestiones(models.Model):
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
 
-    def __str__(self):
+    def __str__(self):  
         return f"{self.fecha} - {self.cel_aspirante.celular}"
     
 
