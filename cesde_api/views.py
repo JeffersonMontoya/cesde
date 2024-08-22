@@ -1,7 +1,7 @@
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 import pandas as pd
@@ -11,7 +11,7 @@ from .serializer_filters import *
 from .serializer_historico import *
 from io import StringIO
 from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When, IntegerField
+from django.db.models import Sum, Count, Case, When, IntegerField, Subquery, OuterRef
 from .serializer_asesores import ConsultaAsesoresSerializer
 from django.db.models.functions import Coalesce
 from .estadisticas import *
@@ -765,26 +765,16 @@ class HistoricoViewSet(viewsets.ModelViewSet):
             return Response({"error": "Número de celular no proporcionado"}, status=400)
 
 
-class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
-    queryset = Asesores.objects.all()
+class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = None  # Desactiva la paginación para esta vista
+    pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = Asesores.objects.annotate(
-            cantidad_llamadas=Coalesce(Sum(Case(
-                When(gestiones__tipo_gestion__nombre='Llamada', then=1),
-                output_field=IntegerField()
-            )), 0),
-            cantidad_whatsapp=Coalesce(Sum(Case(
-                When(gestiones__tipo_gestion__nombre='WhatsApp', then=1),
-                output_field=IntegerField()
-            )), 0),
-            cantidad_gestiones=Count('gestiones', distinct=True),
-        ).distinct()
+        return self.get_filtered_queryset()
 
+    def get_filtered_queryset(self):
         fecha_inicio = self.request.query_params.get('fecha_inicio')
         fecha_fin = self.request.query_params.get('fecha_fin')
         id_asesor = self.request.query_params.get('id')
@@ -796,4 +786,15 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
-        return queryset.distinct()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
