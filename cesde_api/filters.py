@@ -1,6 +1,6 @@
 import django_filters
 import datetime
-from datetime import datetime, date
+from datetime import datetime, date, time
 from django_filters import ModelChoiceFilter
 from .models import *
 from django.db.models import Count, Q, Max, Subquery, OuterRef, F
@@ -8,6 +8,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django_filters import ModelChoiceFilter
 from django.db.models.functions import TruncDate
+from django.utils.timezone import make_aware
 
 
 # Clases ModelChoice para devolver el nombre por la url, para hacer el consumo de la api
@@ -304,15 +305,19 @@ class GestionesFilter(django_filters.FilterSet):
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion', 'observaciones', 'asesor']
 
 class AsesoresFilter(django_filters.FilterSet):
-    fecha_inicio = django_filters.DateFilter(method='filter_fecha', label='Fecha inicio')
-    fecha_fin = django_filters.DateFilter(method='filter_fecha', label='Fecha final')
+    fecha_inicio = django_filters.DateTimeFilter(method='filter_fecha', label='Fecha inicio')
+    fecha_fin = django_filters.DateTimeFilter(method='filter_fecha', label='Fecha final')
     id = django_filters.CharFilter(field_name='id', label='ID')
 
     def filter_fecha(self, queryset, name, value):
-        if name == 'fecha_inicio':
-            return queryset.filter(gestiones__fecha__gte=value)
-        elif name == 'fecha_fin':
-            return queryset.filter(gestiones__fecha__lte=value)
+        if value:
+            if name == 'fecha_inicio':
+                return queryset.filter(gestiones__fecha__gte=value)
+            elif name == 'fecha_fin':
+                # Ajustar fecha_fin al final del día
+                fecha_fin = make_aware(datetime.combine(value.date(), time.max))
+                return queryset.filter(gestiones__fecha__lte=fecha_fin)
+        return queryset
 
     class Meta:
         model = Asesores
@@ -325,6 +330,8 @@ class AsesoresFilter(django_filters.FilterSet):
         fecha_fin = self.form.cleaned_data.get('fecha_fin')
 
         if fecha_inicio and fecha_fin:
+            # Ajustar fecha_fin al final del día
+            fecha_fin = make_aware(datetime.combine(fecha_fin.date(), time.max))
             return parent.annotate(
                 num_gestiones=Count(
                     'gestiones',
