@@ -1,11 +1,14 @@
 import django_filters
 import datetime
+from datetime import datetime, date
 from django_filters import ModelChoiceFilter
 from .models import *
 from django.db.models import Count, Q, Max, Subquery, OuterRef, F
 from django.utils import timezone
 from datetime import timedelta
 from django_filters import ModelChoiceFilter
+from django.db.models.functions import TruncDate
+
 
 # Clases ModelChoice para devolver el nombre por la url, para hacer el consumo de la api
 class TipificacionNameFilter(ModelChoiceFilter):
@@ -151,15 +154,16 @@ class AspirantesFilter(django_filters.FilterSet):
         return queryset
 
 
+    # Dias ultima gestion con datetime
     def filter_dias_ultima_gestion(self, queryset, name, value):
         if value:
             try:
                 dias = int(value)
                 fecha_limite = timezone.now().date() - timedelta(days=dias)
 
-                # Anotar con la última fecha de gestión
+                # Anotar con la última fecha de gestión, truncada a fecha
                 queryset = queryset.annotate(
-                    dias_ultima_gestion=Max('gestiones__fecha')
+                    dias_ultima_gestion=TruncDate(Max('gestiones__fecha'))
                 )
 
                 # Filtrar aspirantes cuya última gestión sea exactamente hace el número de días especificado
@@ -174,20 +178,32 @@ class AspirantesFilter(django_filters.FilterSet):
         return queryset
 
 
+    #  Fecha ultima gestion con datetime 
     def filter_fecha_ultima_gestion(self, queryset, name, value):
         if value:
+            # Convertir el valor de entrada a date si es necesario
+            if isinstance(value, str):
+                try:
+                    fecha_buscada = datetime.strptime(value, '%Y-%m-%d').date()
+                except ValueError:
+                    return queryset.none()
+            elif isinstance(value, date):
+                fecha_buscada = value
+            else:
+                return queryset.none()
+
             # Subquery para obtener la última fecha de gestión por cada aspirante
             subquery = Gestiones.objects.filter(
                 cel_aspirante=OuterRef('celular')
             ).values('cel_aspirante').annotate(
-                ultima_fecha=Max('fecha')
+                ultima_fecha=TruncDate(Max('fecha'))
             ).values('ultima_fecha')
 
-            # Anotar el queryset con la última fecha de gestión
+            # Anotar el queryset con la última fecha de gestión y filtrar
             queryset = queryset.annotate(
                 fecha_ultima_gestion=Subquery(subquery)
             ).filter(
-                fecha_ultima_gestion=value
+                fecha_ultima_gestion=fecha_buscada
             )
 
         return queryset
