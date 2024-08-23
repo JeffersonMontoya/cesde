@@ -60,7 +60,7 @@ class Cargarcsv(APIView):
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado'])
+            estado__nombre__in=['matriculado', 'liquidado', 'Descartado'])
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
@@ -253,19 +253,19 @@ class Cargarcsv(APIView):
                     return row['COMMENTS']
                 
         def convertir_fecha(fecha_str):
-               if not fecha_str or pd.isna(fecha_str):
-                   return None  # Retorna None si la fecha está vacía o es NaN
-               try:
-                   # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                   fecha_convertida = datetime.datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
-                   # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                   zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
-                   # Hacer el datetime aware
-                   fecha_convertida = zona_horaria.localize(fecha_convertida)
-                   return fecha_convertida
-               except ValueError as e:
-                   print(f"Error al convertir la fecha: {e}")
-                   return None
+            if not fecha_str or pd.isna(fecha_str):
+                return None  # Retorna None si la fecha está vacía o es NaN
+            try:
+                # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
+                fecha_convertida = datetime.datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                # Asignar la zona horaria deseada (por ejemplo, 'UTC')
+                zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
+                # Hacer el datetime aware
+                fecha_convertida = zona_horaria.localize(fecha_convertida)
+                return fecha_convertida
+            except ValueError as e:
+                print(f"Error al convertir la fecha: {e}")
+                return None
         
         def validar_tipo_gestion(row, df):
                 # Verificar si la columna 'CHANNEL' existe en el DataFrame
@@ -343,11 +343,11 @@ class Cargarcsv(APIView):
                     # Verificar que todos los datos necesarios están disponibles
                     gestion_existente = Gestiones.objects.filter(
                         cel_aspirante=aspirante,
-                            fecha=fecha_convertida,
-                            tipo_gestion=tipo_gestion,
-                            observaciones=observaciones,
-                            tipificacion=tipificacion,
-                            asesor=asesor,
+                        fecha=fecha_convertida,
+                        tipo_gestion=tipo_gestion,
+                        observaciones=observaciones,
+                        tipificacion=tipificacion,
+                        asesor=asesor,
                     ).exists()
                         
                     if not gestion_existente:
