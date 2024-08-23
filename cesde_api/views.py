@@ -770,7 +770,7 @@ class ConsultaAsesoresViewSet(viewsets.ModelViewSet):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = None  # Desactiva la paginación para esta vista
+    
 
     def get_queryset(self):
         queryset = Asesores.objects.annotate(
