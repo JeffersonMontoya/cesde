@@ -71,7 +71,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
 
     def get_cantidad_matriculas(self, obj):
         fecha_inicio, fecha_fin = self.get_fecha_range()
-        matriculado_tipificacion = 'matriculado'
+        matriculado_tipificacion = 'Matriculado'
         query = Gestiones.objects.filter(
             asesor=obj,
             tipificacion__nombre=matriculado_tipificacion
@@ -84,7 +84,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
 
     def get_cantidad_liquidaciones(self, obj):
         fecha_inicio, fecha_fin = self.get_fecha_range()
-        liquidado_tipificacion = 'liquidado'
+        liquidado_tipificacion = 'Liquidacion'
         query = Gestiones.objects.filter(
             asesor=obj,
             tipificacion__nombre=liquidado_tipificacion
