@@ -397,7 +397,7 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = CustomPagination
+    pagination_class = None
 
     def get_queryset(self):
         return self.get_filtered_queryset()
