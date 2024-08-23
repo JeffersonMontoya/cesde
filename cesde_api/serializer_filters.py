@@ -70,13 +70,27 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             cel_aspirante=obj).count()
         return cantidad_gestiones
 
+
     # Función para obtener la fecha de la última gestión del celular adicional 
     def get_fecha_ultima_gestion(self, obj):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-            # Formatear la fecha y hora
-            return ultima_gestion.fecha.strftime('%Y-%m-%d')
+            # Formatear la fecha (sin hora)
+            return ultima_gestion.fecha.date().strftime('%Y-%m-%d')
+        return "Ninguno"
+
+
+    def get_dias_ultima_gestion(self, obj):
+        ultima_gestion = Gestiones.objects.filter(
+            cel_aspirante=obj,
+            fecha__isnull=False
+        ).order_by('-fecha').first()
+        if ultima_gestion:
+            fecha_ultima = ultima_gestion.fecha.date() if isinstance(
+                ultima_gestion.fecha, datetime) else ultima_gestion.fecha
+            delta = datetime.now().date() - fecha_ultima
+            return delta.days
         return "Ninguno"
 
 
@@ -93,19 +107,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         ).order_by('-fecha', '-id').first()
         if ultima_tipificacion:
             return ultima_tipificacion.tipificacion.nombre
-        return "Ninguno"
-
-
-    def get_dias_ultima_gestion(self, obj):
-        ultima_gestion = Gestiones.objects.filter(
-            cel_aspirante=obj,
-            fecha__isnull=False
-        ).order_by('-fecha').first()
-        if ultima_gestion:
-            fecha_ultima = ultima_gestion.fecha.date() if isinstance(
-                ultima_gestion.fecha, datetime) else ultima_gestion.fecha
-            delta = datetime.now().date() - fecha_ultima
-            return delta.days
         return "Ninguno"
 
 
