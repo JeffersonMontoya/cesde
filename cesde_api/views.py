@@ -14,6 +14,14 @@ from .estadisticas import *
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
+import pytz
+from django.db import IntegrityError
+
+
+import logging
+# Configurar el logger
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 
 from rest_framework.pagination import PageNumberPagination
@@ -332,8 +340,6 @@ class EmpresaViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = EmpresaFilter
     pagination_class = None  # Desactiva la paginación
-
-
 
 
 class ProcesoViewSet(viewsets.ModelViewSet):
