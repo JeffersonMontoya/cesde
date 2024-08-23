@@ -11,8 +11,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     cantidad_gestiones = serializers.SerializerMethodField()
     cantidad_matriculas = serializers.SerializerMethodField()
     cantidad_liquidaciones = serializers.SerializerMethodField()
-    fecha_inicio = serializers.SerializerMethodField()
-    fecha_fin = serializers.SerializerMethodField()
+    # fecha_inicio = serializers.SerializerMethodField()
+    # fecha_fin = serializers.SerializerMethodField()
 
     class Meta:
         model = Asesores
@@ -24,8 +24,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'cantidad_gestiones',
             'cantidad_matriculas',  
             'cantidad_liquidaciones',
-            'fecha_inicio',
-            'fecha_fin'
+            # 'fecha_inicio',
+            # 'fecha_fin'
         ]
 
     def get_nombre_completo(self, obj):
