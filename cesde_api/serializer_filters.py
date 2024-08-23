@@ -46,7 +46,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     def get_nombre_completo(self, obj):
         return obj.nombre
 
-
     # Funcion para llevar el conteo de llamadas del aspirante
     def get_cantidad_llamadas(self, obj):
         llamadas_gestion = Tipo_gestion.objects.filter(
@@ -65,7 +64,6 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             return Gestiones.objects.filter(cel_aspirante=obj, tipo_gestion=whatsapp_gestion).count()
         return 0
 
-
     # Funcion para llevar el conteo  de gestiones
     def get_cantidad_gestiones(self, obj):
         cantidad_gestiones = Gestiones.objects.filter(
@@ -78,25 +76,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
         ultima_gestion = Gestiones.objects.filter(
             cel_aspirante=obj, fecha__isnull=False).order_by('-fecha').first()
         if ultima_gestion:
-            # Formatear la fecha y hora
-            return ultima_gestion.fecha.strftime('%Y-%m-%d')
-        return "Ninguno"
-
-
-    # Función para obtener el estado de la última gestión del celular adicional
-    def get_estado_ultima_gestion(self, obj):
-        # Obtener el estado directamente desde el modelo Aspirantes
-        if obj.estado:
-            return obj.estado.nombre  # Accede al nombre del estado
-        return "Ninguno"
-
-
-    def get_ultima_tipificacion(self, obj):
-        ultima_tipificacion = Gestiones.objects.filter(
-            cel_aspirante=obj
-        ).order_by('-fecha', '-id').first()
-        if ultima_tipificacion:
-            return ultima_tipificacion.tipificacion.nombre
+            # Formatear la fecha (sin hora)
+            return ultima_gestion.fecha.date().strftime('%Y-%m-%d')
         return "Ninguno"
 
 
@@ -110,6 +91,22 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
                 ultima_gestion.fecha, datetime) else ultima_gestion.fecha
             delta = datetime.now().date() - fecha_ultima
             return delta.days
+        return "Ninguno"
+
+
+    # Función para obtener el estado de la última gestión del celular adicional
+    def get_estado_ultima_gestion(self, obj):
+        # Obtener el estado directamente desde el modelo Aspirantes
+        if obj.estado:
+            return obj.estado.nombre  # Accede al nombre del estado
+        return "Ninguno"
+    
+    def get_ultima_tipificacion(self, obj):
+        ultima_tipificacion = Gestiones.objects.filter(
+            cel_aspirante=obj
+        ).order_by('-fecha', '-id').first()
+        if ultima_tipificacion:
+            return ultima_tipificacion.tipificacion.nombre
         return "Ninguno"
 
 
