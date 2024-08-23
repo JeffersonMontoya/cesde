@@ -4,19 +4,14 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-import pandas as pd
 from .models import *
 from .serializer import *
 from .serializer_filters import *
 from .serializer_historico import *
-from io import StringIO
-from rest_framework.permissions import AllowAny
-from django.db.models import Sum, Count, Case, When, IntegerField, Subquery, OuterRef
+from django.db.models import  Subquery, OuterRef
 from .serializer_asesores import ConsultaAsesoresSerializer
-from django.db.models.functions import Coalesce
 from .estadisticas import *
 from rest_framework.decorators import action
-from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
 import pytz
@@ -397,7 +392,7 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = AsesoresFilter
-    pagination_class = CustomPagination
+    pagination_class = None
 
     def get_queryset(self):
         return self.get_filtered_queryset()
