@@ -86,6 +86,20 @@ class ProcesoNameFilter(ModelChoiceFilter):
             return qs.filter(proceso__nombre=value.nombre)
         return qs
 
+class EmpresaNameFilter(ModelChoiceFilter):
+    def __init__(self, *args, **kwargs):
+        #Se especifica el nombre del campo relacionado en el modelo para usar como filtro 
+        kwargs['to_field_name'] = 'nit'
+        kwargs['field_name'] = 'nit'
+        super().__init__(*args, **kwargs)
+
+    def filter(self, qs, value):
+        if value:
+            #Filtrar el queryset por el nombre de la empresa
+            return qs.filter(empresa__nit=value.nit)
+        return qs
+
+
 # Clase con todos los campos a filtrar
 class AspirantesFilter(django_filters.FilterSet):
     proceso_nombre = ProcesoNameFilter(queryset=Proceso.objects.all(), label='Proceso Nombre')
@@ -99,6 +113,7 @@ class AspirantesFilter(django_filters.FilterSet):
     programa = ProgramaNameFilter(queryset=Programa.objects.all(), label='Programa')
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
+    nombre_empresa = EmpresaNameFilter(queryset=Empresa.objects.all(), label= 'Empresas')
 
     class Meta:
         model = Aspirantes
@@ -114,6 +129,7 @@ class AspirantesFilter(django_filters.FilterSet):
             'programa',
             'sede',
             'mejor_gestion',
+            'nombre_empresa'
         ]
 
 
@@ -243,6 +259,14 @@ class AspirantesFilter(django_filters.FilterSet):
             ).distinct()
 
             return queryset
+        return queryset
+
+
+    def filter_nombre_empresa(self, queryset, name, value):
+        if value:
+        # Filtrar aspirantes por el nombre de la empresa
+
+            return queryset.filter(empresa__nit=value)
         return queryset
 
 

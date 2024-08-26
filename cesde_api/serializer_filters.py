@@ -14,11 +14,12 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     sede = serializers.CharField(source='sede.nombre')
     ultima_tipificacion = serializers.SerializerMethodField()
     programa_formacion = serializers.CharField(source='programa.nombre')
-    nit_empresa = serializers.CharField(source='empresa.nit')
+    nombre_empresa = serializers.CharField(source='empresa.nit')
     proceso = serializers.CharField(source='proceso.nombre')
     estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
+    
 
     class Meta:
         model = Aspirantes
@@ -26,8 +27,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'nombre_completo',
             'nit', 
             'sede',
-            'nit_empresa',  
             'programa_formacion', 
+            'nombre_empresa',
             'proceso',
             'celular',
             'cantidad_llamadas',  
@@ -38,7 +39,7 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'ultima_tipificacion', 
             'estado_ultima_gestion',
             'mejor_gestion', 
-            'gestion_final'
+            'gestion_final',
         ]
 
 
