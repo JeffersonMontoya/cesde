@@ -1,0 +1,33 @@
+# Usa una imagen base de Python
+FROM python:3.12.4
+
+# Configura el directorio de trabajo
+WORKDIR /app
+
+# Instala Miniconda
+RUN apt-get update && apt-get install -y wget \
+    && wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
+    && rm Miniconda3-latest-Linux-x86_64.sh \
+    && /opt/conda/bin/conda clean -a -y
+
+# Agrega Miniconda al PATH
+ENV PATH /opt/conda/bin:$PATH
+
+# Copia el archivo de entorno de Conda
+COPY environment.yml .
+
+# Crea el entorno Conda y activa
+RUN conda env create -f environment.yml \
+    && echo "source activate env" > ~/.bashrc
+ENV PATH /opt/conda/envs/env/bin:$PATH
+
+# Copia el resto del código del proyecto
+COPY . .
+
+# Expone el puerto si tu aplicación lo usa
+EXPOSE 8000
+
+# Comando para ejecutar la aplicación
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
