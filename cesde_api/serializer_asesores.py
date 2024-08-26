@@ -11,8 +11,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     cantidad_gestiones = serializers.SerializerMethodField()
     cantidad_matriculas = serializers.SerializerMethodField()
     cantidad_liquidaciones = serializers.SerializerMethodField()
-    fecha_inicio = serializers.SerializerMethodField()
-    fecha_fin = serializers.SerializerMethodField()
+    # fecha_inicio = serializers.SerializerMethodField()
+    # fecha_fin = serializers.SerializerMethodField()
 
     class Meta:
         model = Asesores
@@ -24,8 +24,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'cantidad_gestiones',
             'cantidad_matriculas',  
             'cantidad_liquidaciones',
-            'fecha_inicio',
-            'fecha_fin'
+            # 'fecha_inicio',
+            # 'fecha_fin'
         ]
 
     def get_nombre_completo(self, obj):
@@ -71,7 +71,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
 
     def get_cantidad_matriculas(self, obj):
         fecha_inicio, fecha_fin = self.get_fecha_range()
-        matriculado_tipificacion = 'matriculado'
+        matriculado_tipificacion = 'Matriculado'
         query = Gestiones.objects.filter(
             asesor=obj,
             tipificacion__nombre=matriculado_tipificacion
@@ -84,7 +84,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
 
     def get_cantidad_liquidaciones(self, obj):
         fecha_inicio, fecha_fin = self.get_fecha_range()
-        liquidado_tipificacion = 'liquidado'
+        liquidado_tipificacion = 'Liquidacion'
         query = Gestiones.objects.filter(
             asesor=obj,
             tipificacion__nombre=liquidado_tipificacion
