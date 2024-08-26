@@ -54,8 +54,6 @@ class Cargarcsv(APIView):
             return True
         return False
     
-    
-    
     #funcion para actualizar el estado del aspirante
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
@@ -131,6 +129,8 @@ class Cargarcsv(APIView):
                     data_set3 = whatsapp_file.read().decode('UTF-8')
                     io_string3 = StringIO(data_set3)
                     df3 = pd.read_csv(io_string3)
+                    df3['CUSTOMER_PHONE'].replace('---', np.nan, inplace=True)
+                    df3['CUSTOMER_PHONE'].dropna()
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
@@ -142,6 +142,8 @@ class Cargarcsv(APIView):
                     data_set4 = sms_file.read().decode('UTF-8')
                     io_string4 = StringIO(data_set4)
                     df4 = pd.read_csv(io_string4)
+                    df4['TELEPHONE'].replace('-', np.nan, inplace=True)
+                    df4['TELEPHONE'].dropna()
                     df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
                     df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
                     df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
@@ -155,7 +157,7 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','NitEmpresa','Programa académico'
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico'
                 ]
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
@@ -206,9 +208,10 @@ class Cargarcsv(APIView):
                     'CorreoElectronico': 'sin correo',
                     'Programa académico': 'sin programa',
                     'Sede': 'sin sede',
-                    'NitEmpresa': 'sin empresa',
+                    'Empresa a la que se postula': 'sin empresa',
                     'Identificacion': 'sin ID',
-                    'CorreoElectronico': 'sin correo'
+                    'CorreoElectronico': 'sin correo',
+                    'COMMENTS': 'sin observaciones'
                 }
 
                 # Aplicar la función a ambos DataFrames
@@ -246,12 +249,6 @@ class Cargarcsv(APIView):
     def llenarBD(self, df):
         gestiones_a_guardar = []
         
-        def llenar_observaciones(row):
-                if pd.isna(row['COMMENTS']):
-                    return 'sin observaciones'
-                else:
-                    return row['COMMENTS']
-                
         def convertir_fecha(fecha_str):
             if not fecha_str or pd.isna(fecha_str):
                 return None  # Retorna None si la fecha está vacía o es NaN
@@ -279,7 +276,7 @@ class Cargarcsv(APIView):
         # Modelo Tipo_gestion
         for tipo in ['WhatsApp', 'Llamada']:
             self.actualizar_o_crear_modelo(Tipo_gestion, nombre=tipo)
-        celulares_existentes = set(Aspirantes.objects.values_list('celular', flat=True))
+        
         for index, row in df.iterrows():
             # Modelo Estado
             self.actualizar_o_crear_modelo(Estados, nombre=row['Estado'])
@@ -298,7 +295,7 @@ class Cargarcsv(APIView):
             self.actualizar_o_crear_modelo(Sede, nombre=row['Sede'])
 
             # Modelo Empresa
-            self.actualizar_o_crear_modelo(Empresa, nit=row['NitEmpresa'])
+            self.actualizar_o_crear_modelo(Empresa, nit=row['Empresa a la que se postula'])
 
             # Modelo Tipificación
             valor_tipificacion = self.tipificaciones.get(row['DESCRIPTION_COD_ACT'], 100.0)
@@ -312,7 +309,7 @@ class Cargarcsv(APIView):
             correo = row['CorreoElectronico']
             sede = Sede.objects.get(nombre=row['Sede'])
             programa = Programa.objects.get(nombre=row['Programa académico'])
-            empresa = Empresa.objects.get(nit=row['NitEmpresa'])
+            empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
             proceso = Proceso.objects.get(nombre=row['PROCESO'])
             estado = Estados.objects.get(nombre=row['Estado'])
 
@@ -338,7 +335,7 @@ class Cargarcsv(APIView):
                     asesor = Asesores.objects.get(id=row['AGENT_ID'])
                     tipo_gestion = validar_tipo_gestion(row, df)
                     fecha_convertida = convertir_fecha(row['DATE'])
-                    observaciones = llenar_observaciones(row)
+                    observaciones = row['COMMENTS']
                     
                     # Verificar que todos los datos necesarios están disponibles
                     gestion_existente = Gestiones.objects.filter(
@@ -349,7 +346,7 @@ class Cargarcsv(APIView):
                         tipificacion=tipificacion,
                         asesor=asesor,
                     ).exists()
-                        
+
                     if not gestion_existente:
                         nueva_gestion = Gestiones(
                             cel_aspirante=aspirante,
@@ -372,7 +369,7 @@ class Cargarcsv(APIView):
                     print(f"Error procesando la fila: {e}")
             else:
                 continue
-            
+
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
         # Actualizar estados de todos los aspirantes
