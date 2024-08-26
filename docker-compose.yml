@@ -1,0 +1,40 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: cesde
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  backend:
+    image: back
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_NAME=cesde
+      - DATABASE_USER=admin
+      - DATABASE_PASSWORD=admin
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+    networks:
+      - app-network
+
+  frontend:
+    image: front
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

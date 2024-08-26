@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-
+import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -20,12 +20,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8!@$qqi471*f$@$%8tpp#y#7pq3w7sx7b8#zu54sbhk@4skq6&'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-8!@$qqi471*f$@$%8tpp#y#7pq3w7sx7b8#zu54sbhk@4skq6&')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -83,11 +83,11 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'localhost',
-        'PORT': 5432,
-        'NAME': 'cesde',
-        'USER': 'postgres',
-        'PASSWORD': 'admin'
+        'NAME': os.environ.get('DATABASE_NAME', 'cesde'),
+        'USER': os.environ.get('DATABASE_USER', 'admin'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'admin'),
+        'HOST': os.environ.get('DATABASE_HOST', 'db'),
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),
     }
 }
 
