@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
     'cesde_api',
     'django_filters',
     'drf_yasg',
@@ -83,14 +84,13 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DATABASE_NAME', 'cesde'),
-        'USER': os.environ.get('DATABASE_USER', 'admin'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'admin'),
-        'HOST': os.environ.get('DATABASE_HOST', 'db'),
-        'PORT': os.environ.get('DATABASE_PORT', '5432'),
+        'HOST': 'localhost',
+        'PORT': 5432,
+        'NAME': 'cesde',
+        'USER': 'postgres',
+        'PASSWORD': 'admin'
     }
 }
-
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
