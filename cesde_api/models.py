@@ -48,7 +48,7 @@ class Aspirantes(models.Model):
 
 
     def __str__(self):
-        return f" {self.nombre} {self.celular}  "
+        return f" {self.nombre} {self.celular}"
 
 
 class Tipo_gestion(models.Model):
