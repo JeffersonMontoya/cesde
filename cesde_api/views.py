@@ -1,3 +1,4 @@
+from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
@@ -8,7 +9,7 @@ from .models import *
 from .serializer import *
 from .serializer_filters import *
 from .serializer_historico import *
-from django.db.models import  Subquery, OuterRef
+from django.db.models import Subquery, OuterRef
 from .serializer_asesores import ConsultaAsesoresSerializer
 from .estadisticas import *
 from rest_framework.decorators import action
@@ -23,9 +24,6 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
-
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.response import Response
 
 class CustomPagination(PageNumberPagination):
     """
@@ -96,14 +94,14 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(paginated_queryset, many=True)
 
         return paginator.get_paginated_response(serializer.data)
-    
+
     @action(detail=False, methods=['get'], url_path='buscar-por-celular')
     def retrieve_by_celular(self, request, *args, **kwargs):
         """
         Devuelve un aspirante específico por número de celular.
         """
         celular = request.query_params.get('celular', None)
-        
+
         if not celular:
             return Response({'detail': 'El parámetro celular es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -112,9 +110,9 @@ class AspiranteFilterViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(aspirante)
             return Response(serializer.data)
         except Aspirantes.DoesNotExist:
-            return Response({'detail': 'Aspirante no encontrado.'}, status=status.HTTP_404_NOT_FOUND)  
-    
-    
+            return Response({'detail': 'Aspirante no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
+
+
 class FilterProcesosViewSet(viewsets.ViewSet):
     """
     Vista para mostrar aspirantes con filtros por procesos y filtros generales.
@@ -273,7 +271,8 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
 
         # Aplicar filtro por nombre del proceso si está presente
         if proceso_nombre:
-            proceso_nombre = proceso_nombre.capitalize()  # Esto convierte solo la primera letra a mayúscula
+            # Esto convierte solo la primera letra a mayúscula
+            proceso_nombre = proceso_nombre.capitalize()
             gestiones_queryset = gestiones_queryset.filter(
                 cel_aspirante__proceso__nombre=proceso_nombre
             )
@@ -316,6 +315,7 @@ class TipoGestionViewSet(viewsets.ModelViewSet):
     filterset_class = Tipo_gestionFilter
     pagination_class = None  # Desactiva la paginación
 
+
 class GestionViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = GestionSerializer
@@ -333,6 +333,8 @@ class ProgramaViewSet(viewsets.ModelViewSet):
     pagination_class = None  # Desactiva la paginación
 
 # Proporciona operaciones CRUD (crear, leer, actualizar, eliminar) para el modelo.
+
+
 class EmpresaViewSet(viewsets.ModelViewSet):
     # Especifica datos que deben ser consultados y retornados a la vista
     queryset = Empresa.objects.all()
@@ -372,8 +374,6 @@ class TipificacionViewSet(viewsets.ModelViewSet, APIView):
 class HistoricoViewSet(viewsets.ModelViewSet):
     queryset = Gestiones.objects.all()
     serializer_class = HistoricoGestionesSerializer
-
-    
 
     @action(detail=False, methods=['get'])
     def historico(self, request):
@@ -423,10 +423,80 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
-        
+
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
+from django.shortcuts import get_object_or_404
+from rest_framework.decorators import authentication_classes , permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import TokenAuthentication
+
+
+@api_view(["POST"])
+def login(request):
+    # Obtener el usuario por el nombre de usuario
+    user = get_object_or_404(User, username=request.data.get('username'))
+    
+    # Verificar la contraseña
+    if not user.check_password(request.data.get('password')):
+        return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Obtener o crear el token para el usuario
+    token, created = Token.objects.get_or_create(user=user)
+    
+    # Retornar la respuesta con el token
+    return Response({
+        "token": token.key,
+        "user": {
+            "username": user.username,
+            "email": user.email,
+            # Añadir otros campos que quieras devolver
+        }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def register(request):
+    serializer = UserSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        # Guardar el usuario y obtener la instancia
+        user = serializer.save()
+        
+        # Crear el token para el usuario
+        token, created = Token.objects.get_or_create(user=user)
+        
+        # Retornar la respuesta con el token y los datos del usuario
+        return Response({
+            "token": token.key,
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+                # No incluyas la contraseña por seguridad
+            }
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def profile(request):
+    # Imprimir el ID del usuario autenticado
+    print(request.user.id)
+    
+    # Serializar el usuario autenticado
+    serializer = UserSerializer(instance=request.user)
+    
+    # Devolver la respuesta con los datos del usuario y un estado HTTP 200 OK
+    return Response(serializer.data, status=status.HTTP_200_OK)
