@@ -11,8 +11,9 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     cantidad_gestiones = serializers.SerializerMethodField()
     cantidad_matriculas = serializers.SerializerMethodField()
     cantidad_liquidaciones = serializers.SerializerMethodField()
-    # fecha_inicio = serializers.SerializerMethodField()
-    # fecha_fin = serializers.SerializerMethodField()
+    cantidad_gestiones_empresa = serializers.SerializerMethodField()
+    cantidad_gestiones_tecnicos = serializers.SerializerMethodField()
+    cantidad_gestiones_extensiones = serializers.SerializerMethodField()
 
     class Meta:
         model = Asesores
@@ -22,10 +23,11 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'cantidad_llamadas',
             'cantidad_whatsapp',
             'cantidad_gestiones',
-            'cantidad_matriculas',  
+            'cantidad_matriculas',
             'cantidad_liquidaciones',
-            # 'fecha_inicio',
-            # 'fecha_fin'
+            'cantidad_gestiones_empresa',
+            'cantidad_gestiones_tecnicos',
+            'cantidad_gestiones_extensiones'
         ]
 
     def get_nombre_completo(self, obj):
@@ -95,19 +97,21 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             query = query.filter(fecha__lte=fecha_fin)
         return query.distinct().count()
 
-    # Función para obtener la fecha de la primera gestión (fecha_inicio)
-    def get_fecha_inicio(self, obj):
-        primera_gestion = Gestiones.objects.filter(
-            asesor=obj, fecha__isnull=False).order_by('fecha').first()
-        if primera_gestion:
-            return primera_gestion.fecha.strftime('%Y-%m-%d')
-        return None
+    # Esto es para saber las gestiones por separado de cada asesor por proceso
+    def get_cantidad_gestiones_empresa(self, obj):
+        return self._get_gestiones_por_proceso(obj, 'Empresas')
 
-    # Función para obtener la fecha de la última gestión (fecha_fin)
-    def get_fecha_fin(self, obj):
-        ultima_gestion = Gestiones.objects.filter(
-            asesor=obj, fecha__isnull=False).order_by('-fecha').first()
-        if ultima_gestion:
-            return ultima_gestion.fecha.strftime('%Y-%m-%d')
-        return None
-    
+    def get_cantidad_gestiones_tecnicos(self, obj):
+        return self._get_gestiones_por_proceso(obj, 'Técnicos')
+
+    def get_cantidad_gestiones_extensiones(self, obj):
+        return self._get_gestiones_por_proceso(obj, 'Extensiones')
+
+    def _get_gestiones_por_proceso(self, obj, proceso_nombre):
+        fecha_inicio, fecha_fin = self.get_fecha_range()
+        query = Gestiones.objects.filter(asesor=obj, cel_aspirante__proceso__nombre=proceso_nombre)
+        if fecha_inicio:
+            query = query.filter(fecha__gte=fecha_inicio)
+        if fecha_fin:
+            query = query.filter(fecha__lte=fecha_fin)
+        return query.count()
