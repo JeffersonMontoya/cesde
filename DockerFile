@@ -28,6 +28,5 @@ COPY . .
 # Expone el puerto si tu aplicación lo usa
 EXPOSE 8000
 
-# Comando para ejecutar la aplicación
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-
+# Ejecuta la migración y luego inicia el servidor
+CMD python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000
