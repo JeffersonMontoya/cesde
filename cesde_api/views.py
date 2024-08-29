@@ -14,8 +14,6 @@ from .estadisticas import *
 from rest_framework.decorators import action
 from django.shortcuts import get_object_or_404
 from rest_framework.pagination import PageNumberPagination
-import pytz
-from django.db import IntegrityError
 
 
 import logging

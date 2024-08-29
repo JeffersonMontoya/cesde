@@ -6,26 +6,22 @@ class Sede(models.Model):
     def __str__(self):
         return self.nombre
 
-
 class Estados(models.Model):
     nombre = models.CharField(max_length=15)
 
     def __str__(self):
         return self.nombre
 
-
 class Programa(models.Model):
     nombre = models.CharField(max_length=200)
     def __str__(self):
         return self.nombre
-
 
 class Empresa(models.Model):
     nit = models.CharField(max_length=50)
 
     def __str__(self):
         return self.nit
-
 
 class Proceso(models.Model):
     nombre = models.CharField(max_length=40)
@@ -50,13 +46,11 @@ class Aspirantes(models.Model):
     def __str__(self):
         return f" {self.nombre} {self.celular}  "
 
-
 class Tipo_gestion(models.Model):
     nombre = models.CharField(max_length=12)
 
     def __str__(self):
         return self.nombre
-
 
 class Asesores(models.Model):
     id = models.CharField(max_length=15, primary_key=True)
@@ -64,7 +58,6 @@ class Asesores(models.Model):
 
     def __str__(self):
         return f"{str(self.id)} - {self.nombre_completo}"
-
 
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
@@ -108,10 +101,10 @@ class Gestiones(models.Model):
     observaciones = models.TextField(max_length=300, blank=True)
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
+    empresa = models.CharField(max_length=120)
 
     def __str__(self):  
         return f"{self.fecha} - {self.cel_aspirante.celular}"
-    
 
 
 
