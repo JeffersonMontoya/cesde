@@ -4,7 +4,6 @@ from .views import *
 from .cargarcsv import Cargarcsv
 
 
-
 router = DefaultRouter()
 router.register(r'sede', SedeViewSet)
 router.register(r'estados', EstadoViewSet)
