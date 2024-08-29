@@ -7,19 +7,12 @@ class HistoricoGestionesSerializer(serializers.ModelSerializer):
     nombre_completo_aspirante = serializers.SerializerMethodField()
     sede_nombre = serializers.SerializerMethodField()
     programa_nombre = serializers.SerializerMethodField()
+    empresa_aspirante = serializers.CharField(source='empresa')
 
     class Meta:
         model = Gestiones
-        fields = [
-        'nombre_completo_aspirante',
-        'cel_aspirante',
-        'fecha',
-        'tipo_gestion_nombre',
-        'observaciones',
-        'tipificacion_nombre',
-        'asesor', 
-        'sede_nombre', 
-        'programa_nombre']
+        fields = ['nombre_completo_aspirante', 'cel_aspirante', 'fecha', 'tipo_gestion_nombre', 'observaciones',
+                    'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre', 'empresa_aspirante']
 
     def get_tipo_gestion_nombre(self, obj):
         return obj.tipo_gestion.nombre if obj.tipo_gestion else None
@@ -33,7 +26,7 @@ class HistoricoGestionesSerializer(serializers.ModelSerializer):
         if aspirante:
             return aspirante.nombre
         return None
-
+    
     def get_sede_nombre(self, obj):
         # Asumiendo que `cel_aspirante` es una relación con el modelo `Aspirantes`
         aspirante = obj.cel_aspirante

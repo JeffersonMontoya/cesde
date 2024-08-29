@@ -336,6 +336,7 @@ class Cargarcsv(APIView):
                     tipo_gestion = validar_tipo_gestion(row, df)
                     fecha_convertida = convertir_fecha(row['DATE'])
                     observaciones = row['COMMENTS']
+                    empresa = row['Empresa a la que se postula']
                     
                     # Verificar que todos los datos necesarios están disponibles
                     gestion_existente = Gestiones.objects.filter(
@@ -345,6 +346,7 @@ class Cargarcsv(APIView):
                         observaciones=observaciones,
                         tipificacion=tipificacion,
                         asesor=asesor,
+                        empresa=empresa
                     ).exists()
 
                     if not gestion_existente:
@@ -355,6 +357,7 @@ class Cargarcsv(APIView):
                             observaciones=observaciones,
                             tipificacion=tipificacion,
                             asesor=asesor,
+                            empresa=empresa
                         )
                         gestiones_a_guardar.append(nueva_gestion)
                     else:
