@@ -439,8 +439,12 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
 @api_view(["POST"])
 def login(request):
-    # Obtener el usuario por el nombre de usuario
-    user = get_object_or_404(User, username=request.data.get('username'))
+    # Intentar obtener el usuario por el nombre de usuario
+    try:
+        user = User.objects.get(username=request.data.get('username'))
+    except User.DoesNotExist:
+        # Si el usuario no existe, retornar un mensaje de error
+        return Response({"error": "Usuario no existente"}, status=status.HTTP_404_NOT_FOUND)
 
     # Obtener o crear un registro de intento de inicio de sesión para el usuario
     login_attempt, created = LoginAttempt.objects.get_or_create(user=user)
@@ -449,9 +453,9 @@ def login(request):
     if login_attempt.attempts == 3:
         # Calcular el tiempo transcurrido desde el último intento fallido
         time_since_last_attempt = timezone.now() - login_attempt.last_attempt
-        if time_since_last_attempt < timedelta(minutes=1):
+        if time_since_last_attempt < timedelta(minutes = 5):
             # Si han pasado menos de 10 minutos, bloquear el acceso
-            return Response({"error": "Usuario bloqueado. Por favor, intente de nuevo más tarde."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Usuario bloqueado. Por favor, intente de nuevo más tarde (5 minutos)."}, status=status.HTTP_403_FORBIDDEN)
         # else:
         #     # Si han pasado más de 10 minutos, reiniciar los intentos fallidos
         #     login_attempt.reset_attempts()
@@ -462,7 +466,7 @@ def login(request):
 
     # Verificar si el usuario está bloqueado permanentemente
     if login_attempt.permanently_blocked:
-        return Response({"error": "Usuario bloqueado permanentemente. Contacte al administrador."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Usuario bloqueado permanentemente, contacte al administrador."}, status=status.HTTP_403_FORBIDDEN)
 
     # Verificar si la contraseña es correcta
     if not user.check_password(request.data.get('password')):
