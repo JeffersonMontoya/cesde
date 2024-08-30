@@ -263,7 +263,7 @@ class Cargarcsv(APIView):
             except ValueError as e:
                 print(f"Error al convertir la fecha: {e}")
                 return None
-        
+
         def validar_tipo_gestion(row, df):
                 # Verificar si la columna 'CHANNEL' existe en el DataFrame
                 if 'CHANNEL' in df.columns:
