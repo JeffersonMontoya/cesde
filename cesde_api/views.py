@@ -1,3 +1,10 @@
+from rest_framework.decorators import authentication_classes, permission_classes
+from datetime import timedelta
+from django.utils import timezone
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
@@ -432,27 +439,46 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         return Response(serializer.data)
 
 
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-from django.shortcuts import get_object_or_404
-from rest_framework.decorators import authentication_classes , permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-
-
 @api_view(["POST"])
 def login(request):
     # Obtener el usuario por el nombre de usuario
     user = get_object_or_404(User, username=request.data.get('username'))
-    
-    # Verificar la contraseña
+
+    # Obtener o crear un registro de intento de inicio de sesión para el usuario
+    login_attempt, created = LoginAttempt.objects.get_or_create(user=user)
+
+    # Verificar si el usuario ha alcanzado el límite de intentos fallidos
+    if login_attempt.attempts == 3:
+        # Calcular el tiempo transcurrido desde el último intento fallido
+        time_since_last_attempt = timezone.now() - login_attempt.last_attempt
+        if time_since_last_attempt < timedelta(minutes=1):
+            # Si han pasado menos de 10 minutos, bloquear el acceso
+            return Response({"error": "Usuario bloqueado. Por favor, intente de nuevo más tarde."}, status=status.HTTP_403_FORBIDDEN)
+        # else:
+        #     # Si han pasado más de 10 minutos, reiniciar los intentos fallidos
+        #     login_attempt.reset_attempts()
+
+    if login_attempt.attempts >5:
+        login_attempt.permanently_blocked=True
+        LoginAttempt.objects.filter(user=user).update(permanently_blocked=True)
+
+    # Verificar si el usuario está bloqueado permanentemente
+    if login_attempt.permanently_blocked:
+        return Response({"error": "Usuario bloqueado permanentemente. Contacte al administrador."}, status=status.HTTP_403_FORBIDDEN)
+
+    # Verificar si la contraseña es correcta
     if not user.check_password(request.data.get('password')):
-        return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Obtener o crear el token para el usuario
+        # Incrementar el contador de intentos fallidos si la contraseña es incorrecta
+        login_attempt.increment_attempts()
+        return Response({"error": "Contraseña incorrecta"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Si la contraseña es correcta, reiniciar los intentos fallidos
+    login_attempt.reset_attempts()
+
+    # Obtener o crear un token para el usuario
     token, created = Token.objects.get_or_create(user=user)
-    
-    # Retornar la respuesta con el token
+
+    # Retornar la respuesta con el token y los datos del usuario
     return Response({
         "token": token.key,
         "user": {
@@ -466,14 +492,14 @@ def login(request):
 @api_view(["POST"])
 def register(request):
     serializer = UserSerializer(data=request.data)
-    
+
     if serializer.is_valid():
         # Guardar el usuario y obtener la instancia
         user = serializer.save()
-        
+
         # Crear el token para el usuario
         token, created = Token.objects.get_or_create(user=user)
-        
+
         # Retornar la respuesta con el token y los datos del usuario
         return Response({
             "token": token.key,
@@ -484,7 +510,7 @@ def register(request):
                 # No incluyas la contraseña por seguridad
             }
         }, status=status.HTTP_201_CREATED)
-    
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -494,9 +520,9 @@ def register(request):
 def profile(request):
     # Imprimir el ID del usuario autenticado
     print(request.user.id)
-    
+
     # Serializar el usuario autenticado
     serializer = UserSerializer(instance=request.user)
-    
+
     # Devolver la respuesta con los datos del usuario y un estado HTTP 200 OK
     return Response(serializer.data, status=status.HTTP_200_OK)
