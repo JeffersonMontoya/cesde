@@ -3,6 +3,9 @@ from .models import *
 from datetime import datetime
 from .models import *
 from django.contrib.auth.models import User
+import re
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 
 class SedeSerializer(serializers.ModelSerializer):
@@ -70,11 +73,8 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = '__all__'
+        
 
-
-import re
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError as DjangoValidationError
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
 
