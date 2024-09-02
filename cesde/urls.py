@@ -18,7 +18,6 @@ schema_view = get_schema_view(
         license=openapi.License(name="BSD License"),
     ),
     public=True,
-  
 )
 
 urlpatterns = [
@@ -29,5 +28,4 @@ urlpatterns = [
     path('login/', views.login),
     path('register/', views.register),
     path('profile/', views.profile),
-   
 ]
