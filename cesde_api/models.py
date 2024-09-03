@@ -101,7 +101,6 @@ class Gestiones(models.Model):
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
 
-    
 
 
 
