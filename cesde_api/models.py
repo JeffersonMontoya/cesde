@@ -123,3 +123,6 @@ class LoginAttempt(models.Model):
         self.attempts += 1
         self.last_attempt = timezone.now()
         self.save()
+        
+    def __str__(self):
+        return f"{self.user} - {self.attempts}"

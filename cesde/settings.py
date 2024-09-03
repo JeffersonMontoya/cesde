@@ -83,15 +83,17 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 
 #Para el docker
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'localhost',
-        'PORT': 5432,
-        'NAME': 'cesde',
-        'USER': 'postgres',
-        'PASSWORD': 'admin'
-    }
-}
+     'default': {
+         'ENGINE': 'django.db.backends.postgresql',
+         'HOST': 'db',
+         'PORT': 5432,
+         'NAME': 'cesde',
+         'USER': 'admin',
+         'PASSWORD': 'admin'
+     }
+ }
+
+
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
@@ -155,8 +157,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,  # Número de registros por página
 
-
 }
-
 
 APPEND_SLASH = False
