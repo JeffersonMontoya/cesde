@@ -456,8 +456,8 @@ def login(request):
         #     # Si han pasado más de 10 minutos, reiniciar los intentos fallidos
         #     login_attempt.reset_attempts()
 
-    if login_attempt.attempts >5:
-        login_attempt.permanently_blocked=True
+    if login_attempt.attempts > 5:
+        login_attempt.permanently_blocked = True
         LoginAttempt.objects.filter(user=user).update(permanently_blocked=True)
 
     # Verificar si el usuario está bloqueado permanentemente
