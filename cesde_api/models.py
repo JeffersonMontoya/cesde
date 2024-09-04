@@ -64,8 +64,7 @@ class Asesores(models.Model):
 class Tipificacion(models.Model):
     nombre = models.CharField(max_length=40)
     contacto = models.BooleanField(default=False)
-    valor_tipificacion = models.DecimalField(
-        max_digits=10, decimal_places=2, default=0.00)
+    valor_tipificacion = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     categoria = models.CharField(max_length=50, choices=[
         ('Interesado', 'Interesado'),
         ('En seguimiento', 'En seguimiento'),
@@ -103,6 +102,7 @@ class Gestiones(models.Model):
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
     empresa = models.CharField(max_length=120)
+    tiempo_gestion = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
