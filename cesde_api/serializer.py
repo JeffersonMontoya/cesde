@@ -3,6 +3,9 @@ from .models import *
 from datetime import datetime
 from .models import *
 from django.contrib.auth.models import User
+import re
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 
 class SedeSerializer(serializers.ModelSerializer):
@@ -29,11 +32,12 @@ class GestionSerializer(serializers.ModelSerializer):
     tipificacion = serializers.SerializerMethodField()
     asesor = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='cel_aspirante.estado.nombre')
+    tiempo_gestion = serializers.SerializerMethodField()
 
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante']
+                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante', 'tiempo_gestion']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre
@@ -48,6 +52,9 @@ class GestionSerializer(serializers.ModelSerializer):
                 'nombre_completo': obj.asesor.nombre_completo
             }
         return None
+    
+    def get_tiempo_gestion(self, obj):
+        return obj.tiempo_gestion
 
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:
@@ -70,11 +77,8 @@ class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tipificacion
         fields = '__all__'
+        
 
-
-import re
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError as DjangoValidationError
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
 

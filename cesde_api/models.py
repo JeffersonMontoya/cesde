@@ -1,4 +1,7 @@
+from django.utils import timezone
+from django.contrib.auth.models import User
 from django.db import models
+
 
 class Sede(models.Model):
     nombre = models.CharField(max_length=35)
@@ -14,6 +17,7 @@ class Estados(models.Model):
 
 class Programa(models.Model):
     nombre = models.CharField(max_length=200)
+
     def __str__(self):
         return self.nombre
 
@@ -25,9 +29,10 @@ class Empresa(models.Model):
 
 class Proceso(models.Model):
     nombre = models.CharField(max_length=40)
-    
+
     def __str__(self):
         return self.nombre
+
 
 class Aspirantes(models.Model):
     celular = models.CharField(max_length=15, primary_key=True)
@@ -97,12 +102,27 @@ class Gestiones(models.Model):
     tipificacion = models.ForeignKey(Tipificacion, on_delete=models.CASCADE)
     asesor = models.ForeignKey(Asesores , on_delete=models.CASCADE  , default = 'null')
     empresa = models.CharField(max_length=120)
+    tiempo_gestion = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.fecha} - {self.cel_aspirante.celular}"
 
-    
 
+class LoginAttempt(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    attempts = models.IntegerField(default=0)
+    last_attempt = models.DateTimeField(auto_now_add=True)
+    permanently_blocked = models.BooleanField(default=False)  # Campo para bloquear permanentemente
 
+    def reset_attempts(self):
+        self.attempts = 0
+        self.last_attempt = timezone.now()
+        self.save()
 
-
+    def increment_attempts(self):
+        self.attempts += 1
+        self.last_attempt = timezone.now()
+        self.save()
+        
+    def __str__(self):
+        return f"{self.user} - {self.attempts}"

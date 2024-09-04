@@ -1,4 +1,3 @@
-from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
@@ -428,73 +427,3 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
-
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-from django.shortcuts import get_object_or_404
-from rest_framework.decorators import authentication_classes , permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
-
-
-@api_view(["POST"])
-def login(request):
-    # Obtener el usuario por el nombre de usuario
-    user = get_object_or_404(User, username=request.data.get('username'))
-    
-    # Verificar la contraseña
-    if not user.check_password(request.data.get('password')):
-        return Response({"error": "Invalid password"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    # Obtener o crear el token para el usuario
-    token, created = Token.objects.get_or_create(user=user)
-    
-    # Retornar la respuesta con el token
-    return Response({
-        "token": token.key,
-        "user": {
-            "username": user.username,
-            "email": user.email,
-            # Añadir otros campos que quieras devolver
-        }
-    }, status=status.HTTP_200_OK)
-
-
-@api_view(["POST"])
-def register(request):
-    serializer = UserSerializer(data=request.data)
-    
-    if serializer.is_valid():
-        # Guardar el usuario y obtener la instancia
-        user = serializer.save()
-        
-        # Crear el token para el usuario
-        token, created = Token.objects.get_or_create(user=user)
-        
-        # Retornar la respuesta con el token y los datos del usuario
-        return Response({
-            "token": token.key,
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "email": user.email
-                # No incluyas la contraseña por seguridad
-            }
-        }, status=status.HTTP_201_CREATED)
-    
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["POST"])
-@authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
-def profile(request):
-    # Imprimir el ID del usuario autenticado
-    print(request.user.id)
-    
-    # Serializar el usuario autenticado
-    serializer = UserSerializer(instance=request.user)
-    
-    # Devolver la respuesta con los datos del usuario y un estado HTTP 200 OK
-    return Response(serializer.data, status=status.HTTP_200_OK)
