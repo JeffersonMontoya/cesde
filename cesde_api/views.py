@@ -281,10 +281,26 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         # Obtener la contactabilidad para el rango de fechas filtrado
         contactabilidad = obtener_contactabilidad(gestiones_queryset)
 
+        # Calcular el tiempo promedio de WhatsApp y llamadas en minutos para el rango de fechas
+        promedio_tiempo_wpp = gestiones_queryset.filter(
+            tipo_gestion__nombre='WhatsApp'
+        ).aggregate(
+            promedio_wpp=Avg(F('tiempo_gestion') / 60) # Promedio en minutos
+        )['promedio_wpp'] or 0
+
+        promedio_tiempo_llamada = gestiones_queryset.filter(
+            tipo_gestion__nombre='Llamada'
+        ).aggregate(
+            promedio_llamada=Avg(F('tiempo_gestion') / 60) # Promedio en minutos
+        )['promedio_llamada'] or 0
+
         return Response({
             'estadisticas_por_fechas': estadisticas_por_fechas,
             'contactabilidad': contactabilidad,
+            'promedio_tiempo_whatsapp': round(promedio_tiempo_wpp, 2),
+            'promedio_tiempo_llamada': round(promedio_tiempo_llamada, 2),
         })
+        
 
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
