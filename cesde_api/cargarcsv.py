@@ -147,7 +147,6 @@ class Cargarcsv(APIView):
                     df3['CUSTOMER_PHONE'].replace('---', np.nan, inplace=True)
                     df3['CUSTOMER_PHONE'].dropna()
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
-                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                     df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df3 = df3.dropna(subset=['cel_modificado'])
