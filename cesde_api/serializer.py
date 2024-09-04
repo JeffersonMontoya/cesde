@@ -32,11 +32,12 @@ class GestionSerializer(serializers.ModelSerializer):
     tipificacion = serializers.SerializerMethodField()
     asesor = serializers.SerializerMethodField()
     estado_aspirante = serializers.CharField(source='cel_aspirante.estado.nombre')
+    tiempo_gestion = serializers.SerializerMethodField()
 
     class Meta:
         model = Gestiones
         fields = ['cel_aspirante', 'fecha', 'tipo_gestion',
-                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante']
+                'observaciones', 'tipificacion', 'asesor', 'estado_aspirante', 'tiempo_gestion']
 
     def get_tipo_gestion(self, obj):
         return obj.tipo_gestion.nombre
@@ -51,6 +52,9 @@ class GestionSerializer(serializers.ModelSerializer):
                 'nombre_completo': obj.asesor.nombre_completo
             }
         return None
+    
+    def get_tiempo_gestion(self, obj):
+        return obj.tiempo_gestion
 
 class ProgramaSerializer(serializers.ModelSerializer):
     class Meta:

@@ -7,7 +7,8 @@ from io import StringIO
 from rest_framework.permissions import AllowAny
 import pytz
 import logging
-import datetime
+from datetime import datetime as datetime1
+import datetime 
 import numpy as np
 
 # Configurar el logger
@@ -94,6 +95,21 @@ class Cargarcsv(APIView):
 
         print("Actualización de estados completada.")
         
+    def convertir_a_segundos(self, tiempo):
+        try:
+            # Intentar analizar el tiempo en formato hh:mm:ss AM/PM
+            dt = datetime1.strptime(tiempo, '%I:%M:%S %p')
+        except ValueError:
+            try:
+                # Intentar analizar el tiempo en formato hh:mm:ss (24 horas)
+                dt = datetime1.strptime(tiempo, '%H:%M:%S')
+            except ValueError:
+                raise ValueError(f"Formato de tiempo inválido: {tiempo}")
+        # Convertir el tiempo a segundos
+        tiempo_en_segundos = dt.hour * 3600 + dt.minute * 60 + dt.second
+        tiempo_int = int(tiempo_en_segundos)
+        return tiempo_int
+        
     # función para conectar los archivos csv
     def post(self, request, format=None):
         try:
@@ -119,8 +135,7 @@ class Cargarcsv(APIView):
                 df2 = pd.read_csv(io_string2)
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 # Filtrar y ajustar los números de teléfono
-                df2['cel_modificado'] = df2['TEL1'].apply(
-                    lambda x: x[-10:] if len(x) >= 10 else None)
+                df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                 # Eliminar las filas donde 'cel_modificado' es None (es decir, donde el número original tenía menos de 10 dígitos)
                 df2 = df2.dropna(subset=['cel_modificado'])
 
@@ -128,27 +143,29 @@ class Cargarcsv(APIView):
                 if whatsapp_file:
                     data_set3 = whatsapp_file.read().decode('UTF-8')
                     io_string3 = StringIO(data_set3)
-                    df3 = pd.read_csv(io_string3)
+                    df3 = pd.read_csv(io_string3, delimiter=';')
                     df3['CUSTOMER_PHONE'].replace('---', np.nan, inplace=True)
                     df3['CUSTOMER_PHONE'].dropna()
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
-                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
-                    df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(
-                        lambda x: x[2:] if len(x) == 12 else x)
+                    df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
+                    df3 = df3.dropna(subset=['cel_modificado'])
+                    df3['segundos'] = df3['TIME_ON_AGENT'].apply(self.convertir_a_segundos).astype(int)
+                    df3.loc[:, 'segundos'] = df3['segundos'].astype(int)
 
                 # BD SMS
                 if sms_file:
                     data_set4 = sms_file.read().decode('UTF-8')
                     io_string4 = StringIO(data_set4)
-                    df4 = pd.read_csv(io_string4)
+                    df4 = pd.read_csv(io_string4, delimiter=';')
                     df4['TELEPHONE'].replace('-', np.nan, inplace=True)
                     df4['TELEPHONE'].dropna()
                     df4['TELEPHONE'] = df4['TELEPHONE'].fillna(0)
-                    df4['TELEPHONE'] = df4['TELEPHONE'].astype(int)
                     df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
-                    df4['cel_modificado'] = df4['TELEPHONE'].apply(
-                        lambda x: x[1:] if len(x) == 11 else x)
+                    df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
+                    df4 = df4.dropna(subset=['cel_modificado'])
+                    df4['segundos'] = df4['TIME']
+                    df4.loc[:, 'segundos'] = df4['segundos'].astype(int)
 
                 # Unir los DataFrames
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
@@ -157,8 +174,7 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico'
-                ]
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -254,7 +270,7 @@ class Cargarcsv(APIView):
                 return None  # Retorna None si la fecha está vacía o es NaN
             try:
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                fecha_convertida = datetime.datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
                 zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
@@ -303,7 +319,7 @@ class Cargarcsv(APIView):
                 'contacto': self.contactabilidad(row),
                 'valor_tipificacion': valor_tipificacion
             })
-            
+
             # modelo aspirantes
             documento = row['Identificacion']
             correo = row['CorreoElectronico']
@@ -337,6 +353,7 @@ class Cargarcsv(APIView):
                     fecha_convertida = convertir_fecha(row['DATE'])
                     observaciones = row['COMMENTS']
                     empresa = row['Empresa a la que se postula']
+                    tiempo_gestion = row['segundos']
                     
                     # Verificar que todos los datos necesarios están disponibles
                     gestion_existente = Gestiones.objects.filter(
@@ -346,7 +363,8 @@ class Cargarcsv(APIView):
                         observaciones=observaciones,
                         tipificacion=tipificacion,
                         asesor=asesor,
-                        empresa=empresa
+                        empresa=empresa,
+                        tiempo_gestion= tiempo_gestion
                     ).exists()
 
                     if not gestion_existente:
@@ -357,7 +375,8 @@ class Cargarcsv(APIView):
                             observaciones=observaciones,
                             tipificacion=tipificacion,
                             asesor=asesor,
-                            empresa=empresa
+                            empresa=empresa,
+                            tiempo_gestion=tiempo_gestion
                         )
                         gestiones_a_guardar.append(nueva_gestion)
                     else:

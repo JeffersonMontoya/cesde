@@ -14,6 +14,8 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     cantidad_gestiones_empresa = serializers.SerializerMethodField()
     cantidad_gestiones_tecnicos = serializers.SerializerMethodField()
     cantidad_gestiones_extensiones = serializers.SerializerMethodField()
+    tiempo_promedio_whatsapp = serializers.SerializerMethodField()
+    tiempo_promedio_llamada = serializers.SerializerMethodField()
 
     class Meta:
         model = Asesores
@@ -27,7 +29,9 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'cantidad_liquidaciones',
             'cantidad_gestiones_empresa',
             'cantidad_gestiones_tecnicos',
-            'cantidad_gestiones_extensiones'
+            'cantidad_gestiones_extensiones',
+            'tiempo_promedio_whatsapp',
+            'tiempo_promedio_llamada'
         ]
 
     def get_nombre_completo(self, obj):
@@ -115,3 +119,33 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
         if fecha_fin:
             query = query.filter(fecha__lte=fecha_fin)
         return query.count()
+    
+    def get_tiempo_promedio_whatsapp(self, obj):
+        tipo_gestion = Tipo_gestion.objects.get(nombre='WhatsApp')
+        query = Gestiones.objects.filter(asesor=obj, tipo_gestion_id=tipo_gestion)
+
+        tiempo_segundos_total = sum(gestion.tiempo_gestion for gestion in query)
+        total_gestiones = query.count()
+
+        if total_gestiones == 0:
+            return 0  # O el valor que consideres apropiado, como None o 'N/A'
+
+        tiempo_minutos = tiempo_segundos_total / 60
+        tiempo_promedio = tiempo_minutos / total_gestiones
+        tiempo_promedio_redondeado = round(tiempo_promedio, 2)
+        return tiempo_promedio_redondeado
+    
+    def get_tiempo_promedio_llamada(self, obj):
+        tipo_gestion = Tipo_gestion.objects.get(nombre='Llamada')
+        query = Gestiones.objects.filter(asesor=obj, tipo_gestion_id=tipo_gestion)
+        
+        tiempo_segundos_total = sum(gestion.tiempo_gestion for gestion in query)
+        total_gestiones = query.count()
+    
+        if total_gestiones == 0:
+            return 0 
+        
+        tiempo_minutos = tiempo_segundos_total / 60
+        tiempo_promedio = tiempo_minutos / total_gestiones
+        tiempo_promedio_redondeado = round(tiempo_promedio, 2)
+        return tiempo_promedio_redondeado
