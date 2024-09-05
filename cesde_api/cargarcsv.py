@@ -143,7 +143,7 @@ class Cargarcsv(APIView):
                 if whatsapp_file:
                     data_set3 = whatsapp_file.read().decode('UTF-8')
                     io_string3 = StringIO(data_set3)
-                    df3 = pd.read_csv(io_string3, delimiter=';')
+                    df3 = pd.read_csv(io_string3)
                     df3['CUSTOMER_PHONE'].replace('---', np.nan, inplace=True)
                     df3['CUSTOMER_PHONE'].dropna()
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
