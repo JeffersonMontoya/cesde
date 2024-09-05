@@ -147,6 +147,7 @@ class Cargarcsv(APIView):
                     df3['CUSTOMER_PHONE'].replace('---', np.nan, inplace=True)
                     df3['CUSTOMER_PHONE'].dropna()
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].fillna(0)
+                    df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(int)
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                     df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df3 = df3.dropna(subset=['cel_modificado'])
@@ -270,7 +271,7 @@ class Cargarcsv(APIView):
                 return None  # Retorna None si la fecha está vacía o es NaN
             try:
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
+                fecha_convertida = datetime.datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
                 zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
