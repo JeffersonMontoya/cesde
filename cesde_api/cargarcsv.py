@@ -124,7 +124,7 @@ class Cargarcsv(APIView):
             try:
                 # BD Matriculas
                 data_set1 = matricula_file.read().decode('UTF-8')
-                io_string1 = StringIO(data_set1)
+                io_string1 = StringIO(data_set1, delimiter=';')
                 df1 = pd.read_csv(io_string1)
                 df1['Celular'] = df1['Celular'].astype(str)
                 df1['cel_modificado'] = df1['Celular']
@@ -132,7 +132,7 @@ class Cargarcsv(APIView):
                 # BD predictivo
                 data_set2 = predictivo_file.read().decode('UTF-8')
                 io_string2 = StringIO(data_set2)
-                df2 = pd.read_csv(io_string2)
+                df2 = pd.read_csv(io_string2, delimiter=';')
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 # Filtrar y ajustar los números de teléfono
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
@@ -177,7 +177,7 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CorreoElectronico','Sede','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -224,9 +224,9 @@ class Cargarcsv(APIView):
                 valores_predeterminados = {
                     'Estado': 'Sin gestión',
                     'Identificacion': '',
-                    'CorreoElectronico': 'sin correo',
+                    'CORREO': 'sin correo',
                     'Programa académico': 'sin programa',
-                    'Sede': 'sin sede',
+                    'CIUDAD': 'sin sede',
                     'Empresa a la que se postula': 'sin empresa',
                     'Identificacion': 'sin ID',
                     'CorreoElectronico': 'sin correo',
@@ -311,7 +311,7 @@ class Cargarcsv(APIView):
             self.actualizar_o_crear_modelo(Programa, nombre=row['Programa académico'])
 
             # Modelo Sede
-            self.actualizar_o_crear_modelo(Sede, nombre=row['Sede'])
+            self.actualizar_o_crear_modelo(Sede, nombre=row['CIUDAD'])
 
             # Modelo Empresa
             self.actualizar_o_crear_modelo(Empresa, nit=row['Empresa a la que se postula'])
@@ -325,7 +325,7 @@ class Cargarcsv(APIView):
 
             # modelo aspirantes
             documento = row['Identificacion']
-            correo = row['CorreoElectronico']
+            correo = row['CORREO']
             sede = Sede.objects.get(nombre=row['Sede'])
             programa = Programa.objects.get(nombre=row['Programa académico'])
             empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
