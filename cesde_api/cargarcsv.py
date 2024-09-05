@@ -271,7 +271,7 @@ class Cargarcsv(APIView):
                 return None  # Retorna None si la fecha está vacía o es NaN
             try:
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                fecha_convertida = datetime.datetime.strptime(fecha_str, "%m/%d/%Y %H:%M")
+                fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
                 zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
