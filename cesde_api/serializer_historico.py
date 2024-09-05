@@ -8,11 +8,12 @@ class HistoricoGestionesSerializer(serializers.ModelSerializer):
     sede_nombre = serializers.SerializerMethodField()
     programa_nombre = serializers.SerializerMethodField()
     empresa_aspirante = serializers.CharField(source='empresa')
+    tiempo_gestion = serializers.SerializerMethodField()
 
     class Meta:
         model = Gestiones
         fields = ['nombre_completo_aspirante', 'cel_aspirante', 'fecha', 'tipo_gestion_nombre', 'observaciones',
-                    'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre', 'empresa_aspirante']
+                    'tipificacion_nombre', 'asesor', 'sede_nombre', 'programa_nombre', 'empresa_aspirante', 'tiempo_gestion']
 
     def get_tipo_gestion_nombre(self, obj):
         return obj.tipo_gestion.nombre if obj.tipo_gestion else None
@@ -36,3 +37,7 @@ class HistoricoGestionesSerializer(serializers.ModelSerializer):
         # Asumiendo que `cel_aspirante` es una relación con el modelo `Aspirantes`
         aspirante = obj.cel_aspirante
         return aspirante.programa.nombre if aspirante and aspirante.programa else None
+
+    def get_tiempo_gestion(self, obj):
+        tiempo_gestion = obj.tiempo_gestion
+        return tiempo_gestion

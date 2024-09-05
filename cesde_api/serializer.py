@@ -14,12 +14,10 @@ class SedeSerializer(serializers.ModelSerializer):
         model = Sede
         fields = '__all__'
 
-
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Estados
         fields = ['nombre']
-
 
 class TipoGestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -70,8 +68,6 @@ class ProcesoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proceso
         fields = '__all__'
-
-
 
 class TipificacionSerializer(serializers.ModelSerializer):
     class Meta:

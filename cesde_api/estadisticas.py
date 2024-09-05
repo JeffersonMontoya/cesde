@@ -1,5 +1,6 @@
-from django.db.models import Count
+from django.db.models import Count, Avg, F, Sum
 from .models import *
+
 
 def obtener_estadisticas_generales(queryset):
     # Obtener estadísticas básicas por estado y proceso
@@ -14,17 +15,33 @@ def obtener_estadisticas_generales(queryset):
     contactabilidad_percentage = (contactabilidad_count / gestiones_totales * 100) if gestiones_totales > 0 else 0
     no_contactabilidad_percentage = (no_contactabilidad_count / gestiones_totales * 100) if gestiones_totales > 0 else 0
 
+    # Calcular tiempo promedio de WhatsApp en minutos
+    tiempo_whatsapp_total = queryset.filter(gestiones__tipo_gestion__nombre='WhatsApp').aggregate(
+        total=Sum('gestiones__tiempo_gestion')
+    )['total'] or 0
+    total_gestiones_whatsapp = queryset.filter(gestiones__tipo_gestion__nombre='WhatsApp').count()
+    promedio_tiempo_wpp = (tiempo_whatsapp_total / 60 / total_gestiones_whatsapp) if total_gestiones_whatsapp > 0 else 0
+
+    # Calcular tiempo promedio de llamadas en minutos
+    tiempo_llamada_total = queryset.filter(gestiones__tipo_gestion__nombre='Llamada').aggregate(
+        total=Sum('gestiones__tiempo_gestion')
+    )['total'] or 0
+    total_gestiones_llamada = queryset.filter(gestiones__tipo_gestion__nombre='Llamada').count()
+    promedio_tiempo_llamada = (tiempo_llamada_total / 60 / total_gestiones_llamada) if total_gestiones_llamada > 0 else 0
+
     # Integrar las estadísticas adicionales en la respuesta
     estadisticas = {
         'estadisticas_basicas': list(estadisticas_basicas),
         'contactabilidad': {
             'count': contactabilidad_count,
-            'percentage': contactabilidad_percentage,
+            'percentage': round(contactabilidad_percentage, 2)
         },
         'no_contactabilidad': {
             'count': no_contactabilidad_count,
-            'percentage': no_contactabilidad_percentage,
+            'percentage': round(no_contactabilidad_percentage, 2)
         },
+        'promedio_tiempo_whatsapp': round(promedio_tiempo_wpp, 2),
+        'promedio_tiempo_llamada': round(promedio_tiempo_llamada, 2),
     }
 
     return estadisticas
