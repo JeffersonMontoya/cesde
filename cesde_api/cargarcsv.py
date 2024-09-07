@@ -22,7 +22,7 @@ class Cargarcsv(APIView):
     
     def __init__(self):
         #estados del aspirante segun la tipificación
-        self.estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
+        self.estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_Manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
         ]
 
         self.estado_en_gestion = ['Volver_a_llamar','Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','TIMEOUTACW','Interesado_en_seguimiento','En_proceso_de_selección','Cliente_en_seguimiento','Informacion_general_','Cuelga_Telefono','Liquidacion'
@@ -63,8 +63,7 @@ class Cargarcsv(APIView):
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
-            ultima_gestion = Gestiones.objects.filter(
-                cel_aspirante=aspirante).order_by('-fecha').first()
+            ultima_gestion = Gestiones.objects.filter(cel_aspirante=aspirante).order_by('-fecha').first()
 
             if ultima_gestion:
                 tipificacion = ultima_gestion.tipificacion.nombre
@@ -236,8 +235,8 @@ class Cargarcsv(APIView):
                 if sms_file:
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
-                    # df_result_llamadas.replace('', np.nan, inplace=True)
-                    # df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
+                    df_result_llamadas.replace('', np.nan, inplace=True)
+                    df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
                     df_result_llamadas.to_csv('llamadas', index=False)
                     self.llenarBD(df_result_llamadas)
                 else:
@@ -274,7 +273,7 @@ class Cargarcsv(APIView):
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
                 fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
+                zona_horaria = pytz.timezone("UTC")  # Cambia 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
                 fecha_convertida = zona_horaria.localize(fecha_convertida)
                 return fecha_convertida
@@ -382,7 +381,7 @@ class Cargarcsv(APIView):
                         )
                         gestiones_a_guardar.append(nueva_gestion)
                     else:
-                        print(f"Datos incompletos para la gestión con celular {row['cel_modificado']}.")
+                        print(f"la gestión ya existe para el celular: {row['cel_modificado']}.")
                 except Aspirantes.DoesNotExist:
                     print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
                 except Tipificacion.DoesNotExist:
