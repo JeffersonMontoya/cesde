@@ -84,12 +84,12 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 #Para el docker
 DATABASES = {
     'default': {
-        'HOST': 'localhost',
         'ENGINE': 'django.db.backends.postgresql',
-        'PORT': 5432,
-        'NAME': 'cesde',
-        'USER': 'postgres',
-        'PASSWORD': 'admin'
+        'NAME': os.environ.get('DATABASE_NAME', 'cesde'),
+        'USER': os.environ.get('DATABASE_USER', 'admin'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'admin'),
+        'HOST': os.environ.get('DATABASE_HOST', 'db'),
+        'PORT': os.environ.get('DATABASE_PORT', '5432'),
     }
 }
 
