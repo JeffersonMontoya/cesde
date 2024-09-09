@@ -59,7 +59,7 @@ class Cargarcsv(APIView):
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado', 'Descartado'])
+            estado__nombre__in=['matriculado', 'liquidado', 'Descartado', "cancelado"])
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
@@ -235,8 +235,8 @@ class Cargarcsv(APIView):
                 if sms_file:
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
-                    df_result_llamadas.replace('', np.nan, inplace=True)
-                    df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
+                    # df_result_llamadas.replace('', np.nan, inplace=True)
+                    # df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
                     df_result_llamadas.to_csv('llamadas', index=False)
                     self.llenarBD(df_result_llamadas)
                 else:
