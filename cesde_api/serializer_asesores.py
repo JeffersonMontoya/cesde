@@ -17,7 +17,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     tiempo_promedio_whatsapp = serializers.SerializerMethodField()
     tiempo_promedio_llamada = serializers.SerializerMethodField()
     en_proceso_seleccion_llamadas = serializers.SerializerMethodField()
-    # en_proceso_seleccion_whastapp = serializers.SerializerMethodField()
+    en_proceso_seleccion_whatsapp = serializers.SerializerMethodField()
     
 
     class Meta:
@@ -36,7 +36,7 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'tiempo_promedio_whatsapp',
             'tiempo_promedio_llamada',
             'en_proceso_seleccion_llamadas',
-            'en_proceso_seleccion_whatsapp'
+            'en_proceso_seleccion_whatsapp',
         ]
 
     def get_nombre_completo(self, obj):
@@ -159,16 +159,14 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
         tipo_gestion = Tipo_gestion.objects.get(nombre='Llamada') 
         tipificacion = Tipificacion.objects.get(nombre='En_proceso_de_selección')
 
-        query = Gestiones.objects.filter(asesor=obj, tipificacion=tipificacion, tipo_gestion=tipo_gestion)
-        total = Count(query)
+        query = Gestiones.objects.filter(asesor=obj, tipificacion=tipificacion, tipo_gestion_id=tipo_gestion)
         
-        return total
+        return query.count()
     
     def get_en_proceso_seleccion_whatsapp(self, obj):
-        tipo_gestion = Tipo_gestion.objects.get(nombre='Whatsapp') 
+        tipo_gestion = Tipo_gestion.objects.get(nombre='WhatsApp') 
         tipificacion = Tipificacion.objects.get(nombre='En_proceso_de_selección')
         
-        query = Gestiones.objects.filter(asesor=obj, tipificacion=tipificacion, tipo_gestion=tipo_gestion)
-        total = Count(query)
+        query = Gestiones.objects.filter(asesor=obj, tipificacion=tipificacion, tipo_gestion_id=tipo_gestion)
         
-        return total
+        return query.count()
