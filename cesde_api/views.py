@@ -1,14 +1,14 @@
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, generics,filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import *
 from .serializer import *
 from .serializer_filters import *
 from .serializer_historico import *
-from django.db.models import Subquery, OuterRef
+from django.db.models import Subquery, OuterRef, Count
 from .serializer_asesores import ConsultaAsesoresSerializer
 from .estadisticas import *
 from rest_framework.decorators import action
@@ -403,7 +403,7 @@ class HistoricoViewSet(viewsets.ModelViewSet):
 
 class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, )
     filterset_class = AsesoresFilter
     pagination_class = None
 
@@ -418,6 +418,7 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         gestiones_subquery = Gestiones.objects.filter(
             asesor=OuterRef('pk')
         )
+        
 
         if fecha_inicio and fecha_fin:
             gestiones_subquery = gestiones_subquery.filter(
@@ -425,13 +426,18 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             )
 
         queryset = Asesores.objects.annotate(
-            tiene_gestiones=Subquery(gestiones_subquery.values('id')[:1])
-        ).filter(tiene_gestiones__isnull=False)
+            numero_gestiones=Count(
+                Subquery(gestiones_subquery.values('id'))
+            )
+        ).filter(numero_gestiones__gt=0)
+        
 
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
-        return queryset
+        queryset.order_by('-numero_gestiones')
+        
+        return queryset 
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
