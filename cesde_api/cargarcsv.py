@@ -369,7 +369,7 @@ class Cargarcsv(APIView):
                     ).exists()
 
                     if not gestion_existente:
-                        nueva_gestion = Gestiones(
+                        Gestiones.objects.create(
                             cel_aspirante=aspirante,
                             fecha=fecha_convertida,
                             tipo_gestion=tipo_gestion,
@@ -379,7 +379,6 @@ class Cargarcsv(APIView):
                             empresa=empresa,
                             tiempo_gestion=tiempo_gestion
                         )
-                        gestiones_a_guardar.append(nueva_gestion)
                     else:
                         print(f"la gestión ya existe para el celular: {row['cel_modificado']}.")
                 except Aspirantes.DoesNotExist:
@@ -393,8 +392,6 @@ class Cargarcsv(APIView):
             else:
                 continue
 
-        if gestiones_a_guardar:
-            Gestiones.objects.bulk_create(gestiones_a_guardar)
         # Actualizar estados de todos los aspirantes
         self.actualizar_estados_aspirantes()
         print("carga completada")
