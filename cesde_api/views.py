@@ -418,7 +418,6 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         gestiones_subquery = Gestiones.objects.filter(
             asesor=OuterRef('pk')
         )
-        
 
         if fecha_inicio and fecha_fin:
             gestiones_subquery = gestiones_subquery.filter(
@@ -426,18 +425,13 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
             )
 
         queryset = Asesores.objects.annotate(
-            numero_gestiones=Count(
-                Subquery(gestiones_subquery.values('id'))
-            )
-        ).filter(numero_gestiones__gt=0)
-        
+            tiene_gestiones=Subquery(gestiones_subquery.values('id')[:1])
+        ).filter(tiene_gestiones__isnull=False)
 
         if id_asesor:
             queryset = queryset.filter(id=id_asesor)
 
-        queryset.order_by('-numero_gestiones')
-        
-        return queryset 
+        return queryset
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
