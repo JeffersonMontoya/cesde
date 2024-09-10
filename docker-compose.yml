@@ -1,4 +1,4 @@
-# version: '3.8'
+version: '3.8'
 services:
   db:
     image: postgres:latest
@@ -10,6 +10,8 @@ services:
       - "5432:5432"
     networks:
       - app-network
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Usa un volumen nombrado
 
   backend:
     image: back:latest
@@ -38,3 +40,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  pgdata:
