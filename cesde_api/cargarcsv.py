@@ -273,7 +273,7 @@ class Cargarcsv(APIView):
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
                 fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                zona_horaria = pytz.timezone("UTC")  # Cambia 'UTC' a tu zona horaria si es necesario
+                zona_horaria = pytz.timezone("UTC")  # Cambiaz 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
                 fecha_convertida = zona_horaria.localize(fecha_convertida)
                 return fecha_convertida
