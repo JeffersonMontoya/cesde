@@ -82,7 +82,7 @@ class Tipificacion(models.Model):
             'Interesado': ['Matriculado', 'Liquidacion', 'En_proceso_de_selección', 'Interesado_en_seguimiento'],
             'En seguimiento': ['Volver_a_llamar'],
             'No contactado': ['Primer_intento_de_contacto', 'Segundo_intento_de_contacto', 'Tercer_intento_de_contacto', 'Fuera_de_servicio'],
-            'Descartado': ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo', 'Proxima_convocatoria', 'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad', 'Otra_area_de_interés'],
+            'Descartado': ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo', 'Proxima_convocatoria', 'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad', 'Otra_area_de_interés', 'Otra_area_de_interes'],
         }
 
         for categoria, tipificaciones in categorias.items():

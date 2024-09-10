@@ -11,7 +11,7 @@ services:
       - app-network
 
   backend:
-    image: back
+    image: back:latest
     ports:
       - "8000:8000"
     depends_on:
@@ -26,7 +26,7 @@ services:
       - app-network
 
   frontend:
-    image: front
+    image: front:latest
     ports:
       - "80:80"
     depends_on:

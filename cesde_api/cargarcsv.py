@@ -22,7 +22,7 @@ class Cargarcsv(APIView):
     
     def __init__(self):
         #estados del aspirante segun la tipificación
-        self.estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
+        self.estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_Manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
         ]
 
         self.estado_en_gestion = ['Volver_a_llamar','Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','TIMEOUTACW','Interesado_en_seguimiento','En_proceso_de_selección','Cliente_en_seguimiento','Informacion_general_','Cuelga_Telefono','Liquidacion'
@@ -37,8 +37,8 @@ class Cargarcsv(APIView):
         self.no_contacto = ['Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','Imposible_contacto','Número_inválido','Sin_perfil'
         ]
         
-        self.tipificaciones = {'Matriculado': 1.0,'Liquidacion': 2.0,'Número_inválido': 3.0,'Imposible_contacto': 4.0,'Por_ubicacion': 5.0,'No_Manifiesta_motivo': 6.0,'Proxima_convocatoria': 7.0,'Eliminar_de_la_base': 8.0,'Sin_perfil': 9.0,'Sin_tiempo': 10.0,'Sin_interes': 11.0,'Ya_esta_estudiando_en_otra_universidad': 12.0,'Otra_area_de_interés': 13.0,'En_proceso_de_selección': 14.0,'Interesado_en_seguimiento': 15.0,'Volver_a_llamar': 16.0,'Fuera_de_servicio': 17.0,'Tercer_intento_de_contacto': 18.0,'Segundo_intento_de_contacto': 19.0,'Primer_intento_de_contacto': 20.0,'Informacion_general_': 21.0,'No_Manifiesta_motivo': 22.0,'no': 23.0,'Cliente_en_seguimiento': 24.0,'TIMEOUTCHAT': 25.0,'Equivocado': 26.0,'Se_remite_a_otras_áreas': 27.0,'Otra_area_de_interes': 28.0,'TIMEOUTACW': 29.0,'Cuelga_Telefono': 30.0,'nan': 31.0,'': 32.0,'-': 33.0
-            }
+        self.tipificaciones = {'Matriculado': 1.0,'Liquidacion': 2.0,'Número_inválido': 3.0,'Imposible_contacto': 4.0,'Por_ubicacion': 5.0,'No_Manifiesta_motivo': 6.0,'Proxima_convocatoria': 7.0,'Eliminar_de_la_base': 8.0,'Sin_perfil': 9.0,'Sin_tiempo': 10.0,'Sin_interes': 11.0,'Ya_esta_estudiando_en_otra_universidad': 12.0,'Otra_area_de_interés': 13.0,'En_proceso_de_selección': 14.0,'Interesado_en_seguimiento': 15.0,'Volver_a_llamar': 16.0,'Fuera_de_servicio': 17.0,'Tercer_intento_de_contacto': 18.0,'Segundo_intento_de_contacto': 19.0,'Primer_intento_de_contacto': 20.0,'Informacion_general_': 21.0,'no': 23.0,'Cliente_en_seguimiento': 24.0,'TIMEOUTCHAT': 25.0,'Equivocado': 26.0,'Se_remite_a_otras_áreas': 27.0,'Otra_area_de_interes': 28.0,'TIMEOUTACW': 29.0,'Cuelga_Telefono': 30.0,'nan': 31.0,'': 32.0,'-': 33.0
+        }
         
         self.en_seguimiento = ['Volver_a_llamar']
         
@@ -59,12 +59,11 @@ class Cargarcsv(APIView):
     def actualizar_estados_aspirantes(self):
         # Obtener todos los aspirantes menos los matriculados y liquidados
         aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado', 'Descartado'])
+            estado__nombre__in=['matriculado', 'liquidado', 'Descartado', "cancelado"])
 
         for aspirante in aspirantes:
             # Obtener la última gestión para este aspirante
-            ultima_gestion = Gestiones.objects.filter(
-                cel_aspirante=aspirante).order_by('-fecha').first()
+            ultima_gestion = Gestiones.objects.filter(cel_aspirante=aspirante).order_by('-fecha').first()
 
             if ultima_gestion:
                 tipificacion = ultima_gestion.tipificacion.nombre
@@ -124,8 +123,8 @@ class Cargarcsv(APIView):
             try:
                 # BD Matriculas
                 data_set1 = matricula_file.read().decode('UTF-8')
-                io_string1 = StringIO(data_set1, delimiter=';')
-                df1 = pd.read_csv(io_string1)
+                io_string1 = StringIO(data_set1)
+                df1 = pd.read_csv(io_string1, delimiter=';')
                 df1['Celular'] = df1['Celular'].astype(str)
                 df1['cel_modificado'] = df1['Celular']
 
@@ -229,7 +228,6 @@ class Cargarcsv(APIView):
                     'CIUDAD': 'sin sede',
                     'Empresa a la que se postula': 'sin empresa',
                     'Identificacion': 'sin ID',
-                    'CorreoElectronico': 'sin correo',
                     'COMMENTS': 'sin observaciones'
                 }
 
@@ -275,7 +273,7 @@ class Cargarcsv(APIView):
                 # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
                 fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
                 # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                zona_horaria = pytz.timezone('UTC')  # Cambia 'UTC' a tu zona horaria si es necesario
+                zona_horaria = pytz.timezone("UTC")  # Cambiaz 'UTC' a tu zona horaria si es necesario
                 # Hacer el datetime aware
                 fecha_convertida = zona_horaria.localize(fecha_convertida)
                 return fecha_convertida
@@ -326,7 +324,7 @@ class Cargarcsv(APIView):
             # modelo aspirantes
             documento = row['Identificacion']
             correo = row['CORREO']
-            sede = Sede.objects.get(nombre=row['Sede'])
+            sede = Sede.objects.get(nombre=row['CIUDAD'])
             programa = Programa.objects.get(nombre=row['Programa académico'])
             empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
             proceso = Proceso.objects.get(nombre=row['PROCESO'])
@@ -383,7 +381,7 @@ class Cargarcsv(APIView):
                         )
                         gestiones_a_guardar.append(nueva_gestion)
                     else:
-                        print(f"Datos incompletos para la gestión con celular {row['cel_modificado']}.")
+                        print(f"la gestión ya existe para el celular: {row['cel_modificado']}.")
                 except Aspirantes.DoesNotExist:
                     print(f"Aspirante con celular {row['cel_modificado']} no encontrado.")
                 except Tipificacion.DoesNotExist:

@@ -85,11 +85,11 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'HOST': 'localhost',
-        'PORT': 5432,
         'NAME': 'cesde',
         'USER': 'postgres',
-        'PASSWORD': 'admin'
+        'PASSWORD': 'admin',
+        'HOST': 'localhost',
+        'PORT': 5432
     }
 }
 
