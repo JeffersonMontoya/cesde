@@ -1,14 +1,14 @@
 from rest_framework.pagination import PageNumberPagination
 from .filters import *
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status, mixins
+from rest_framework import viewsets, status, mixins, generics,filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import *
 from .serializer import *
 from .serializer_filters import *
 from .serializer_historico import *
-from django.db.models import Subquery, OuterRef
+from django.db.models import Subquery, OuterRef, Count
 from .serializer_asesores import ConsultaAsesoresSerializer
 from .estadisticas import *
 from rest_framework.decorators import action
@@ -403,7 +403,7 @@ class HistoricoViewSet(viewsets.ModelViewSet):
 
 class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     serializer_class = ConsultaAsesoresSerializer
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, )
     filterset_class = AsesoresFilter
     pagination_class = None
 
@@ -434,12 +434,26 @@ class ConsultaAsesoresViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
         return queryset
 
     def list(self, request, *args, **kwargs):
+        # Obtén el queryset filtrado
         queryset = self.filter_queryset(self.get_queryset())
+        
+        # Verifica si hay paginación
         page = self.paginate_queryset(queryset)
-
+        
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            asesores_count = queryset.count()  # Conteo de asesores en la página
+            return self.get_paginated_response({
+                'asesores_count': asesores_count,
+                'results': serializer.data
+            })
 
+        # Serializa los datos y cuenta los asesores
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        asesores_count = queryset.count()  # Conteo de asesores sin paginación
+
+        # Retorna la respuesta con los asesores y el conteo
+        return Response({
+            'total_asesores': asesores_count,
+            'results': serializer.data
+        })
