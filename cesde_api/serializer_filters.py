@@ -19,13 +19,14 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     estado_ultima_gestion = serializers.SerializerMethodField()
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
-    
+    correo = serializers.CharField()
 
     class Meta:
         model = Aspirantes
         fields = [
             'nombre_completo',
             'nit', 
+            'correo',
             'sede',
             'programa_formacion', 
             'nombre_empresa',
