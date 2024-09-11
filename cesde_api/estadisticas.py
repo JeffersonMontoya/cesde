@@ -29,6 +29,8 @@ def obtener_estadisticas_generales(queryset):
     total_gestiones_llamada = queryset.filter(gestiones__tipo_gestion__nombre='Llamada').count()
     promedio_tiempo_llamada = (tiempo_llamada_total / 60 / total_gestiones_llamada) if total_gestiones_llamada > 0 else 0
 
+    total_procesos_seleccion = queryset.filter(gestiones__tipificacion__nombre='En_proceso_de_selección').count()
+
     # Integrar las estadísticas adicionales en la respuesta
     estadisticas = {
         'estadisticas_basicas': list(estadisticas_basicas),
@@ -42,6 +44,7 @@ def obtener_estadisticas_generales(queryset):
         },
         'promedio_tiempo_whatsapp': round(promedio_tiempo_wpp, 2),
         'promedio_tiempo_llamada': round(promedio_tiempo_llamada, 2),
+        'en_seleccion_total': total_procesos_seleccion
     }
 
     return estadisticas
