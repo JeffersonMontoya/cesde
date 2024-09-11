@@ -18,7 +18,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
     tiempo_promedio_llamada = serializers.SerializerMethodField()
     en_proceso_seleccion_llamadas = serializers.SerializerMethodField()
     en_proceso_seleccion_whatsapp = serializers.SerializerMethodField()
-    asesores_totales = serializers.SerializerMethodField()
     
 
     class Meta:
@@ -38,7 +37,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
             'tiempo_promedio_llamada',
             'en_proceso_seleccion_llamadas',
             'en_proceso_seleccion_whatsapp',
-            'asesores_totales'
         ]
 
     def get_nombre_completo(self, obj):
@@ -72,11 +70,6 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
                 query = query.filter(fecha__lte=fecha_fin)
             return query.count()
         return 0
-    
-    def get_asesores_totales(self, obj):
-        asesores = Asesores.objects.all()
-        
-        return asesores.count()
 
     def get_cantidad_gestiones(self, obj):
         fecha_inicio, fecha_fin = self.get_fecha_range()
