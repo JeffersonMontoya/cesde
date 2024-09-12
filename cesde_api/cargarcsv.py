@@ -151,6 +151,7 @@ class Cargarcsv(APIView):
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                     df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df3 = df3.dropna(subset=['cel_modificado'])
+                    df3['TIME_ON_AGENT'].fillna(value='0:00:00', inplace=True)
                     df3['segundos'] = df3['TIME_ON_AGENT'].apply(self.convertir_a_segundos).astype(int)
                     df3.loc[:, 'segundos'] = df3['segundos'].astype(int)
 
@@ -166,6 +167,7 @@ class Cargarcsv(APIView):
                     df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                     df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df4 = df4.dropna(subset=['cel_modificado'])
+                    df4['TIME'].fillna(value='0', inplace=True)
                     df4['segundos'] = df4['TIME']
                     df4.loc[:, 'segundos'] = df4['segundos'].astype(int)
 
