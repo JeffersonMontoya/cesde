@@ -170,15 +170,16 @@ class Cargarcsv(APIView):
                     df4['TIME'].fillna(value='0', inplace=True)
                     df4['segundos'] = df4['TIME']
                     df4.loc[:, 'segundos'] = df4['segundos'].astype(int)
+                    
 
                 # Unir los DataFrames
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 if whatsapp_file:
-                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
+                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='outer')
                 if sms_file:
-                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='outer')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos', 'Estado de Prospecto']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -237,8 +238,6 @@ class Cargarcsv(APIView):
                 if sms_file:
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
-                    # df_result_llamadas.replace('', np.nan, inplace=True)
-                    # df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
                     df_result_llamadas.to_csv('llamadas', index=False)
                     self.llenarBD(df_result_llamadas)
                 else:
@@ -264,33 +263,33 @@ class Cargarcsv(APIView):
     def actualizar_o_crear_modelo(self, Model, **kwargs):
         Model.objects.update_or_create(**kwargs)
 
+    def convertir_fecha(self, fecha_str):
+        if not fecha_str or pd.isna(fecha_str):
+            return None  # Retorna None si la fecha está vacía o es NaN
+        try:
+            # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
+            fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
+            # Asignar la zona horaria deseada (por ejemplo, 'UTC')
+            zona_horaria = pytz.timezone("UTC")  # Cambiaz 'UTC' a tu zona horaria si es necesario
+            # Hacer el datetime aware
+            fecha_convertida = zona_horaria.localize(fecha_convertida)
+            return fecha_convertida
+        except ValueError as e:
+            print(f"Error al convertir la fecha: {e}")
+            return None
+        
+    def validar_tipo_gestion(self ,row, df):
+            # Verificar si la columna 'CHANNEL' existe en el DataFrame
+            if 'CHANNEL' in df.columns:
+                # Verificar si el valor de 'CHANNEL' no es NaN
+                if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
+                    return Tipo_gestion.objects.get(nombre='WhatsApp')
+            # Si la columna no existe o el valor es NaN, retornar 'llamadas'
+            return Tipo_gestion.objects.get(nombre='Llamada')
+        
     # función para agregar a la base de datos
     def llenarBD(self, df):
         gestiones_a_guardar = []
-        
-        def convertir_fecha(fecha_str):
-            if not fecha_str or pd.isna(fecha_str):
-                return None  # Retorna None si la fecha está vacía o es NaN
-            try:
-                # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
-                # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                zona_horaria = pytz.timezone("UTC")  # Cambiaz 'UTC' a tu zona horaria si es necesario
-                # Hacer el datetime aware
-                fecha_convertida = zona_horaria.localize(fecha_convertida)
-                return fecha_convertida
-            except ValueError as e:
-                print(f"Error al convertir la fecha: {e}")
-                return None
-
-        def validar_tipo_gestion(row, df):
-                # Verificar si la columna 'CHANNEL' existe en el DataFrame
-                if 'CHANNEL' in df.columns:
-                    # Verificar si el valor de 'CHANNEL' no es NaN
-                    if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
-                        return Tipo_gestion.objects.get(nombre='WhatsApp')
-                # Si la columna no existe o el valor es NaN, retornar 'llamadas'
-                return Tipo_gestion.objects.get(nombre='Llamada')
 
         # Modelo Tipo_gestion
         for tipo in ['WhatsApp', 'Llamada']:
@@ -352,8 +351,8 @@ class Cargarcsv(APIView):
                     aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
                     tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
                     asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                    tipo_gestion = validar_tipo_gestion(row, df)
-                    fecha_convertida = convertir_fecha(row['DATE'])
+                    tipo_gestion = self.validar_tipo_gestion(row, df)
+                    fecha_convertida = self.convertir_fecha(row['DATE'])
                     observaciones = row['COMMENTS']
                     empresa = row['Empresa a la que se postula']
                     tiempo_gestion = row['segundos']
@@ -366,12 +365,11 @@ class Cargarcsv(APIView):
                         observaciones=observaciones,
                         tipificacion=tipificacion,
                         asesor=asesor,
-                        empresa=empresa,
                         tiempo_gestion= tiempo_gestion
                     ).exists()
 
                     if not gestion_existente:
-                        Gestiones.objects.create(
+                        nueva_gestion = Gestiones(
                             cel_aspirante=aspirante,
                             fecha=fecha_convertida,
                             tipo_gestion=tipo_gestion,
@@ -381,6 +379,7 @@ class Cargarcsv(APIView):
                             empresa=empresa,
                             tiempo_gestion=tiempo_gestion
                         )
+                        gestiones_a_guardar.append(nueva_gestion)
                     else:
                         print(f"la gestión ya existe para el celular: {row['cel_modificado']}.")
                 except Aspirantes.DoesNotExist:
@@ -395,5 +394,7 @@ class Cargarcsv(APIView):
                 continue
 
         # Actualizar estados de todos los aspirantes
+        if gestiones_a_guardar:
+            Gestiones.objects.bulk_create(gestiones_a_guardar)
         self.actualizar_estados_aspirantes()
         print("carga completada")
