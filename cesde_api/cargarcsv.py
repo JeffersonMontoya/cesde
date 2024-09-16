@@ -132,6 +132,9 @@ class Cargarcsv(APIView):
                 data_set2 = predictivo_file.read().decode('UTF-8')
                 io_string2 = StringIO(data_set2)
                 df2 = pd.read_csv(io_string2, delimiter=';')
+                df2['TEL1'] = df2['TEL1'].dropna()
+                df2['TEL1'] = df2['TEL1'].fillna(0)
+                df2['TEL1'] = df2['TEL1'].astype(int)
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 # Filtrar y ajustar los números de teléfono
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
@@ -179,7 +182,7 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='outer')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos', 'Estado de Prospecto']
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -187,8 +190,15 @@ class Cargarcsv(APIView):
                     df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
                 if sms_file:
                     df_result_llamadas = df_unido_llamadas[columnas_deseadas]
+                    
+                #validar estado 
+                # if whatsapp_file:
+                #     df_result_whatsapp['Estado'] = df_result_whatsapp['Estado'].fillna(df_result_whatsapp['Prospecto'])
+                # if sms_file:
+                #     df_result_llamadas['Estado']= df_result_llamadas['Estado'].fillna(df_result_llamadas['Prospecto'])
 
                 # funcion para validar los datos antes de ingresarlos a la BD
+                
                 def validarDatos(row):
                     # validar Estado
                     validar_estado = ['DESCRIPTION_COD_ACT']
@@ -224,7 +234,7 @@ class Cargarcsv(APIView):
 
                 # Definir los valores predeterminados
                 valores_predeterminados = {
-                    'Estado': 'Sin gestión',
+                    'Estado': 'Sin Gestion',
                     'Identificacion': '',
                     'CORREO': 'sin correo',
                     'Programa académico': 'sin programa',
@@ -290,6 +300,13 @@ class Cargarcsv(APIView):
     # función para agregar a la base de datos
     def llenarBD(self, df):
         gestiones_a_guardar = []
+        aspirantes_a_crear = []
+        aspirantes_a_actualizar = []
+        celulares_a_guardar = set()
+        
+        celulares_existentes = set(Aspirantes.objects.filter(
+            celular__in=df['cel_modificado'].unique()
+        ).values_list('celular', flat=True))
 
         # Modelo Tipo_gestion
         for tipo in ['WhatsApp', 'Llamada']:
@@ -323,7 +340,9 @@ class Cargarcsv(APIView):
             })
 
             # modelo aspirantes
+            celular = row['cel_modificado']
             documento = row['Identificacion']
+            nombre = row['NOMBRE']
             correo = row['CORREO']
             sede = Sede.objects.get(nombre=row['CIUDAD'])
             programa = Programa.objects.get(nombre=row['Programa académico'])
@@ -331,20 +350,44 @@ class Cargarcsv(APIView):
             proceso = Proceso.objects.get(nombre=row['PROCESO'])
             estado = Estados.objects.get(nombre=row['Estado'])
 
-            Aspirantes.objects.update_or_create(
-                celular=row['cel_modificado'], # Campo único para buscar o crear
-                defaults={
-                    'nombre': row['NOMBRE'],
-                    'documento': documento,
-                    'correo': correo,
-                    'sede': sede,
-                    'programa': programa,
-                    'empresa': empresa,
-                    'proceso': proceso,
-                    'estado': estado
-                }
-            )
+            if celular in celulares_existentes or celular in celulares_a_guardar:
+                aspirante_existente = Aspirantes(
+                    celular=celular,
+                    nombre= nombre,
+                    documento=documento,
+                    correo=correo,
+                    sede=sede,
+                    programa=programa,
+                    empresa=empresa,
+                    proceso=proceso,
+                    estado=estado
+                )
+                if pd.notna(nombre):
+                    aspirantes_a_actualizar.append(aspirante_existente)
+            else:
+                # Crear un nuevo aspirante
+                nuevo_aspirante = Aspirantes(
+                    celular=celular,
+                    nombre= nombre,
+                    documento=documento,
+                    correo=correo,
+                    sede=sede,
+                    programa=programa,
+                    empresa=empresa,
+                    proceso=proceso,
+                    estado=estado
+                )
+                aspirantes_a_crear.append(nuevo_aspirante)
+                celulares_a_guardar.add(celular)
 
+        #Inserción y actualizacion en bloque
+        if aspirantes_a_crear:
+            Aspirantes.objects.bulk_create(aspirantes_a_crear)
+        if aspirantes_a_actualizar:
+            Aspirantes.objects.bulk_update(aspirantes_a_actualizar, ['nombre', 'documento', 'correo', 'sede', 'programa', 'empresa', 'proceso', 'estado'])
+
+        #segundo bucle para llenar las gestiones
+        for index, row in df.iterrows():
             # Modelo Gestiones
             if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_NAME']):
                 try:
@@ -392,9 +435,11 @@ class Cargarcsv(APIView):
                     print(f"Error procesando la fila: {e}")
             else:
                 continue
+        
 
         # Actualizar estados de todos los aspirantes
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
+            
         self.actualizar_estados_aspirantes()
         print("carga completada")
