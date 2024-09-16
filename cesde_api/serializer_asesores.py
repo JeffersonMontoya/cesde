@@ -170,3 +170,5 @@ class ConsultaAsesoresSerializer(serializers.ModelSerializer):
         query = Gestiones.objects.filter(asesor=obj, tipificacion=tipificacion, tipo_gestion_id=tipo_gestion)
         
         return query.count()
+    
+    

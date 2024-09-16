@@ -132,6 +132,9 @@ class Cargarcsv(APIView):
                 data_set2 = predictivo_file.read().decode('UTF-8')
                 io_string2 = StringIO(data_set2)
                 df2 = pd.read_csv(io_string2, delimiter=';')
+                df2['TEL1'] = df2['TEL1'].dropna()
+                df2['TEL1'] = df2['TEL1'].fillna(0)
+                df2['TEL1'] = df2['TEL1'].astype(int)
                 df2['TEL1'] = df2['TEL1'].astype(str)
                 # Filtrar y ajustar los números de teléfono
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
@@ -151,6 +154,7 @@ class Cargarcsv(APIView):
                     df3['CUSTOMER_PHONE'] = df3['CUSTOMER_PHONE'].astype(str)
                     df3['cel_modificado'] = df3['CUSTOMER_PHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df3 = df3.dropna(subset=['cel_modificado'])
+                    df3['TIME_ON_AGENT'].fillna(value='0:00:00', inplace=True)
                     df3['segundos'] = df3['TIME_ON_AGENT'].apply(self.convertir_a_segundos).astype(int)
                     df3.loc[:, 'segundos'] = df3['segundos'].astype(int)
 
@@ -166,15 +170,17 @@ class Cargarcsv(APIView):
                     df4['TELEPHONE'] = df4['TELEPHONE'].astype(str)
                     df4['cel_modificado'] = df4['TELEPHONE'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                     df4 = df4.dropna(subset=['cel_modificado'])
+                    df4['TIME'].fillna(value='0', inplace=True)
                     df4['segundos'] = df4['TIME']
                     df4.loc[:, 'segundos'] = df4['segundos'].astype(int)
+                    
 
                 # Unir los DataFrames
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 if whatsapp_file:
-                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
+                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='outer')
                 if sms_file:
-                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
+                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='outer')
 
                 columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
 
@@ -184,8 +190,15 @@ class Cargarcsv(APIView):
                     df_result_whatsapp = df_unido_whatsapp[columnas_deseadas_whatsapp]
                 if sms_file:
                     df_result_llamadas = df_unido_llamadas[columnas_deseadas]
+                    
+                #validar estado 
+                # if whatsapp_file:
+                #     df_result_whatsapp['Estado'] = df_result_whatsapp['Estado'].fillna(df_result_whatsapp['Prospecto'])
+                # if sms_file:
+                #     df_result_llamadas['Estado']= df_result_llamadas['Estado'].fillna(df_result_llamadas['Prospecto'])
 
                 # funcion para validar los datos antes de ingresarlos a la BD
+                
                 def validarDatos(row):
                     # validar Estado
                     validar_estado = ['DESCRIPTION_COD_ACT']
@@ -221,7 +234,7 @@ class Cargarcsv(APIView):
 
                 # Definir los valores predeterminados
                 valores_predeterminados = {
-                    'Estado': 'Sin gestión',
+                    'Estado': 'Sin Gestion',
                     'Identificacion': '',
                     'CORREO': 'sin correo',
                     'Programa académico': 'sin programa',
@@ -235,8 +248,6 @@ class Cargarcsv(APIView):
                 if sms_file:
                     llenar_valores_predeterminados(df_result_llamadas, valores_predeterminados)
                     df_result_llamadas['AGENT_ID'] = df_result_llamadas['AGENT_ID'].fillna(0).astype(int)
-                    # df_result_llamadas.replace('', np.nan, inplace=True)
-                    # df_result_llamadas.dropna(subset=['AGENT_NAME', 'DATE'], inplace=True)
                     df_result_llamadas.to_csv('llamadas', index=False)
                     self.llenarBD(df_result_llamadas)
                 else:
@@ -262,33 +273,40 @@ class Cargarcsv(APIView):
     def actualizar_o_crear_modelo(self, Model, **kwargs):
         Model.objects.update_or_create(**kwargs)
 
+    def convertir_fecha(self, fecha_str):
+        if not fecha_str or pd.isna(fecha_str):
+            return None  # Retorna None si la fecha está vacía o es NaN
+        try:
+            # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
+            fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
+            # Asignar la zona horaria deseada (por ejemplo, 'UTC')
+            zona_horaria = pytz.timezone("UTC")  # Cambiaz 'UTC' a tu zona horaria si es necesario
+            # Hacer el datetime aware
+            fecha_convertida = zona_horaria.localize(fecha_convertida)
+            return fecha_convertida
+        except ValueError as e:
+            print(f"Error al convertir la fecha: {e}")
+            return None
+        
+    def validar_tipo_gestion(self ,row, df):
+            # Verificar si la columna 'CHANNEL' existe en el DataFrame
+            if 'CHANNEL' in df.columns:
+                # Verificar si el valor de 'CHANNEL' no es NaN
+                if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
+                    return Tipo_gestion.objects.get(nombre='WhatsApp')
+            # Si la columna no existe o el valor es NaN, retornar 'llamadas'
+            return Tipo_gestion.objects.get(nombre='Llamada')
+        
     # función para agregar a la base de datos
     def llenarBD(self, df):
         gestiones_a_guardar = []
+        aspirantes_a_crear = []
+        aspirantes_a_actualizar = []
+        celulares_a_guardar = set()
         
-        def convertir_fecha(fecha_str):
-            if not fecha_str or pd.isna(fecha_str):
-                return None  # Retorna None si la fecha está vacía o es NaN
-            try:
-                # Convertir la fecha de "M/D/YYYY H:M" a un objeto datetime
-                fecha_convertida = datetime.datetime.strptime(fecha_str, "%d/%m/%Y %H:%M")
-                # Asignar la zona horaria deseada (por ejemplo, 'UTC')
-                zona_horaria = pytz.timezone("UTC")  # Cambia 'UTC' a tu zona horaria si es necesario
-                # Hacer el datetime aware
-                fecha_convertida = zona_horaria.localize(fecha_convertida)
-                return fecha_convertida
-            except ValueError as e:
-                print(f"Error al convertir la fecha: {e}")
-                return None
-
-        def validar_tipo_gestion(row, df):
-                # Verificar si la columna 'CHANNEL' existe en el DataFrame
-                if 'CHANNEL' in df.columns:
-                    # Verificar si el valor de 'CHANNEL' no es NaN
-                    if pd.notna(row['CHANNEL']) and isinstance(row['CHANNEL'], str) and row['CHANNEL'] == 'whatsapp':
-                        return Tipo_gestion.objects.get(nombre='WhatsApp')
-                # Si la columna no existe o el valor es NaN, retornar 'llamadas'
-                return Tipo_gestion.objects.get(nombre='Llamada')
+        celulares_existentes = set(Aspirantes.objects.filter(
+            celular__in=df['cel_modificado'].unique()
+        ).values_list('celular', flat=True))
 
         # Modelo Tipo_gestion
         for tipo in ['WhatsApp', 'Llamada']:
@@ -322,7 +340,9 @@ class Cargarcsv(APIView):
             })
 
             # modelo aspirantes
+            celular = row['cel_modificado']
             documento = row['Identificacion']
+            nombre = row['NOMBRE']
             correo = row['CORREO']
             sede = Sede.objects.get(nombre=row['CIUDAD'])
             programa = Programa.objects.get(nombre=row['Programa académico'])
@@ -330,28 +350,52 @@ class Cargarcsv(APIView):
             proceso = Proceso.objects.get(nombre=row['PROCESO'])
             estado = Estados.objects.get(nombre=row['Estado'])
 
-            Aspirantes.objects.update_or_create(
-                celular=row['cel_modificado'], # Campo único para buscar o crear
-                defaults={
-                    'nombre': row['NOMBRE'],
-                    'documento': documento,
-                    'correo': correo,
-                    'sede': sede,
-                    'programa': programa,
-                    'empresa': empresa,
-                    'proceso': proceso,
-                    'estado': estado
-                }
-            )
+            if celular in celulares_existentes or celular in celulares_a_guardar:
+                aspirante_existente = Aspirantes(
+                    celular=celular,
+                    nombre= nombre,
+                    documento=documento,
+                    correo=correo,
+                    sede=sede,
+                    programa=programa,
+                    empresa=empresa,
+                    proceso=proceso,
+                    estado=estado
+                )
+                if pd.notna(nombre):
+                    aspirantes_a_actualizar.append(aspirante_existente)
+            else:
+                # Crear un nuevo aspirante
+                nuevo_aspirante = Aspirantes(
+                    celular=celular,
+                    nombre= nombre,
+                    documento=documento,
+                    correo=correo,
+                    sede=sede,
+                    programa=programa,
+                    empresa=empresa,
+                    proceso=proceso,
+                    estado=estado
+                )
+                aspirantes_a_crear.append(nuevo_aspirante)
+                celulares_a_guardar.add(celular)
 
+        #Inserción y actualizacion en bloque
+        if aspirantes_a_crear:
+            Aspirantes.objects.bulk_create(aspirantes_a_crear)
+        if aspirantes_a_actualizar:
+            Aspirantes.objects.bulk_update(aspirantes_a_actualizar, ['nombre', 'documento', 'correo', 'sede', 'programa', 'empresa', 'proceso', 'estado'])
+
+        #segundo bucle para llenar las gestiones
+        for index, row in df.iterrows():
             # Modelo Gestiones
             if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_NAME']):
                 try:
                     aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
                     tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
                     asesor = Asesores.objects.get(id=row['AGENT_ID'])
-                    tipo_gestion = validar_tipo_gestion(row, df)
-                    fecha_convertida = convertir_fecha(row['DATE'])
+                    tipo_gestion = self.validar_tipo_gestion(row, df)
+                    fecha_convertida = self.convertir_fecha(row['DATE'])
                     observaciones = row['COMMENTS']
                     empresa = row['Empresa a la que se postula']
                     tiempo_gestion = row['segundos']
@@ -364,7 +408,6 @@ class Cargarcsv(APIView):
                         observaciones=observaciones,
                         tipificacion=tipificacion,
                         asesor=asesor,
-                        empresa=empresa,
                         tiempo_gestion= tiempo_gestion
                     ).exists()
 
@@ -392,9 +435,11 @@ class Cargarcsv(APIView):
                     print(f"Error procesando la fila: {e}")
             else:
                 continue
+        
 
+        # Actualizar estados de todos los aspirantes
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
-        # Actualizar estados de todos los aspirantes
+            
         self.actualizar_estados_aspirantes()
         print("carga completada")
