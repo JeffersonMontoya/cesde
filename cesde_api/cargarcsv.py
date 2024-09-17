@@ -127,6 +127,7 @@ class Cargarcsv(APIView):
                 df1 = pd.read_csv(io_string1, delimiter=';')
                 df1['Celular'] = df1['Celular'].astype(str)
                 df1['cel_modificado'] = df1['Celular']
+                df1 = df1.drop_duplicates(subset=['cel_modificado'], keep='first')
 
                 # BD predictivo
                 data_set2 = predictivo_file.read().decode('UTF-8')
@@ -140,7 +141,8 @@ class Cargarcsv(APIView):
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                 # Eliminar las filas donde 'cel_modificado' es None (es decir, donde el número original tenía menos de 10 dígitos)
                 df2 = df2.dropna(subset=['cel_modificado'])
-                df2 = df2.drop_duplicates(subset={'cel_modificado'}, keep='last')
+                #se eliminan los duplicados de el archivo de predictivo para evitar que se dupliquen las mismas gestiones
+                df2 = df2.drop_duplicates(subset=['cel_modificado'], keep='first')
 
                 # BD Whatsapp
                 if whatsapp_file:
@@ -198,37 +200,6 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_result_llamadas['Estado'] = df_result_llamadas['Estado'].fillna(df_result_llamadas['Prospecto'])
 
-                # funcion para validar los datos antes de ingresarlos a la BD
-                
-                # def validarDatos(row):
-                #     # validar Estado
-                #     validar_estado = ['DESCRIPTION_COD_ACT']
-                
-                #     if pd.isna(row['Estado']):
-                #         # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
-                #         if any(row[col] in self.estado_descargo for col in validar_estado if col in row):
-                #             return 'Descartado'
-                #         # verifica si alguna de las columnas en validar_estado tiene valor en estado_en_gestion
-                #         if any(row[col] in self.estado_en_gestion for col in validar_estado if col in row):
-                #             return 'En Gestión'
-                #         # verifica si alguna de las columnas en validar-estado tiene valor en estado_liquidado
-                #         if any(row[col] in self.estado_liquidado for col in validar_estado if col in row):
-                #             return 'liquidado'
-                #         # Verificar si alguna de las columnas en validar_estado está vacía
-                #         if any(pd.isna(row[col]) for col in validar_estado if col in row):
-                #             return 'Sin gestión'
-                #         else:
-                #             return 'En Gestión'
-
-                #     else:
-                #         return row['Estado']
-
-                # llenando datos vacíos con valores predeterminados
-                # if whatsapp_file:
-                #     df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
-                # if sms_file:
-                #     df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
-
                 def llenar_valores_predeterminados(df, columnas):
                     for columna, valor in columnas.items():
                         df.loc[:, columna] = df[columna].fillna(valor)
@@ -238,7 +209,6 @@ class Cargarcsv(APIView):
                     'Estado': 'Por Gestionar',
                     'Identificacion': '',
                     'PROCESO': 'sin proceso',
-                    'NOMBRE': 'sin nombre',
                     'CORREO': 'sin correo',
                     'Programa académico': 'sin programa',
                     'CIUDAD': 'sin sede',
