@@ -127,6 +127,7 @@ class Cargarcsv(APIView):
                 df1 = pd.read_csv(io_string1, delimiter=';')
                 df1['Celular'] = df1['Celular'].astype(str)
                 df1['cel_modificado'] = df1['Celular']
+                df1 = df1.drop_duplicates(subset=['cel_modificado'], keep='first')
 
                 # BD predictivo
                 data_set2 = predictivo_file.read().decode('UTF-8')
@@ -140,6 +141,8 @@ class Cargarcsv(APIView):
                 df2['cel_modificado'] = df2['TEL1'].apply(lambda x: x[-10:] if len(x) >= 10 else None)
                 # Eliminar las filas donde 'cel_modificado' es None (es decir, donde el número original tenía menos de 10 dígitos)
                 df2 = df2.dropna(subset=['cel_modificado'])
+                #se eliminan los duplicados de el archivo de predictivo para evitar que se dupliquen las mismas gestiones
+                df2 = df2.drop_duplicates(subset=['cel_modificado'], keep='first')
 
                 # BD Whatsapp
                 if whatsapp_file:
@@ -178,11 +181,11 @@ class Cargarcsv(APIView):
                 # Unir los DataFrames
                 df_unido = pd.merge(df1, df2, left_on='cel_modificado', right_on='cel_modificado', how='right')
                 if whatsapp_file:
-                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='outer')
+                    df_unido_whatsapp = pd.merge(df_unido, df3, on='cel_modificado', how='left')
                 if sms_file:
-                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='outer')
+                    df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos']
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos', 'Prospecto']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -192,41 +195,10 @@ class Cargarcsv(APIView):
                     df_result_llamadas = df_unido_llamadas[columnas_deseadas]
                     
                 #validar estado 
-                # if whatsapp_file:
-                #     df_result_whatsapp['Estado'] = df_result_whatsapp['Estado'].fillna(df_result_whatsapp['Prospecto'])
-                # if sms_file:
-                #     df_result_llamadas['Estado']= df_result_llamadas['Estado'].fillna(df_result_llamadas['Prospecto'])
-
-                # funcion para validar los datos antes de ingresarlos a la BD
-                
-                def validarDatos(row):
-                    # validar Estado
-                    validar_estado = ['DESCRIPTION_COD_ACT']
-                
-                    if pd.isna(row['Estado']):
-                        # Verificar si alguna de las columnas en validar_estado tiene un valor en estado_descargo
-                        if any(row[col] in self.estado_descargo for col in validar_estado if col in row):
-                            return 'Descartado'
-                        # verifica si alguna de las columnas en validar_estado tiene valor en estado_en_gestion
-                        if any(row[col] in self.estado_en_gestion for col in validar_estado if col in row):
-                            return 'En Gestión'
-                        # verifica si alguna de las columnas en validar-estado tiene valor en estado_liquidado
-                        if any(row[col] in self.estado_liquidado for col in validar_estado if col in row):
-                            return 'liquidado'
-                        # Verificar si alguna de las columnas en validar_estado está vacía
-                        if any(pd.isna(row[col]) for col in validar_estado if col in row):
-                            return 'Sin gestión'
-                        else:
-                            return 'En Gestión'
-
-                    else:
-                        return row['Estado']
-
-                # llenando datos vacíos con valores predeterminados
                 if whatsapp_file:
-                    df_result_whatsapp.loc[:, 'Estado'] = df_unido_whatsapp.apply(lambda row: validarDatos(row), axis=1)
+                    df_result_whatsapp['Estado'] = df_result_whatsapp['Estado'].fillna(df_result_whatsapp['Prospecto'])
                 if sms_file:
-                    df_result_llamadas.loc[:, 'Estado'] = df_unido_llamadas.apply(lambda row: validarDatos(row), axis=1)
+                    df_result_llamadas['Estado'] = df_result_llamadas['Estado'].fillna(df_result_llamadas['Prospecto'])
 
                 def llenar_valores_predeterminados(df, columnas):
                     for columna, valor in columnas.items():
@@ -234,8 +206,9 @@ class Cargarcsv(APIView):
 
                 # Definir los valores predeterminados
                 valores_predeterminados = {
-                    'Estado': 'Sin Gestion',
+                    'Estado': 'Por Gestionar',
                     'Identificacion': '',
+                    'PROCESO': 'sin proceso',
                     'CORREO': 'sin correo',
                     'Programa académico': 'sin programa',
                     'CIUDAD': 'sin sede',
@@ -339,46 +312,50 @@ class Cargarcsv(APIView):
                 'valor_tipificacion': valor_tipificacion
             })
 
-            # modelo aspirantes
-            celular = row['cel_modificado']
-            documento = row['Identificacion']
-            nombre = row['NOMBRE']
-            correo = row['CORREO']
-            sede = Sede.objects.get(nombre=row['CIUDAD'])
-            programa = Programa.objects.get(nombre=row['Programa académico'])
-            empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
-            proceso = Proceso.objects.get(nombre=row['PROCESO'])
-            estado = Estados.objects.get(nombre=row['Estado'])
+            try:
+                # modelo aspirantes
+                celular = row['cel_modificado']
+                documento = row['Identificacion']
+                nombre = row['NOMBRE']
+                correo = row['CORREO']
+                sede = Sede.objects.get(nombre=row['CIUDAD'])
+                programa = Programa.objects.get(nombre=row['Programa académico'])
+                empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
+                proceso = Proceso.objects.get(nombre=row['PROCESO'])
+                estado = Estados.objects.get(nombre=row['Estado'])
 
-            if celular in celulares_existentes or celular in celulares_a_guardar:
-                aspirante_existente = Aspirantes(
-                    celular=celular,
-                    nombre= nombre,
-                    documento=documento,
-                    correo=correo,
-                    sede=sede,
-                    programa=programa,
-                    empresa=empresa,
-                    proceso=proceso,
-                    estado=estado
-                )
-                if pd.notna(nombre):
+                if celular in celulares_existentes or celular in celulares_a_guardar:
+                    aspirante_existente = Aspirantes(
+                        celular=celular,
+                        nombre= nombre,
+                        documento=documento,
+                        correo=correo,
+                        sede=sede,
+                        programa=programa,
+                        empresa=empresa,
+                        proceso=proceso,
+                        estado=estado
+                    )
                     aspirantes_a_actualizar.append(aspirante_existente)
-            else:
-                # Crear un nuevo aspirante
-                nuevo_aspirante = Aspirantes(
-                    celular=celular,
-                    nombre= nombre,
-                    documento=documento,
-                    correo=correo,
-                    sede=sede,
-                    programa=programa,
-                    empresa=empresa,
-                    proceso=proceso,
-                    estado=estado
-                )
-                aspirantes_a_crear.append(nuevo_aspirante)
-                celulares_a_guardar.add(celular)
+                else:
+                    # Crear un nuevo aspirante
+                    nuevo_aspirante = Aspirantes(
+                        celular=celular,
+                        nombre= nombre,
+                        documento=documento,
+                        correo=correo,
+                        sede=sede,
+                        programa=programa,
+                        empresa=empresa,
+                        proceso=proceso,
+                        estado=estado
+                    )
+                    aspirantes_a_crear.append(nuevo_aspirante)
+                    celulares_a_guardar.add(celular)
+                    
+            except Exception as e:
+                print(f"error al almacenar el aspirante con el celular: {celular}")
+                print(f"error: {e}")
 
         #Inserción y actualizacion en bloque
         if aspirantes_a_crear:
@@ -441,5 +418,5 @@ class Cargarcsv(APIView):
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
             
-        self.actualizar_estados_aspirantes()
+        # self.actualizar_estados_aspirantes()
         print("carga completada")

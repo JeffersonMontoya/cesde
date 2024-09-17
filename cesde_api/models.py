@@ -10,7 +10,7 @@ class Sede(models.Model):
         return self.nombre
 
 class Estados(models.Model):
-    nombre = models.CharField(max_length=15)
+    nombre = models.CharField(max_length=25)
 
     def __str__(self):
         return self.nombre
