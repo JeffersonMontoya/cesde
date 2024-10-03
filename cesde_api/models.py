@@ -22,7 +22,7 @@ class Programa(models.Model):
         return self.nombre
 
 class Empresa(models.Model):
-    nit = models.CharField(max_length=50)
+    nit = models.CharField(max_length=70)
 
     def __str__(self):
         return self.nit
@@ -38,12 +38,14 @@ class Aspirantes(models.Model):
     celular = models.CharField(max_length=15, primary_key=True)
     nombre = models.CharField(max_length=100)
     documento = models.CharField(max_length=15)
-    correo = models.CharField(max_length=50)
+    correo = models.CharField(max_length=100)
     sede = models.ForeignKey(Sede, on_delete=models.CASCADE)
     programa = models.ForeignKey(Programa, on_delete=models.CASCADE)
     empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     proceso = models.ForeignKey(Proceso, on_delete=models.CASCADE)
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE, default=1)
+    fecha_ingreso = models.CharField(max_length=30, default='Octubre')
+    fecha_modificacion = models.DateField(blank=True, null=True, default=None)
 
     def __str__(self):
         return f"{self.nombre} {self.celular}"

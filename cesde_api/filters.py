@@ -114,6 +114,9 @@ class AspirantesFilter(django_filters.FilterSet):
     sede = SedeNameFilter(queryset=Sede.objects.all(), label='Sedes')
     mejor_gestion = django_filters.CharFilter(method='filter_mejor_gestion', label='Mejor Gestión')
     nombre_empresa = EmpresaNameFilter(queryset=Empresa.objects.all(), label= 'Empresas')
+    mes_ingreso = django_filters.CharFilter(method='filter_mes_ingreso', label='Mes de ingreso')
+    fecha_modificacion = django_filters.DateFilter(method='filter_fecha_modificacion', label='Fecha de Modificacion')
+    
 
     class Meta:
         model = Aspirantes
@@ -129,7 +132,9 @@ class AspirantesFilter(django_filters.FilterSet):
             'programa',
             'sede',
             'mejor_gestion',
-            'nombre_empresa'
+            'nombre_empresa', 
+            'mes_ingreso', 
+            'fecha_modificacion'
         ]
 
 
@@ -268,6 +273,21 @@ class AspirantesFilter(django_filters.FilterSet):
 
             return queryset.filter(empresa__nit=value)
         return queryset
+    
+    def filter_mes_ingreso(self, queryset, name, value):
+        if value:
+            
+            return queryset.filter(fecha_ingreso=value)
+        return queryset
+    
+    def filter_fecha_modificacion(self, queryset, name, value):
+        if value:
+            
+            return queryset.filter(fecha_modificacion=value)
+        return queryset
+        
+            
+    
 
 
 # Filters para los procesos

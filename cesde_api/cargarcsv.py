@@ -21,15 +21,6 @@ class Cargarcsv(APIView):
     # gestiones_acumuladas = []
     
     def __init__(self):
-        #estados del aspirante segun la tipificación
-        self.estado_descargo = ['Sin_interes','Otra_area_de_interes','Ya_esta_estudiando_en_otra_universidad','Sin_tiempo','Sin_perfil','Eliminar_de_la_base','Proxima_convocatoria','No_Manifiesta_motivo','Por_ubicacion','Imposible_contacto','Numero_invalido','Se_remite_a_otras_áreas_'
-        ]
-
-        self.estado_en_gestion = ['Volver_a_llamar','Primer_intento_de_contacto','Segundo_intento_de_contacto','Tercer_intento_de_contacto','Fuera_de_servicio','TIMEOUTACW','Interesado_en_seguimiento','En_proceso_de_selección','Cliente_en_seguimiento','Informacion_general_','Cuelga_Telefono','Liquidacion'
-        ]
-        
-        self.estado_liquidado = ['Matriculado',]
-        
         #contactabilidad segun la tipificación 
         self.contacto = ['Otra_area_de_interés','Ya_esta_estudiando_en_otra_universidad','Sin_interes','Sin_tiempo','Eliminar_de_la_base','Próxima_convocatorio','No_Manifiesta_motivo','Por_ubicación','Matriculado','Liquidacion','En_proceso_de_selección','Interesado_en_seguimiento','Volver_a_llamar'
         ]
@@ -46,7 +37,7 @@ class Cargarcsv(APIView):
     
         self.interesado = ['Matriculado', 'Liquidado', 'En_proceso_de_selección', 'Interesado_en_seguimiento']
         
-        self.descartado = ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo',  'Proxima_convocatoria',  'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad',  'Otra_area_de_interés']
+        self.descartado = ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo',  'Proxima_convocatoria',  'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad',  'Otra_area_de_interés', 'MesIngreso']
     
     def contactabilidad(self, row):
         if row['DESCRIPTION_COD_ACT'] in self.no_contacto:
@@ -55,44 +46,15 @@ class Cargarcsv(APIView):
             return True
         return False
     
-    #funcion para actualizar el estado del aspirante
-    def actualizar_estados_aspirantes(self):
-        # Obtener todos los aspirantes menos los matriculados y liquidados
-        aspirantes = Aspirantes.objects.exclude(
-            estado__nombre__in=['matriculado', 'liquidado', 'Descartado', "cancelado"])
+    def actualizar_fecha_modificacion(self):
+       aspirantes = Aspirantes.objects.all()
 
-        for aspirante in aspirantes:
-            # Obtener la última gestión para este aspirante
-            ultima_gestion = Gestiones.objects.filter(cel_aspirante=aspirante).order_by('-fecha').first()
-
-            if ultima_gestion:
-                tipificacion = ultima_gestion.tipificacion.nombre
-
-                if tipificacion in self.estado_descargo:
-                    nombre_nuevo_estado = 'Descartado'
-                elif tipificacion in self.estado_en_gestion:
-                    nombre_nuevo_estado = 'En Gestión'
-                elif tipificacion in self.estado_liquidado:
-                    nombre_nuevo_estado = 'liquidado'
-                else:
-                    nombre_nuevo_estado = 'En Gestión'
-
-                try:
-                    nuevo_estado = Estados.objects.get(
-                        nombre=nombre_nuevo_estado)
-                    if aspirante.estado != nuevo_estado:
-                        aspirante.estado = nuevo_estado
-                        aspirante.save()
-                except Exception as e:
-                    print(f"Error al procesar el estado para {aspirante.celular}: {e}")
-            else:
-                # Si no hay gestión, asignar estado 'Sin gestión'
-                sin_gestion_estado = Estados.objects.get(nombre='Sin gestión')
-                if aspirante.estado != sin_gestion_estado:
-                    aspirante.estado = sin_gestion_estado
-                    aspirante.save()
-
-        print("Actualización de estados completada.")
+       for aspirante in aspirantes:
+           modificacion = Gestiones.objects.filter(cel_aspirante=aspirante).order_by('-fecha').first()
+           
+           if modificacion:
+               aspirante.fecha_modificacion = modificacion.fecha
+               aspirante.save()
         
     def convertir_a_segundos(self, tiempo):
         try:
@@ -185,7 +147,7 @@ class Cargarcsv(APIView):
                 if sms_file:
                     df_unido_llamadas = pd.merge(df_unido, df4, on='cel_modificado', how='left')
 
-                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos', 'Prospecto']
+                columnas_deseadas = ['cel_modificado','Identificacion','DESCRIPTION_COD_ACT','Estado','NOMBRE','CORREO','CIUDAD','AGENT_ID','AGENT_NAME','DATE','COMMENTS','PROCESO','Empresa a la que se postula','Programa académico', 'segundos', 'Prospecto', 'MesIngreso']
 
                 columnas_deseadas_whatsapp = columnas_deseadas + ['CHANNEL']
 
@@ -323,6 +285,7 @@ class Cargarcsv(APIView):
                 empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
                 proceso = Proceso.objects.get(nombre=row['PROCESO'])
                 estado = Estados.objects.get(nombre=row['Estado'])
+                fecha_ingreso = row['MesIngreso']
 
                 if celular in celulares_existentes or celular in celulares_a_guardar:
                     aspirante_existente = Aspirantes(
@@ -334,7 +297,8 @@ class Cargarcsv(APIView):
                         programa=programa,
                         empresa=empresa,
                         proceso=proceso,
-                        estado=estado
+                        estado=estado,
+                        fecha_ingreso=fecha_ingreso
                     )
                     aspirantes_a_actualizar.append(aspirante_existente)
                 else:
@@ -348,7 +312,8 @@ class Cargarcsv(APIView):
                         programa=programa,
                         empresa=empresa,
                         proceso=proceso,
-                        estado=estado
+                        estado=estado,
+                        fecha_ingreso=fecha_ingreso
                     )
                     aspirantes_a_crear.append(nuevo_aspirante)
                     celulares_a_guardar.add(celular)
@@ -418,5 +383,5 @@ class Cargarcsv(APIView):
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
             
-        # self.actualizar_estados_aspirantes()
+        self.actualizar_fecha_modificacion()
         print("carga completada")
