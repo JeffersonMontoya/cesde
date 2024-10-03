@@ -341,13 +341,13 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         return Response({'estadisticas_mes': estadisticas_generales})
     
 
-    @action(detail=False, methods={'get'}, url_path='hibrido')
-    def estadisticas_hibridas(self, request):
-        mes = request.query_params.get('mes')
-        proceso = request.query_params.get('proceso')
-        queryset = self.get_queryset().filter(fecha_ingreso=mes, proceso=proceso)
-        estadisticas_generales = obtener_estadisticas_generales(queryset)
-        return Response({'estadisticas_mes': estadisticas_generales})
+    # @action(detail=False, methods={'get'}, url_path='hibrido')
+    # def estadisticas_(self, request):
+    #     mes = request.query_params.get('mes')
+    #     proceso = request.query_params.get('proceso')
+    #     queryset = self.get_queryset().filter(fecha_ingreso=mes, proceso=proceso)
+    #     estadisticas_generales = obtener_estadisticas_generales(queryset)
+    #     return Response({'estadisticas_mes': estadisticas_generales})
 
     
 
