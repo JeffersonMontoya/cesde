@@ -19,6 +19,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
     mejor_gestion = serializers.SerializerMethodField()
     gestion_final = serializers.SerializerMethodField()
     correo = serializers.CharField()  # Removed source attribute
+    mes_ingreso = serializers.CharField(source='fecha_ingreso')
+    fecha_modificacion = serializers.DateField()
 
     class Meta:
         model = Aspirantes
@@ -40,6 +42,8 @@ class AspiranteFilterSerializer(serializers.ModelSerializer):
             'estado_ultima_gestion',
             'mejor_gestion',
             'gestion_final',
+            'mes_ingreso',
+            'fecha_modificacion'
         ]
 
     def get_nombre_completo(self, obj):

@@ -19,7 +19,6 @@ router.register(r'tipificaciones', TipificacionViewSet)
 router.register(r'gestiones', GestionViewSet)
 router.register(r'historico', HistoricoViewSet, basename='historico')
 
-
 urlpatterns = [
     path('', include(router.urls)),
     path('cargar_csv/', Cargarcsv.as_view(), name='cargar_csv'),

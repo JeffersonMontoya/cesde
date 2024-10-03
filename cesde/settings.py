@@ -85,11 +85,11 @@ WSGI_APPLICATION = 'cesde.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DATABASE_NAME', 'cesde'),
-        'USER': os.environ.get('DATABASE_USER', 'admin'),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'admin'),
-        'HOST': os.environ.get('DATABASE_HOST', 'db'),
-        'PORT': os.environ.get('DATABASE_PORT', '5432'),
+        'NAME': 'cesde',
+        'USER': 'postgres',
+        'PASSWORD': 'admin',
+        'HOST': 'localhost',
+        'PORT': 5432,
     }
 }
 # Password validation
