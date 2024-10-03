@@ -332,7 +332,24 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         queryset = self.get_queryset().filter(proceso__nombre='Empresas')
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_empresa': estadisticas_generales})
+    
+    @action(detail=False, methods={'get'}, url_path='mes')
+    def estadisticas_mes(self, request):
+        mes = request.query_params.get('mes')
+        queryset = self.get_queryset().filter(fecha_ingreso=mes)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_mes': estadisticas_generales})
+    
 
+    @action(detail=False, methods={'get'}, url_path='hibrido')
+    def estadisticas_hibridas(self, request):
+        mes = request.query_params.get('mes')
+        proceso = request.query_params.get('proceso')
+        queryset = self.get_queryset().filter(fecha_ingreso=mes, proceso=proceso)
+        estadisticas_generales = obtener_estadisticas_generales(queryset)
+        return Response({'estadisticas_mes': estadisticas_generales})
+
+    
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
     queryset = Tipo_gestion.objects.all()
