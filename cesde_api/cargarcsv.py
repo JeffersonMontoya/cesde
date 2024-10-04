@@ -234,38 +234,51 @@ class Cargarcsv(APIView):
         
     # función para agregar a la base de datos
     def llenarBD(self, df):
-        gestiones_a_guardar = []
-        aspirantes_a_crear = []
-        aspirantes_a_actualizar = []
-        celulares_a_guardar = set()
+        estados_existentes = {estado.nombre: estado for estado in Estados.objects.all()}
+        procesos_existentes = {proceso.nombre: proceso for proceso in Proceso.objects.all()}
+        programas_existentes = {programa.nombre: programa for programa in Programa.objects.all()}
+        sedes_existentes = {sede.nombre: sede for sede in Sede.objects.all()}
+        empresas_existenes = {empresa.nit: empresa for empresa in Empresa.objects.all()}
         
-        celulares_existentes = set(Aspirantes.objects.filter(
-            celular__in=df['cel_modificado'].unique()
-        ).values_list('celular', flat=True))
-
+        nuevos_estados = []
+        nuevos_procesos = []
+        nuevos_programas = []
+        nuevos_sedes = []
+        nuevas_empresas = []
+        
         # Modelo Tipo_gestion
         for tipo in ['WhatsApp', 'Llamada']:
             self.actualizar_o_crear_modelo(Tipo_gestion, nombre=tipo)
         
         for index, row in df.iterrows():
-            # Modelo Estado
-            self.actualizar_o_crear_modelo(Estados, nombre=row['Estado'])
+            if row['Estado'] not in estados_existentes:
+                nuevo_estado = Estados(nombre=row['Estado'])
+                nuevos_estados.append(nuevo_estado)
+                estados_existentes[row['Estado']] = nuevo_estado
+                
+            if row['PROCESO'] not in procesos_existentes:
+                nuevo_proceso = Proceso(nombre=row['PROCESO'])
+                nuevos_procesos.append(nuevo_proceso)
+                procesos_existentes[row['PROCESO']] = nuevo_proceso
+           
+            if row['Programa académico'] not in programas_existentes:
+                nuevo_programa = Programa(nombre=row['Programa académico'])
+                nuevos_programas.append(nuevo_programa)
+                programas_existentes[row['Programa académico']] = nuevo_programa
+                
+            if row['CIUDAD'] not in sedes_existentes:
+                nuevo_sede = Sede(nombre=row['CIUDAD'])
+                nuevos_sedes.append(nuevo_sede)
+                sedes_existentes[row['CIUDAD']] = nuevo_sede
 
-            # Modelo Proceso
-            self.actualizar_o_crear_modelo(Proceso, nombre=row['PROCESO'])
-
+            if row['Empresa a la que se postula'] not in empresas_existenes:
+                nuevo_empresa = Empresa(nit=row['Empresa a la que se postula'])
+                nuevas_empresas.append(nuevo_empresa)
+                empresas_existenes[row['Empresa a la que se postula']] = nuevo_empresa
+                
             # Modelo Asesores
             if pd.notna(row['AGENT_ID']):
                 self.actualizar_o_crear_modelo(Asesores, id=row['AGENT_ID'], defaults={'nombre_completo': row['AGENT_NAME']})
-
-            # Modelo Programa
-            self.actualizar_o_crear_modelo(Programa, nombre=row['Programa académico'])
-
-            # Modelo Sede
-            self.actualizar_o_crear_modelo(Sede, nombre=row['CIUDAD'])
-
-            # Modelo Empresa
-            self.actualizar_o_crear_modelo(Empresa, nit=row['Empresa a la que se postula'])
 
             # Modelo Tipificación
             valor_tipificacion = self.tipificaciones.get(row['DESCRIPTION_COD_ACT'], 100.0)
@@ -274,17 +287,50 @@ class Cargarcsv(APIView):
                 'valor_tipificacion': valor_tipificacion
             })
 
+        if nuevos_estados:
+            Estados.objects.bulk_create(nuevos_estados)
+        if nuevos_procesos:
+            Proceso.objects.bulk_create(nuevos_procesos)
+        if nuevos_programas:
+            Programa.objects.bulk_create(nuevos_programas)
+        if nuevos_sedes:
+            Sede.objects.bulk_create(nuevos_sedes)
+        if nuevas_empresas:
+            Empresa.objects.bulk_create(nuevas_empresas)
+        
+        print("datos insertados correctamente")
+            
+        #llama la funcion llenarAsprantes
+        self.llenarAspiantes(df)
+        #llama la funcion llenarGestiones
+        self.llenarGestiones(df)
+        
+    def llenarAspiantes(self, df):
+        aspirantes_a_crear = []
+        aspirantes_a_actualizar = []
+        celulares_a_guardar = set()
+        sedes = {sede.nombre: sede for sede in Sede.objects.all()}
+        programas = {programa.nombre: programa for programa in Programa.objects.all()}
+        empresas = {empresa.nit: empresa for empresa in Empresa.objects.all()}
+        procesos = {proceso.nombre: proceso for proceso in Proceso.objects.all()}
+        estados = {estado.nombre: estado for estado in Estados.objects.all()}
+        
+        celulares_existentes = set(Aspirantes.objects.filter(
+            celular__in=df['cel_modificado'].unique()
+        ).values_list('celular', flat=True))
+        
+        for index, row in df.iterrows():
             try:
                 # modelo aspirantes
                 celular = row['cel_modificado']
                 documento = row['Identificacion']
                 nombre = row['NOMBRE']
                 correo = row['CORREO']
-                sede = Sede.objects.get(nombre=row['CIUDAD'])
-                programa = Programa.objects.get(nombre=row['Programa académico'])
-                empresa = Empresa.objects.get(nit=row['Empresa a la que se postula'])
-                proceso = Proceso.objects.get(nombre=row['PROCESO'])
-                estado = Estados.objects.get(nombre=row['Estado'])
+                sede = sedes.get(row['CIUDAD'])
+                programa = programas.get(row['Programa académico'])
+                empresa = empresas.get(row['Empresa a la que se postula'])
+                proceso = procesos.get(row['PROCESO'])
+                estado = estados.get(row['Estado'])
                 fecha_ingreso = row['MesIngreso']
 
                 if celular in celulares_existentes or celular in celulares_a_guardar:
@@ -327,14 +373,20 @@ class Cargarcsv(APIView):
             Aspirantes.objects.bulk_create(aspirantes_a_crear)
         if aspirantes_a_actualizar:
             Aspirantes.objects.bulk_update(aspirantes_a_actualizar, ['nombre', 'documento', 'correo', 'sede', 'programa', 'empresa', 'proceso', 'estado'])
-
+        print("Aspirantes ingresados exitosamente")
+        
+    def llenarGestiones(self, df):
+        gestiones_a_guardar = []
+        tipificaciones = {tipificacion.nombre: tipificacion for tipificacion in Tipificacion.objects.all()}
+        aspirantes = {aspirantes.celular: aspirantes for aspirantes in Aspirantes.objects.all()}
+        
         #segundo bucle para llenar las gestiones
         for index, row in df.iterrows():
             # Modelo Gestiones
             if pd.notna(row['DATE']) and pd.notna(row['DESCRIPTION_COD_ACT']) and pd.notna(row['AGENT_NAME']):
                 try:
-                    aspirante = Aspirantes.objects.get(celular=row['cel_modificado'])
-                    tipificacion = Tipificacion.objects.get(nombre=row['DESCRIPTION_COD_ACT'])
+                    aspirante = aspirantes.get(row['cel_modificado'])
+                    tipificacion = tipificaciones.get(row['DESCRIPTION_COD_ACT'])
                     asesor = Asesores.objects.get(id=row['AGENT_ID'])
                     tipo_gestion = self.validar_tipo_gestion(row, df)
                     fecha_convertida = self.convertir_fecha(row['DATE'])
@@ -375,13 +427,13 @@ class Cargarcsv(APIView):
                     print(f"Asesor con ID {row['AGENT_ID']} no encontrado.")
                 except Exception as e:
                     print(f"Error procesando la fila: {e}")
-            else:
+            else:  
                 continue
         
-
         # Actualizar estados de todos los aspirantes
         if gestiones_a_guardar:
             Gestiones.objects.bulk_create(gestiones_a_guardar)
-            
+   
         self.actualizar_fecha_modificacion()
         print("carga completada")
+        
