@@ -155,6 +155,15 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         proceso = get_object_or_404(Proceso, nombre="Empresas")
         queryset = self.get_queryset().filter(proceso=proceso)
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -178,6 +187,15 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         proceso = get_object_or_404(Proceso, nombre="extenciones")
         queryset = self.get_queryset().filter(proceso=proceso)
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -201,6 +219,15 @@ class FilterProcesosViewSet(viewsets.ViewSet):
         """
         proceso = get_object_or_404(Proceso, nombre="Técnicos")
         queryset = self.get_queryset().filter(proceso=proceso)
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Aplica filtros generales
         filterset = AspirantesFilter(request.GET, queryset=queryset)
@@ -216,6 +243,26 @@ class FilterProcesosViewSet(viewsets.ViewSet):
 
         # Devuelve la respuesta paginada
         return paginator.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='mes')
+    def aspirantes_por_mes(self, request):
+        #Variable para los meses
+        mes = request.query_params.get('mes')
+
+        # Filtrar el queryset por el mes
+        queryset = self.get_queryset().filter(fecha_ingreso=mes)
+
+        # Paginación del queryset
+        paginator = self.pagination_class()
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        # Serializa los datos
+        serializer = AspiranteFilterSerializer(paginated_queryset, many=True)
+
+        # Devuelve la respuesta paginada
+        return paginator.get_paginated_response({
+            'aspirantes': serializer.data
+        })
 
 
 class EstadisticasViewSet(viewsets.GenericViewSet):
