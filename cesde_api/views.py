@@ -318,18 +318,48 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['get'], url_path='proceso-extenciones')
     def estadisticas_extenciones(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='Extenciones')
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_extenciones': estadisticas_generales})
 
     @action(detail=False, methods=['get'], url_path='proceso-técnicos')
     def estadisticas_tecnicos(self, request):
         queryset = self.get_queryset().filter(proceso__nombre='Técnicos')
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_tecnicos': estadisticas_generales})
 
     @action(detail=False, methods=['get'], url_path='proceso-empresa')
-    def estadisticas_empresa(self, request):
+    def estadisticas_empresa(self, request):    
         queryset = self.get_queryset().filter(proceso__nombre='Empresas')
+        mes = request.query_params.get('mes')
+        
+        # Si mes url es igual a mes, me botara el mes dentro del proceso
+        if mes:
+            mes_url = mes;
+            if mes_url:
+                queryset = queryset.filter(fecha_ingreso=mes_url)
+            else:
+                return Response({'detail': 'Mes inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_empresa': estadisticas_generales})
     
@@ -339,17 +369,7 @@ class EstadisticasViewSet(viewsets.GenericViewSet):
         queryset = self.get_queryset().filter(fecha_ingreso=mes)
         estadisticas_generales = obtener_estadisticas_generales(queryset)
         return Response({'estadisticas_mes': estadisticas_generales})
-    
 
-    # @action(detail=False, methods={'get'}, url_path='hibrido')
-    # def estadisticas_(self, request):
-    #     mes = request.query_params.get('mes')
-    #     proceso = request.query_params.get('proceso')
-    #     queryset = self.get_queryset().filter(fecha_ingreso=mes, proceso=proceso)
-    #     estadisticas_generales = obtener_estadisticas_generales(queryset)
-    #     return Response({'estadisticas_mes': estadisticas_generales})
-
-    
 
 class TipoGestionViewSet(viewsets.ModelViewSet):
     queryset = Tipo_gestion.objects.all()
