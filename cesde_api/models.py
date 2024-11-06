@@ -46,6 +46,7 @@ class Aspirantes(models.Model):
     estado = models.ForeignKey(Estados, on_delete=models.CASCADE, default=1)
     fecha_ingreso = models.CharField(max_length=30, default='Octubre')
     fecha_modificacion = models.DateField(blank=True, null=True, default=None)
+    detalle = models.CharField(max_length=100)
 
     def __str__(self):
         return f"{self.nombre} {self.celular}"

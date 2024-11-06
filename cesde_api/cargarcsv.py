@@ -37,7 +37,7 @@ class Cargarcsv(APIView):
     
         self.interesado = ['Matriculado', 'Liquidado', 'En_proceso_de_selección', 'Interesado_en_seguimiento']
         
-        self.descartado = ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo',  'Proxima_convocatoria',  'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad',  'Otra_area_de_interés', 'MesIngreso']
+        self.descartado = ['Número_inválido', 'Imposible_contacto', 'Por_ubicacion', 'No_Manifiesta_motivo',  'Proxima_convocatoria',  'Eliminar_de_la_base', 'Sin_perfil', 'Sin_tiempo', 'Sin_interes', 'Ya_esta_estudiando_en_otra_universidad',  'Otra_area_de_interés', 'MesIngreso', 'DetalleProspecto']
     
     def contactabilidad(self, row):
         if row['DESCRIPTION_COD_ACT'] in self.no_contacto:
@@ -332,6 +332,7 @@ class Cargarcsv(APIView):
                 proceso = procesos.get(row['PROCESO'])
                 estado = estados.get(row['Estado'])
                 fecha_ingreso = row['MesIngreso']
+                detalle = row['DetalleProspecto']
 
                 if celular in celulares_existentes or celular in celulares_a_guardar:
                     aspirante_existente = Aspirantes(
@@ -344,7 +345,8 @@ class Cargarcsv(APIView):
                         empresa=empresa,
                         proceso=proceso,
                         estado=estado,
-                        fecha_ingreso=fecha_ingreso
+                        fecha_ingreso=fecha_ingreso,
+                        detalle=detalle
                     )
                     aspirantes_a_actualizar.append(aspirante_existente)
                 else:
@@ -359,7 +361,8 @@ class Cargarcsv(APIView):
                         empresa=empresa,
                         proceso=proceso,
                         estado=estado,
-                        fecha_ingreso=fecha_ingreso
+                        fecha_ingreso=fecha_ingreso,
+                        detalle=detalle,
                     )
                     aspirantes_a_crear.append(nuevo_aspirante)
                     celulares_a_guardar.add(celular)
@@ -372,7 +375,7 @@ class Cargarcsv(APIView):
         if aspirantes_a_crear:
             Aspirantes.objects.bulk_create(aspirantes_a_crear)
         if aspirantes_a_actualizar:
-            Aspirantes.objects.bulk_update(aspirantes_a_actualizar, ['nombre', 'documento', 'correo', 'sede', 'programa', 'empresa', 'proceso', 'estado'])
+            Aspirantes.objects.bulk_update(aspirantes_a_actualizar, ['nombre', 'documento', 'correo', 'sede', 'programa', 'empresa', 'proceso', 'estado', 'detalle'])
         print("Aspirantes ingresados exitosamente")
         
     def llenarGestiones(self, df):
@@ -436,4 +439,3 @@ class Cargarcsv(APIView):
    
         self.actualizar_fecha_modificacion()
         print("carga completada")
-        
